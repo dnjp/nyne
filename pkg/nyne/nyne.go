@@ -5,18 +5,17 @@
 package nyne
 
 import (
-
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"bytes"
 	"os"
 	"os/exec"
 	"strings"
 
 	"9fans.net/go/acme"
-	"git.sr.ht/~danieljamespost/nyne/pkg/util/config"
 	"git.sr.ht/~danieljamespost/nyne/pkg/nyne/golang"
+	"git.sr.ht/~danieljamespost/nyne/pkg/util/config"
 )
 
 func New(conf *config.Config) {
