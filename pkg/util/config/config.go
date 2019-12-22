@@ -23,7 +23,7 @@ type Config struct {
 }
 
 type Spec struct {
-	Ext string `json:"ext"`
+	Ext []string `json:"ext"`
 	Cmd []Command `json:"cmd"`
 }
 

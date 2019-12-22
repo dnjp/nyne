@@ -1,0 +1,61 @@
+{
+	"spec": [
+		{
+			"ext": [".js"],
+			"cmd": [
+					{
+						"exec": "eslint",
+						"args": ["--fix", "$NAME"]
+					},
+					{
+						"exec": "prettier",
+						"args": ["$NAME", "--write", "--loglevel", "error"]
+					}
+				]
+		},
+		{
+			"ext": [".yml", ".yaml"],
+			"cmd": [
+					{
+						"exec": "yamllint",
+						"args": ["-d", "relaxed", "$NAME"]
+					},
+					{
+						"exec": "prettier",
+						"args": ["$NAME", "--write", "--loglevel", "error"]
+					}
+				]
+		},
+		{
+			"ext": [".md"],
+			"cmd": [
+					{
+						"exec": "prettier",
+						"args": ["$NAME", "--write", "--loglevel", "error"]
+					}
+				]
+		},	
+		{
+			"ext": [".go"],
+			"cmd": [
+				{
+					"exec": "goimports",
+					"args": ["$NAME"]
+				},
+				{
+					"exec": "gofmt",
+					"args": ["$NAME"]
+				}
+			]
+		},
+		{
+			"ext": [".cc", "cpp"],
+			"cmd": [
+				{
+					"exec": "clang-format",
+					"args": ["-style=google", "$NAME"]
+				}
+			]
+		}		
+	]
+}

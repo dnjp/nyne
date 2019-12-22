@@ -31,19 +31,33 @@ func New(conf *config.Config) {
 		}
 		if event.Name != "" && event.Op == "put" {
 			for _, spec := range conf.Spec {
-				if strings.HasSuffix(event.Name, spec.Ext) {
-					for _, cmd := range spec.Cmd {
-						args := append(cmd.Args, event.Name)
-						reformat(event.ID, event.Name, cmd.Exec, args, spec.Ext)
-				    		event, err = l.Read()
-				    		if err != nil {
-				    			log.Fatal(err)
+				for _, ext := range spec.Ext {
+					if strings.HasSuffix(event.Name, ext) {
+						for _, cmd := range spec.Cmd {
+							args := replaceName(cmd.Args, event.Name)
+							reformat(event.ID, event.Name, cmd.Exec, args, ext)
+					    		event, err = l.Read()
+					    		if err != nil {
+					    			log.Fatal(err)
+					    		}
 				    		}
-			    		}
+				    	}
 			    	}
 		    	}
 		}
 	}
+}
+
+func replaceName(arr []string, name string) []string {
+	newArr := make([]string, len(arr))
+	for idx, str := range arr {
+		if str == "$NAME" {
+			newArr[idx] = name
+		} else {
+			newArr[idx] = arr[idx]
+		}
+	}
+	return newArr
 }
 
 func reformat(id int, name string, x string, args []string, ext string) {
