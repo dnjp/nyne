@@ -25,6 +25,12 @@ type Config struct {
 type Spec struct {
 	Ext []string `json:"ext"`
 	Cmd []Command `json:"cmd"`
+	Fmt Format `json:"fmt"`
+}
+
+type Format struct {
+	Indent int `json:"indent"`
+	Expand bool `json:"expand"`
 }
 
 type Command struct {

@@ -1,12 +1,7 @@
-// Acmego watches acme for .go files being written.
-// Each time a .go file is written, acmego checks whether the
-// import block needs adjustment. If so, it makes the changes
-// in the window body but does not write the file.
 package nyne
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -28,23 +23,50 @@ func New(conf *config.Config) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if event.Name != "" && event.Op == "put" {
-			for _, spec := range conf.Spec {
-				for _, ext := range spec.Ext {
-					if strings.HasSuffix(event.Name, ext) {
-						for _, cmd := range spec.Cmd {
-							args := replaceName(cmd.Args, event.Name)
-							reformat(event.ID, event.Name, cmd.Exec, args, ext)
-					    		event, err = l.Read()
-					    		if err != nil {
-					    			log.Fatal(err)
-					    		}
-				    		}
-				    	}
-			    	}
-		    	}
+		switch event.Op {
+		case "put":
+			runCmd(conf, event)
+		case "new":
+			runFmt(conf, event)
 		}
+		if event.Name != "" && event.Op == "put" {}
 	}
+}
+
+func runFmt(conf *config.Config, event *acme.Event) {
+	for _, spec := range conf.Spec {
+		for idx, ext := range spec.Ext {
+			if strings.HasSuffix(event.Name, ext) {
+				fmt(event.ID, spec[idx].Fmt)
+			}
+	    	}
+    	}
+}
+
+func runCmd(conf *config.Config, event *acme.Event) {
+	for _, spec := range conf.Spec {
+		for _, ext := range spec.Ext {
+			if strings.HasSuffix(event.Name, ext) {
+				for _, cmd := range spec.Cmd {
+					args := replaceName(cmd.Args, event.Name)
+					reformat(event.ID, event.Name, cmd.Exec, args, ext)
+			    		event, err = l.Read()
+			    		if err != nil {
+			    			log.Fatal(err)
+			    		}
+		    		}
+		    	}
+	    	}
+    	}
+}
+
+func fmt(event *acme.Event, f config.Format) {
+	w, err := acme.Open(event.ID, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer w.CloseFiles()
+
 }
 
 func replaceName(arr []string, name string) []string {
