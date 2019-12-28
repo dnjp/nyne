@@ -20,6 +20,7 @@ func Load(path string) (*Config, error) {
 
 type Config struct {
 	Spec []Spec `json:"spec"`
+	Menu []string `json:"menu"`
 }
 
 type Spec struct {

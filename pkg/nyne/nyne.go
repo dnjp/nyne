@@ -2,13 +2,13 @@ package nyne
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"unicode/utf8"
-	"fmt"
 
 	"9fans.net/go/acme"
 	"git.sr.ht/~danieljamespost/nyne/pkg/nyne/golang"
@@ -30,6 +30,7 @@ func New(conf *config.Config) {
 			runCmd(conf, event)
 		case "new":
 			runFmt(conf, event)
+			printMenu(conf, event)
 		}
 	}
 }
@@ -55,6 +56,26 @@ func runCmd(conf *config.Config, event acme.LogEvent) {
 		    	}
 	    	}
     	}
+}
+
+func printMenu(conf *config.Config, event acme.LogEvent) {
+	w, err := acme.Open(event.ID, nil)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	defer w.CloseFiles()
+	if err := w.Fprintf("tag", "%s", "\n"); err != nil {
+		log.Print(err)
+	}
+
+	for _, opt := range conf.Menu {
+		cmd := fmt.Sprintf(" (%s)", opt)
+		if err := w.Fprintf("tag", "%s", cmd); err != nil {
+			log.Print(err)
+		}	
+	}
+	
 }
 
 func format(event acme.LogEvent, f config.Format) {
