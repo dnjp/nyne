@@ -108,8 +108,6 @@ func format(event acme.LogEvent, f config.Format) {
 		evt.Q1 = offset + cmdlen
 		w.WriteEvent(evt)		
 	}
-	
-	return
 }
 
 func replaceName(arr []string, name string) []string {
