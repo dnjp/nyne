@@ -73,9 +73,9 @@ func printMenu(conf *config.Config, event acme.LogEvent) {
 		cmd := fmt.Sprintf(" (%s)", opt)
 		if err := w.Fprintf("tag", "%s", cmd); err != nil {
 			log.Print(err)
-		}	
+		}
 	}
-	
+
 }
 
 func format(event acme.LogEvent, f config.Format) {
@@ -85,7 +85,7 @@ func format(event acme.LogEvent, f config.Format) {
 		return
 	}
 	defer w.CloseFiles()
-	
+
 	if f.Indent != 0 {
 		tabCmd := fmt.Sprintf("Tab %d", f.Indent)
 		if err := w.Ctl("cleartag"); err != nil {
@@ -105,11 +105,11 @@ func format(event acme.LogEvent, f config.Format) {
 		evt.C2 = 'x'
 		evt.Q0 = offset
 		evt.Q1 = offset + cmdlen
-		w.WriteEvent(evt)		
+		w.WriteEvent(evt)
 	}
-	
+
 	if f.Expand == true {
-		expCmd := "Tabexpand"
+		expCmd := fmt.Sprintf("nynetab %d", f.Indent)
 		if err := w.Ctl("cleartag"); err != nil {
 			log.Print(err)
 		}
@@ -127,7 +127,7 @@ func format(event acme.LogEvent, f config.Format) {
 		evt.C2 = 'x'
 		evt.Q0 = offset
 		evt.Q1 = offset + cmdlen
-		w.WriteEvent(evt)		
+		w.WriteEvent(evt)
 	}
 }
 
@@ -150,7 +150,7 @@ func reformat(id int, name string, x string, args []string, ext string) {
 		return
 	}
 	defer w.CloseFiles()
-	
+
 	old, err := ioutil.ReadFile(name)
 	if err != nil {
 		return
@@ -168,10 +168,10 @@ func reformat(id int, name string, x string, args []string, ext string) {
 	if bytes.Equal(old, new) {
 		return
 	}
-		
+
 	if ext != ".go" {
 		w.Write("ctl", []byte("clean"))
-		w.Write("ctl", []byte("get"))	
+		w.Write("ctl", []byte("get"))
 		return
 	} else {
 		golang.Reformat(name, ext, w, old, new)
