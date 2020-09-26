@@ -1,4 +1,4 @@
-package nyne
+package formatter
 
 import (
 	"bytes"
@@ -11,11 +11,38 @@ import (
 	"unicode/utf8"
 
 	"9fans.net/go/acme"
-	"git.sr.ht/~danieljamespost/nyne/pkg/nyne/golang"
-	"git.sr.ht/~danieljamespost/nyne/pkg/util/config"
+	"git.sr.ht/~danieljamespost/nyne/pkg/golang"
+	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
-func New(conf *config.Config) {
+type Formatter struct {
+	ops map[string]*Op
+	menu []string
+}
+
+type Op struct {
+	Fmt config.Format
+	Cmd []config.Command
+}
+
+func New(conf *config.Config) *Formatter {
+	f := &Formatter{
+		ops: make(map[string]*Op),
+		menu: conf.Menu,
+	}
+
+	for _, spec := range conf.Spec {
+    		for _, ext := range spec.Ext {
+	    		f.ops[ext] = &Op{
+				Fmt: spec.Fmt,
+				Cmd: spec.Cmd,
+			}
+	    	}
+    	}
+	return f
+}
+
+func (f *Formatter) Listen() {
 	l, err := acme.Log()
 	if err != nil {
 		log.Fatal(err)
@@ -25,40 +52,30 @@ func New(conf *config.Config) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		ext := getExt(event.Name, ".txt")
+		op := f.ops[ext]
+		if op == nil {
+			continue
+		}
 		switch event.Op {
 		case "put":
-			runCmd(conf, event)
+			f.cmd(event, op.Cmd, ext)
 		case "new":
-			runFmt(conf, event)
-			printMenu(conf, event)
+			f.fmt(event, op.Fmt)
+			f.wmenu(event)
 		}
 	}
 }
 
-func runFmt(conf *config.Config, event acme.LogEvent) {
-	for _, spec := range conf.Spec {
-		for _, ext := range spec.Ext {
-			if strings.HasSuffix(event.Name, ext) {
-				format(event, spec.Fmt)
-			}
-	    	}
+
+func (f *Formatter) cmd(event acme.LogEvent, commands []config.Command, ext string) {
+	for _, cmd := range commands {
+		args := replaceName(cmd.Args, event.Name)
+		f.refmt(event.ID, event.Name, cmd.Exec, args, ext)
     	}
 }
 
-func runCmd(conf *config.Config, event acme.LogEvent) {
-	for _, spec := range conf.Spec {
-		for _, ext := range spec.Ext {
-			if strings.HasSuffix(event.Name, ext) {
-				for _, cmd := range spec.Cmd {
-					args := replaceName(cmd.Args, event.Name)
-					reformat(event.ID, event.Name, cmd.Exec, args, ext)
-		    		}
-		    	}
-	    	}
-    	}
-}
-
-func printMenu(conf *config.Config, event acme.LogEvent) {
+func (f *Formatter) wmenu(event acme.LogEvent) {
 	w, err := acme.Open(event.ID, nil)
 	if err != nil {
 		log.Print(err)
@@ -69,16 +86,15 @@ func printMenu(conf *config.Config, event acme.LogEvent) {
 		log.Print(err)
 	}
 
-	for _, opt := range conf.Menu {
+	for _, opt := range f.menu {
 		cmd := fmt.Sprintf(" (%s)", opt)
 		if err := w.Fprintf("tag", "%s", cmd); err != nil {
 			log.Print(err)
 		}
 	}
-
 }
 
-func format(event acme.LogEvent, f config.Format) {
+func (f* Formatter) fmt(event acme.LogEvent, format config.Format) {
 	w, err := acme.Open(event.ID, nil)
 	if err != nil {
 		log.Print(err)
@@ -86,8 +102,8 @@ func format(event acme.LogEvent, f config.Format) {
 	}
 	defer w.CloseFiles()
 
-	if f.Indent != 0 {
-		tabCmd := fmt.Sprintf("Tab %d", f.Indent)
+	if format.Indent != 0 {
+		tabCmd := fmt.Sprintf("Tab %d", format.Indent)
 		if err := w.Ctl("cleartag"); err != nil {
 			log.Print(err)
 		}
@@ -108,8 +124,8 @@ func format(event acme.LogEvent, f config.Format) {
 		w.WriteEvent(evt)
 	}
 
-	if f.Expand == true {
-		expCmd := fmt.Sprintf("nynetab %d", f.Indent)
+	if format.Expand == true {
+		expCmd := fmt.Sprintf("nynetab %d", format.Indent)
 		if err := w.Ctl("cleartag"); err != nil {
 			log.Print(err)
 		}
@@ -131,19 +147,7 @@ func format(event acme.LogEvent, f config.Format) {
 	}
 }
 
-func replaceName(arr []string, name string) []string {
-	newArr := make([]string, len(arr))
-	for idx, str := range arr {
-		if str == "$NAME" {
-			newArr[idx] = name
-		} else {
-			newArr[idx] = arr[idx]
-		}
-	}
-	return newArr
-}
-
-func reformat(id int, name string, x string, args []string, ext string) {
+func (f *Formatter) refmt(id int, name string, x string, args []string, ext string) {
 	w, err := acme.Open(id, nil)
 	if err != nil {
 		log.Print(err)
@@ -151,6 +155,7 @@ func reformat(id int, name string, x string, args []string, ext string) {
 	}
 	defer w.CloseFiles()
 
+	// TODO: read from 9p contents instead of raw file
 	old, err := ioutil.ReadFile(name)
 	if err != nil {
 		return
@@ -170,11 +175,32 @@ func reformat(id int, name string, x string, args []string, ext string) {
 	}
 
 	if ext != ".go" {
+		// TODO: this is a bug because it breaks undo
 		w.Write("ctl", []byte("clean"))
 		w.Write("ctl", []byte("get"))
 		return
 	} else {
 		golang.Reformat(name, ext, w, old, new)
 	}
+}
+
+func replaceName(arr []string, name string) []string {
+	newArr := make([]string, len(arr))
+	for idx, str := range arr {
+		if str == "$NAME" {
+			newArr[idx] = name
+		} else {
+			newArr[idx] = arr[idx]
+		}
+	}
+	return newArr
+}
+
+func getExt(in string, def string) string {
+	pts := strings.Split(in, ".")
+	if len(pts) == len(in) {
+		return def
+	}
+	return "." + pts[len(pts)-1]
 }
 

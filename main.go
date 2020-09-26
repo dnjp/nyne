@@ -6,8 +6,8 @@ import (
 	"os/user"
   "os"
 
-	"git.sr.ht/~danieljamespost/nyne/pkg/nyne"
-	"git.sr.ht/~danieljamespost/nyne/pkg/util/config"
+	"git.sr.ht/~danieljamespost/nyne/pkg/formatter"
+	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
 func main() {
@@ -25,5 +25,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	nyne.New(conf)
+	f := formatter.New(conf)
+	f.Listen()
 }
