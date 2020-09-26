@@ -15,34 +15,47 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
-type Formatter struct {
+// Formatter listens for Acme events and applies formatting rules to the active buffer
+type Formatter interface {
+	Listen()
+	Cmd(event acme.LogEvent, commands []config.Command, ext string)
+	WMenu(event acme.LogEvent)
+	Fmt(event acme.LogEvent, format config.Format)
+	Refmt(id int, name string, x string, args []string, ext string)
+}
+
+// NFmt implements the Formatter inferface for $NYNERULES
+type NFmt struct {
 	ops map[string]*Op
 	menu []string
 }
 
+// Op specifies a formatting operation to be performed on an Acme buffer
 type Op struct {
 	Fmt config.Format
 	Cmd []config.Command
 }
 
-func New(conf *config.Config) *Formatter {
-	f := &Formatter{
+// New constructs a Formatter that uses $NYNERULES for formatting
+func New(conf *config.Config) Formatter {
+	n := &NFmt{
 		ops: make(map[string]*Op),
 		menu: conf.Menu,
 	}
 
 	for _, spec := range conf.Spec {
     		for _, ext := range spec.Ext {
-	    		f.ops[ext] = &Op{
+	    		n.ops[ext] = &Op{
 				Fmt: spec.Fmt,
 				Cmd: spec.Cmd,
 			}
-	    	}
+		}
     	}
-	return f
+	return n
 }
 
-func (f *Formatter) Listen() {
+// Listen tells the Formatter to begin listening for Acme events
+func (n *NFmt) Listen() {
 	l, err := acme.Log()
 	if err != nil {
 		log.Fatal(err)
@@ -53,29 +66,32 @@ func (f *Formatter) Listen() {
 			log.Fatal(err)
 		}
 		ext := getExt(event.Name, ".txt")
-		op := f.ops[ext]
+		op := n.ops[ext]
 		if op == nil {
 			continue
 		}
 		switch event.Op {
 		case "put":
-			f.cmd(event, op.Cmd, ext)
+			n.Cmd(event, op.Cmd, ext)
 		case "new":
-			f.fmt(event, op.Fmt)
-			f.wmenu(event)
+			n.Fmt(event, op.Fmt)
+			n.WMenu(event)
 		}
 	}
 }
 
-
-func (f *Formatter) cmd(event acme.LogEvent, commands []config.Command, ext string) {
+// Cmd executes commands that operate on stdin/stdout against the Acme buffer
+// TODO: this should read the file once, create a unified diff, and apply the diff
+//             to the buffer instead of doing so for each command
+func (n *NFmt) Cmd(event acme.LogEvent, commands []config.Command, ext string) {
 	for _, cmd := range commands {
 		args := replaceName(cmd.Args, event.Name)
-		f.refmt(event.ID, event.Name, cmd.Exec, args, ext)
+		n.Refmt(event.ID, event.Name, cmd.Exec, args, ext)
     	}
 }
 
-func (f *Formatter) wmenu(event acme.LogEvent) {
+// WMenu writes the specified menu options to the Acme buffer
+func (n *NFmt) WMenu(event acme.LogEvent) {
 	w, err := acme.Open(event.ID, nil)
 	if err != nil {
 		log.Print(err)
@@ -86,7 +102,7 @@ func (f *Formatter) wmenu(event acme.LogEvent) {
 		log.Print(err)
 	}
 
-	for _, opt := range f.menu {
+	for _, opt := range n.menu {
 		cmd := fmt.Sprintf(" (%s)", opt)
 		if err := w.Fprintf("tag", "%s", cmd); err != nil {
 			log.Print(err)
@@ -94,7 +110,9 @@ func (f *Formatter) wmenu(event acme.LogEvent) {
 	}
 }
 
-func (f* Formatter) fmt(event acme.LogEvent, format config.Format) {
+// Fmt opens the Acme buffer for writing and applies the indentation and
+// tab expansion options provided in $NYNERULES
+func (f* NFmt) Fmt(event acme.LogEvent, format config.Format) {
 	w, err := acme.Open(event.ID, nil)
 	if err != nil {
 		log.Print(err)
@@ -147,7 +165,10 @@ func (f* Formatter) fmt(event acme.LogEvent, format config.Format) {
 	}
 }
 
-func (f *Formatter) refmt(id int, name string, x string, args []string, ext string) {
+
+// Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
+// TODO: this implementation introduces a bug that breaks undo
+func (n *NFmt) Refmt(id int, name string, x string, args []string, ext string) {
 	w, err := acme.Open(id, nil)
 	if err != nil {
 		log.Print(err)
@@ -175,7 +196,6 @@ func (f *Formatter) refmt(id int, name string, x string, args []string, ext stri
 	}
 
 	if ext != ".go" {
-		// TODO: this is a bug because it breaks undo
 		w.Write("ctl", []byte("clean"))
 		w.Write("ctl", []byte("get"))
 		return
