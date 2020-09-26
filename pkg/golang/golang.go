@@ -106,7 +106,7 @@ func Reformat(name string, ext string, w *acme.Win, old []byte, new []byte) {
 			}
 		}
 	}
-	
+
 	// update buffer
 	w.Write("ctl", []byte("clean"))
 	w.Write("ctl", []byte("get"))

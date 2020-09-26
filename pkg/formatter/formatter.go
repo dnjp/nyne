@@ -9,9 +9,10 @@ import (
 	"os/exec"
 	"strings"
 	"unicode/utf8"
+	"strconv"
 
 	"9fans.net/go/acme"
-	"git.sr.ht/~danieljamespost/nyne/pkg/golang"
+	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
@@ -28,6 +29,7 @@ type Formatter interface {
 type NFmt struct {
 	ops map[string]*Op
 	menu []string
+	listener event.Listener
 }
 
 // Op specifies a formatting operation to be performed on an Acme buffer
@@ -41,6 +43,7 @@ func New(conf *config.Config) Formatter {
 	n := &NFmt{
 		ops: make(map[string]*Op),
 		menu: conf.Menu,
+		listener: event.NewListener(),
 	}
 
 	for _, spec := range conf.Spec {
@@ -51,134 +54,108 @@ func New(conf *config.Config) Formatter {
 			}
 		}
     	}
+
+ 	n.listener.RegisterHook(event.Hook{
+ 		Op: event.PUT,
+ 		Handler: func(evt *event.Event) {
+			if !n.shouldProcessEvent(evt) {
+				return
+			}
+			n.Cmd(evt, op.Cmd, ext)
+ 		},
+ 	})
+
+  	n.listener.RegisterHook(event.Hook{
+ 		Op: event.NEW,
+ 		Handler: func(evt *event.Event) {
+			if !n.shouldProcessEvent(evt) {
+				return
+			}
+			n.Fmt(evt, op.Fmt)
+			n.WMenu(evt)
+		},
+ 	})
+
 	return n
 }
 
-// Listen tells the Formatter to begin listening for Acme events
-func (n *NFmt) Listen() {
-	l, err := acme.Log()
-	if err != nil {
-		log.Fatal(err)
+func (n *NFmt) shouldProcessEvent(evt *event.Event) bool {
+ 	ext := getExt(evt.File, ".txt")
+	op := n.ops[ext]
+	if op == nil {
+		return false
 	}
-	for {
-		event, err := l.Read()
-		if err != nil {
-			log.Fatal(err)
-		}
-		ext := getExt(event.Name, ".txt")
-		op := n.ops[ext]
-		if op == nil {
-			continue
-		}
-		switch event.Op {
-		case "put":
-			n.Cmd(event, op.Cmd, ext)
-		case "new":
-			n.Fmt(event, op.Fmt)
-			n.WMenu(event)
-		}
-	}
+	return true
+}
+
+// Run tells the Formatter to begin listening for Acme events
+func (n *NFmt) Run() {
+	log.Fatal(n.listener.Listen())
 }
 
 // Cmd executes commands that operate on stdin/stdout against the Acme buffer
 // TODO: this should read the file once, create a unified diff, and apply the diff
 //             to the buffer instead of doing so for each command
-func (n *NFmt) Cmd(event acme.LogEvent, commands []config.Command, ext string) {
+func (n *NFmt) Cmd(evt *event.Event, commands []config.Command, ext string) {
 	for _, cmd := range commands {
-		args := replaceName(cmd.Args, event.Name)
-		n.Refmt(event.ID, event.Name, cmd.Exec, args, ext)
+		args := replaceName(cmd.Args, evt.File)
+		n.Refmt(evt, cmd.Exec, args, ext)
     	}
 }
 
 // WMenu writes the specified menu options to the Acme buffer
-func (n *NFmt) WMenu(event acme.LogEvent) {
-	w, err := acme.Open(event.ID, nil)
-	if err != nil {
-		log.Print(err)
+func (n *NFmt) WMenu(evt *event.Event) {
+	if err := evt.Win.WriteToTag("\n"); err != nil {
+		printErr(err)
 		return
 	}
-	defer w.CloseFiles()
-	if err := w.Fprintf("tag", "%s", "\n"); err != nil {
-		log.Print(err)
-	}
-
 	for _, opt := range n.menu {
 		cmd := fmt.Sprintf(" (%s)", opt)
-		if err := w.Fprintf("tag", "%s", cmd); err != nil {
-			log.Print(err)
+		if err := evt.Win.WriteToTag(cmd); err != nil {
+			printErr(err)
 		}
 	}
 }
 
 // Fmt opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
-func (f* NFmt) Fmt(event acme.LogEvent, format config.Format) {
-	w, err := acme.Open(event.ID, nil)
-	if err != nil {
-		log.Print(err)
+func (f* NFmt) Fmt(evt *acme.Event, format config.Format) {
+	if format.Indent == 0 {
 		return
 	}
-	defer w.CloseFiles()
 
-	if format.Indent != 0 {
-		tabCmd := fmt.Sprintf("Tab %d", format.Indent)
-		if err := w.Ctl("cleartag"); err != nil {
-			log.Print(err)
-		}
-		tag, err := w.ReadAll("tag")
-		if err != nil {
-			log.Print(err)
-		}
-		offset := utf8.RuneCount(tag)
-		cmdlen := utf8.RuneCountInString(tabCmd)
-		if err := w.Fprintf("tag", "%s", tabCmd); err != nil {
-			log.Print(err)
-		}
-		evt := new(acme.Event)
-		evt.C1 = 'M'
-		evt.C2 = 'x'
-		evt.Q0 = offset
-		evt.Q1 = offset + cmdlen
-		w.WriteEvent(evt)
+	if err := evt.Win.ClearTagText(); err != nil {
+		printErr(err)
+		return
 	}
 
-	if format.Expand == true {
-		expCmd := fmt.Sprintf("nynetab %d", format.Indent)
-		if err := w.Ctl("cleartag"); err != nil {
-			log.Print(err)
+	if err := evt.Win.ExecInTag("Tab", strconv.Itoa(format.Indent)); err != nil {
+		printErr(err)
+		return
+	}
+
+
+	if format.Expand {
+		if err := evt.Win.ClearTagText(); err != nil {
+			printErr(err)
+			return
 		}
-		tag, err := w.ReadAll("tag")
-		if err != nil {
-			log.Print(err)
+
+		if err := evt.Win.ExecInTag("nynetab", strconv.Itoa(format.Indent)); err != nil {
+			printErr(err)
+			return
 		}
-		offset := utf8.RuneCount(tag)
-		cmdlen := utf8.RuneCountInString(expCmd)
-		if err := w.Fprintf("tag", "%s", expCmd); err != nil {
-			log.Print(err)
-		}
-		evt := new(acme.Event)
-		evt.C1 = 'M'
-		evt.C2 = 'x'
-		evt.Q0 = offset
-		evt.Q1 = offset + cmdlen
-		w.WriteEvent(evt)
 	}
 }
 
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
 // TODO: this implementation introduces a bug that breaks undo
-func (n *NFmt) Refmt(id int, name string, x string, args []string, ext string) {
-	w, err := acme.Open(id, nil)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	defer w.CloseFiles()
+func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) {
 
-	// TODO: read from 9p contents instead of raw file
-	old, err := ioutil.ReadFile(name)
+	old, err := evt.Win.ReadBody()
 	if err != nil {
+		printErr(err)
 		return
 	}
 	new, err := exec.Command(x, args...).CombinedOutput()
@@ -195,13 +172,15 @@ func (n *NFmt) Refmt(id int, name string, x string, args []string, ext string) {
 		return
 	}
 
-	if ext != ".go" {
-		w.Write("ctl", []byte("clean"))
-		w.Write("ctl", []byte("get"))
-		return
-	} else {
-		golang.Reformat(name, ext, w, old, new)
-	}
+	evt.Win.SetAddr(",", nil)
+	evt.Win.SetData(new)
+// 	evt.Win.MarkWinClean()
+// 	evt.Win.ExecGet()
+
+}
+
+func printErr(err error) {
+	fmt.Fprintf(os.Stderr, "%v", err)
 }
 
 func replaceName(arr []string, name string) []string {
