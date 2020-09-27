@@ -63,6 +63,8 @@ func New(conf *config.Config) Formatter {
 				return
 			}
 			n.ExecCmds(evt, op.Cmd, ext)
+
+			fmt.Println("PUT")
 		},
 	})
 
@@ -160,58 +162,37 @@ func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]b
 	if err != nil {
 		return []byte{}, err
 	}
-
 	if bytes.Equal(old, new) {
 		return old, nil
 	}
-
 	return new, nil
 }
 
 func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
-	// 	original, err := n.Win.ReadBody()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	//
-	// 	unified := [][]diffmatchpatch.Diff
-	// 	for i, update := range updates {
-	// 		old := []byte{}
-	// 		if i == 0 {
-	// 			old = original
-	// 		} else {
-	// 			old = updates[i-1]
-	// 		}
-	//
-	// 		dmp := diffmatchpatch.New()
-	// 		diffs = dmp.DiffMain(string(old),string(update), false)
-	// 		unified = append(unified, diffs)
-	// 	}
-
-	update := updates[len(updates)-1]
-
-	if err := evt.Win.SetAddr(","); err != nil {
-		return err
+	for _, _ = range updates {
+		if err := evt.Win.SetAddr(","); err != nil {
+			return err
+		}
+	fmt.Printf("%+v\n", *evt)
+		// if err := evt.Win.SetData(update); err != nil {
+		// 	return err
+		// }
 	}
+	return nil
 
-	if err := evt.Win.SetData(update); err != nil {
-		return err
-	}
 
+}
+
+func (n *NFmt) resetView(evt *event.Event) error {
 	if err := evt.Win.SetAddr("0,0"); err != nil {
 		return err
 	}
-
 	if err := evt.Win.SetTextToAddr(); err != nil {
 		return err
 	}
-
 	if err := evt.Win.ExecShow(); err != nil {
 		return err
 	}
-
-	evt.Win.MarkWinClean()
-
 	return nil
 }
 

@@ -2,6 +2,7 @@ package event
 
 import (
 	"9fans.net/go/acme"
+	"fmt"
 )
 
 type Event struct {
@@ -20,7 +21,20 @@ func (e *Event) ConnectWin() error {
 	e.Win = &Win{
 		handle: w,
 	}
+	eventlistener(w)
 	return nil
+}
+
+func eventlistener(w *acme.Win) {
+	for e := range w.EventChan() {
+		evtType := fmt.Sprintf("%s%s", string(e.C1), string(e.C2))
+		switch (evtType) {
+		default:
+			fmt.Println(evtType)
+			fmt.Printf("%+v\n", *e)
+			w.WriteEvent(e)
+		}
+	}
 }
 
 func (e *Event) CloseFilesForWin() {
