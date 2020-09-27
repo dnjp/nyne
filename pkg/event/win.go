@@ -77,25 +77,29 @@ func (w *Win) MarkWinDirty() error {
 
 // ClearTagText removes all text in the tag after the vertical bar.
 func (w *Win) ClearTagText() error {
-// 	if err := w.Ctl("cleartag"); err != nil {
-// 		log.Print(err)
-// 		return
-// 	}
+	// 	if err := w.Ctl("cleartag"); err != nil {
+	// 		log.Print(err)
+	// 		return
+	// 	}
 
 	return w.write("ctl", []byte("cleartag"))
 }
 
 func (w *Win) ReadTag() ([]byte, error) {
-	return w.ReadAll("tag")
+	return w.handle.ReadAll("tag")
 }
 
 func (w *Win) ReadBody() ([]byte, error) {
-	return w.ReadAll("body")
+	return w.handle.ReadAll("body")
+}
+
+func (w *Win) ReadAddr() ([]byte, error) {
+	return w.handle.ReadAll("addr")
 }
 
 // SetTextToAddr sets the user’s selected text in the window to the text addressed by the addr address.
 func (w *Win) SetTextToAddr() error {
-	return e.write("ctl", []byte("dot=addr"))
+	return w.write("ctl", []byte("dot=addr"))
 }
 
 // SetDumpDir sets the directory in which to run the command to recreate the window from a dump file.
@@ -112,6 +116,7 @@ func (w *Win) RestrictSearchToAddr() error {
 func (w *Win) EnableNoMark() error {
 	return w.write("ctl", []byte("nomark"))
 }
+
 // DisableNoMark cancels nomark, returning the window to the usual state wherein each modification to the body must be undone individually.
 func (w *Win) DisableNoMark() error {
 	return w.write("ctl", []byte("mark"))
@@ -124,8 +129,8 @@ func (w *Win) SetWinName(name string) error {
 
 // SetAddr takes an addr which may be written with any textual address
 // in the format understood by button 3 but without the initial colon
-func (w *Win) SetAddr(addr string, args ...interface{}) error {
-	return w.handle.Addr(addr, args)
+func (w *Win) SetAddr(addr string) error {
+	return w.write("addr", []byte(addr))
 }
 
 // data   is used in conjunction with addr for random access to the
@@ -149,4 +154,8 @@ func (w *Win) WriteToTag(text string) error {
 func (w *Win) write(file string, data []byte) error {
 	_, err := w.handle.Write(file, data)
 	return err
+}
+
+func (w *Win) closeFiles() {
+	w.handle.CloseFiles()
 }

@@ -2,11 +2,9 @@ package event
 
 import (
 	"fmt"
-	"log"
-	"strings"
-	"unicode/utf8"
 
 	"9fans.net/go/acme"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 type AcmeOp int
@@ -28,7 +26,7 @@ type Hook struct {
 }
 
 type Listener interface {
-	Listen() err
+	Listen() error
 	RegisterHook(hook Hook)
 }
 type Acme struct {
@@ -37,11 +35,11 @@ type Acme struct {
 
 func NewListener() Listener {
 	return &Acme{
-		hooks: make(map[AcmeOp]*Handler),
+		hooks: make(map[AcmeOp][]Hook),
 	}
 }
 
-func (a *Acme) Listen() err {
+func (a *Acme) Listen() error {
 	l, err := acme.Log()
 	if err != nil {
 		return err
@@ -56,32 +54,33 @@ func (a *Acme) Listen() err {
 		if err != nil {
 			return err
 		}
-		a.runHooks(&evt)
+		if evt != nil {
+			a.runHooks(evt)
+		}
 	}
 }
 
-func (a *Acme) runHooks(event Event) {
+func (a *Acme) runHooks(event *Event) {
 	hooks := a.hooks[event.Op]
-	if h == nil {
+	if len(hooks) == 0 {
 		return
 	}
-	w, err := acme.Open(id, nil)
-	if err != nil {
-		log.Print(err)
+	if err := event.ConnectWin(); err != nil {
+		io.PrintErr(err)
 		return
 	}
-	defer w.CloseFiles()
-	event.fid = w
 
 	for _, hook := range hooks {
-		fn := h.Handler
-		fn(&event)
+		fn := hook.Handler
+		fn(event)
 	}
+	event.CloseFilesForWin()
 }
 
 func (a *Acme) RegisterHook(hook Hook) {
-	hooks := a.hooks[h.Op]
-	h.hooks = append(hooks, hook)
+	hooks := a.hooks[hook.Op]
+	hooks = append(hooks, hook)
+	a.hooks[hook.Op] = hooks
 }
 
 
@@ -98,11 +97,14 @@ func tokenizeEvent(event acme.LogEvent) (*Event, error) {
 		op = PUT
 	case "del":
 		op = DEL
+	case "focus":
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("cannot handle '%s' event", event.Op)
 	}
 
 	return &Event{
+		ID: event.ID,
 		Op:   op,
 		File: event.Name,
 		log:  event,
