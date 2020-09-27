@@ -4,16 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	// "os"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	// "unicode/utf8"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
-	// "git.sr.ht/~danieljamespost/nyne/util/io"
-	// "github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
@@ -30,6 +27,7 @@ type NFmt struct {
 	ops      map[string]*Op
 	menu     []string
 	listener event.Listener
+	debug bool
 }
 
 // Op specifies a formatting operation to be performed on an Acme buffer
@@ -44,6 +42,7 @@ func New(conf *config.Config) Formatter {
 		ops:      make(map[string]*Op),
 		menu:     conf.Menu,
 		listener: event.NewListener(),
+		debug: len(os.Getenv("DEBUG")) > 0,
 	}
 
 	for _, spec := range conf.Spec {
@@ -153,7 +152,6 @@ func (f *NFmt) SetupFormatting(w *event.Win, format config.Format) error {
 }
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
-// TODO: this implementation introduces a bug that breaks undo
 func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]byte, error) {
 	old, err := evt.Win.ReadBody()
 	if err != nil {
@@ -170,7 +168,6 @@ func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]b
 }
 
 func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
-	fmt.Println("!!! writing updates")
 	for _, update := range updates {
 		if err := evt.Win.SetAddr(","); err != nil {
 			return err

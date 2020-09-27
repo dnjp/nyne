@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+	"os"
 
 	"9fans.net/go/acme"
 )
@@ -15,6 +16,7 @@ type Acme struct {
 	hooks map[AcmeOp][]Hook
 	openHooks map[AcmeOp][]OpenHook
 	windows map[int]string
+	debug bool
 }
 
 func NewListener() Listener {
@@ -26,6 +28,10 @@ func NewListener() Listener {
 }
 
 func (a *Acme) Listen() error {
+	if len(os.Getenv("DEBUG")) > 0 {
+		a.debug = true
+	}
+
 	l, err := acme.Log()
 	if err != nil {
 		return err
@@ -60,7 +66,9 @@ func (a *Acme) mapWindows() error {
 
 
 func (a *Acme) startEventListener(id int) {
-	fmt.Println("starting event listener")
+	if a.debug {
+		fmt.Println("starting event listener")
+	}
 	w, err := acme.Open(id, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -73,7 +81,9 @@ func (a *Acme) startEventListener(id int) {
 	})
 
 	for e := range w.EventChan() {
-		fmt.Printf("RAW: %+v\n", *e)
+		if a.debug {
+			fmt.Printf("RAW: %+v\n", *e)
+		}
 
 		// empty event received on delete
 		if e.C1 == 0 && e.C2 == 0 {
@@ -84,12 +94,16 @@ func (a *Acme) startEventListener(id int) {
 		event, err := a.tokenizeEvent(w, e, id)
 		if err != nil {
 			w.WriteEvent(e)
-			fmt.Println(err)
+			if a.debug {
+				fmt.Println(err)
+			}
 			return
 		}
 
-		fmt.Printf("TOKEN: %+v\n", *event)
-		fmt.Printf("\n")
+		if a.debug {
+			fmt.Printf("TOKEN: %+v\n", *event)
+			fmt.Printf("\n")
+		}
 
 		newEvent := a.runEventHooks(event)
 		w.WriteEvent(newEvent.raw)
