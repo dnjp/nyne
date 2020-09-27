@@ -20,8 +20,8 @@ import (
 type Formatter interface {
 	Run()
 	ExecCmds(event *event.Event, commands []config.Command, ext string) error
-	WriteMenu(event *event.Event) error
-	SetupFormatting(event *event.Event, format config.Format) error
+	WriteMenu(w *event.Win) error
+	SetupFormatting(*event.Win, config.Format) error
 	Refmt(*event.Event, string, []string, string) ([]byte, error)
 }
 
@@ -55,36 +55,37 @@ func New(conf *config.Config) Formatter {
 		}
 	}
 
+	n.listener.RegisterOpenHook(event.OpenHook{
+		Op: event.NEW,
+		Handler: func(w *event.Win) {
+			op, _ := n.getOp(w.File)
+			if op == nil {
+				return
+			}
+			n.SetupFormatting(w, op.Fmt)
+			n.WriteMenu(w)
+		},
+	})
+
 	n.listener.RegisterHook(event.Hook{
 		Op: event.PUT,
-		Handler: func(evt *event.Event) {
-			op, ext := n.getOp(evt)
+		Handler: func(evt *event.Event) *event.Event {
+			op, ext := n.getOp(evt.File)
 			if op == nil {
-				return
+				return evt
 			}
 			n.ExecCmds(evt, op.Cmd, ext)
-
-			fmt.Println("PUT")
+			return evt
 		},
 	})
 
-	n.listener.RegisterHook(event.Hook{
-		Op: event.NEW,
-		Handler: func(evt *event.Event) {
-			op, _ := n.getOp(evt)
-			if op == nil {
-				return
-			}
-			n.SetupFormatting(evt, op.Fmt)
-			n.WriteMenu(evt)
-		},
-	})
 
 	return n
 }
 
-func (n *NFmt) getOp(evt *event.Event) (*Op, string) {
-	ext := getExt(evt.File, ".txt")
+
+func (n *NFmt) getOp(file string) (*Op, string) {
+	ext := getExt(file, ".txt")
 	op := n.ops[ext]
 	return op, ext
 }
@@ -111,13 +112,13 @@ func (n *NFmt) ExecCmds(evt *event.Event, commands []config.Command, ext string)
 }
 
 // WriteMenu writes the specified menu options to the Acme buffer
-func (n *NFmt) WriteMenu(evt *event.Event) error {
-	if err := evt.Win.WriteToTag("\n"); err != nil {
+func (n *NFmt) WriteMenu(w *event.Win) error {
+	if err := w.WriteToTag("\n"); err != nil {
 		return err
 	}
 	for _, opt := range n.menu {
 		cmd := fmt.Sprintf(" (%s)", opt)
-		if err := evt.Win.WriteToTag(cmd); err != nil {
+		if err := w.WriteToTag(cmd); err != nil {
 			return err
 		}
 	}
@@ -126,25 +127,25 @@ func (n *NFmt) WriteMenu(evt *event.Event) error {
 
 // SetupFormatting opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
-func (f *NFmt) SetupFormatting(evt *event.Event, format config.Format) error {
+func (f *NFmt) SetupFormatting(w *event.Win, format config.Format) error {
 	if format.Indent == 0 {
 		return nil
 	}
 
-	if err := evt.Win.ClearTagText(); err != nil {
+	if err := w.ClearTagText(); err != nil {
 		return err
 	}
 
-	if err := evt.Win.ExecInTag("Tab", strconv.Itoa(format.Indent)); err != nil {
+	if err := w.ExecInTag("Tab", strconv.Itoa(format.Indent)); err != nil {
 		return err
 	}
 
 	if format.Expand {
-		if err := evt.Win.ClearTagText(); err != nil {
+		if err := w.ClearTagText(); err != nil {
 			return err
 		}
 
-		if err := evt.Win.ExecInTag("nynetab", strconv.Itoa(format.Indent)); err != nil {
+		if err := w.ExecInTag("nynetab", strconv.Itoa(format.Indent)); err != nil {
 			return err
 		}
 	}
@@ -169,14 +170,14 @@ func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]b
 }
 
 func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
-	for _, _ = range updates {
+	fmt.Println("!!! writing updates")
+	for _, update := range updates {
 		if err := evt.Win.SetAddr(","); err != nil {
 			return err
 		}
-	fmt.Printf("%+v\n", *evt)
-		// if err := evt.Win.SetData(update); err != nil {
-		// 	return err
-		// }
+		if err := evt.Win.SetData(update); err != nil {
+			return err
+		}
 	}
 	return nil
 

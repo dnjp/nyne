@@ -11,6 +11,8 @@ import (
 
 // Win represents the active Acme window
 type Win struct {
+	ID int
+	File string
 	handle *acme.Win
 }
 
