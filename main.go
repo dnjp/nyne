@@ -19,7 +19,7 @@ func main() {
 	cfgPath := fmt.Sprintf("%s/lib/nyne", usr.HomeDir)
 	npath := os.Getenv("NYNERULES")
 	if npath != "" {
-	  cfgPath = npath
+		cfgPath = npath
 	}
 	conf, err := config.Load(cfgPath)
 	if err != nil {

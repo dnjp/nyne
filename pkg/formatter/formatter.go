@@ -28,6 +28,7 @@ type NFmt struct {
 	menu     []string
 	listener event.Listener
 	debug bool
+	extWithoutDot []string
 }
 
 // Op specifies a formatting operation to be performed on an Acme buffer
@@ -43,6 +44,7 @@ func New(conf *config.Config) Formatter {
 		menu:     conf.Menu,
 		listener: event.NewListener(),
 		debug: len(os.Getenv("DEBUG")) > 0,
+		extWithoutDot: []string{"Makefile"},
 	}
 
 	for _, spec := range conf.Spec {
@@ -58,10 +60,9 @@ func New(conf *config.Config) Formatter {
 		Op: event.NEW,
 		Handler: func(w *event.Win) {
 			op, _ := n.getOp(w.File)
-			if op == nil {
-				return
+			if op != nil {
+				n.SetupFormatting(w, op.Fmt)
 			}
-			n.SetupFormatting(w, op.Fmt)
 			n.WriteMenu(w)
 		},
 	})
@@ -84,7 +85,7 @@ func New(conf *config.Config) Formatter {
 
 
 func (n *NFmt) getOp(file string) (*Op, string) {
-	ext := getExt(file, ".txt")
+	ext := n.getExt(file, ".txt")
 	op := n.ops[ext]
 	return op, ext
 }
@@ -116,7 +117,7 @@ func (n *NFmt) WriteMenu(w *event.Win) error {
 		return err
 	}
 	for _, opt := range n.menu {
-		cmd := fmt.Sprintf(" (%s)", opt)
+		cmd := fmt.Sprintf("  %s", opt)
 		if err := w.WriteToTag(cmd); err != nil {
 			return err
 		}
@@ -131,19 +132,11 @@ func (f *NFmt) SetupFormatting(w *event.Win, format config.Format) error {
 		return nil
 	}
 
-	if err := w.ClearTagText(); err != nil {
-		return err
-	}
-
 	if err := w.ExecInTag("Tab", strconv.Itoa(format.Indent)); err != nil {
 		return err
 	}
 
 	if format.Expand {
-		if err := w.ClearTagText(); err != nil {
-			return err
-		}
-
 		if err := w.ExecInTag("nynetab", strconv.Itoa(format.Indent)); err != nil {
 			return err
 		}
@@ -177,8 +170,6 @@ func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
 		}
 	}
 	return nil
-
-
 }
 
 func (n *NFmt) resetView(evt *event.Event) error {
@@ -206,10 +197,28 @@ func replaceName(arr []string, name string) []string {
 	return newArr
 }
 
-func getExt(in string, def string) string {
-	pts := strings.Split(in, ".")
+func (n *NFmt) getExt(in string, def string) string {
+	filename := getFileName(in)
+	if includes(filename, n.extWithoutDot) {
+		return filename
+	}
+	pts := strings.Split(filename, ".")
 	if len(pts) == len(in) {
 		return def
 	}
 	return "." + pts[len(pts)-1]
+}
+
+func getFileName(in string) string {
+	path := strings.Split(in, "/")
+	return path[len(path)-1]
+}
+
+func includes(in string, dat []string) bool {
+	for _, val := range dat {
+		if val == in {
+			return true
+		}
+	}
+	return false
 }

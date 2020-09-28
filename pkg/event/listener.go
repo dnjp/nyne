@@ -3,6 +3,7 @@ package event
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"9fans.net/go/acme"
 )
@@ -48,9 +49,18 @@ func (a *Acme) Listen() error {
 			if err != nil {
 				fmt.Println(err)
 			}
+			if a.isTerm(event.ID) {
+				continue
+			}
 			a.startEventListener(event.ID)
 		}
 	}
+}
+
+func (a *Acme) isTerm(id int) bool {
+	filename := a.windows[id]
+	// TODO: this should be decerned in a more intelligent way
+	return strings.Contains(filename, "/-") || strings.Contains(filename, "Del")
 }
 
 func (a *Acme) mapWindows() error {
