@@ -14,17 +14,17 @@ type Listener interface {
 	RegisterOpenHook(hook OpenHook)
 }
 type Acme struct {
-	hooks map[AcmeOp][]Hook
+	hooks     map[AcmeOp][]Hook
 	openHooks map[AcmeOp][]OpenHook
-	windows map[int]string
-	debug bool
+	windows   map[int]string
+	debug     bool
 }
 
 func NewListener() Listener {
 	return &Acme{
-		hooks: make(map[AcmeOp][]Hook),
+		hooks:     make(map[AcmeOp][]Hook),
 		openHooks: make(map[AcmeOp][]OpenHook),
-		windows: make(map[int]string),
+		windows:   make(map[int]string),
 	}
 }
 
@@ -49,7 +49,7 @@ func (a *Acme) Listen() error {
 			if err != nil {
 				fmt.Println(err)
 			}
-			if a.isTerm(event.ID) {
+			if a.isDisabled(event.ID) {
 				continue
 			}
 			a.startEventListener(event.ID)
@@ -57,10 +57,16 @@ func (a *Acme) Listen() error {
 	}
 }
 
-func (a *Acme) isTerm(id int) bool {
+func (a *Acme) isDisabled(id int) bool {
 	filename := a.windows[id]
 	// TODO: this should be decerned in a more intelligent way
-	return strings.Contains(filename, "/-") || strings.Contains(filename, "Del")
+	disabledNames := []string{"/-", "Del", "xplor"}
+	for _, name := range disabledNames {
+		if strings.Contains(filename, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Acme) mapWindows() error {
@@ -74,7 +80,6 @@ func (a *Acme) mapWindows() error {
 	return nil
 }
 
-
 func (a *Acme) startEventListener(id int) {
 	if a.debug {
 		fmt.Println("starting event listener")
@@ -85,8 +90,8 @@ func (a *Acme) startEventListener(id int) {
 	}
 
 	a.runOpenHooks(&Win{
-		File: a.windows[id],
-		ID: id,
+		File:   a.windows[id],
+		ID:     id,
 		handle: w,
 	})
 
