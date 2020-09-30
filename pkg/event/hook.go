@@ -10,7 +10,7 @@ type Hook struct {
 }
 
 type OpenHook struct {
-	Op AcmeOp
+	Op      AcmeOp
 	Handler OpenHandler
 }
 

@@ -11,6 +11,7 @@ import (
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
@@ -24,10 +25,10 @@ type Formatter interface {
 
 // NFmt implements the Formatter inferface for $NYNERULES
 type NFmt struct {
-	ops      map[string]*Op
-	menu     []string
-	listener event.Listener
-	debug bool
+	ops           map[string]*Op
+	menu          []string
+	listener      event.Listener
+	debug         bool
 	extWithoutDot []string
 }
 
@@ -40,10 +41,10 @@ type Op struct {
 // New constructs a Formatter that uses $NYNERULES for formatting
 func New(conf *config.Config) Formatter {
 	n := &NFmt{
-		ops:      make(map[string]*Op),
-		menu:     conf.Menu,
-		listener: event.NewListener(),
-		debug: len(os.Getenv("DEBUG")) > 0,
+		ops:           make(map[string]*Op),
+		menu:          conf.Menu,
+		listener:      event.NewListener(),
+		debug:         len(os.Getenv("DEBUG")) > 0,
 		extWithoutDot: []string{"Makefile"},
 	}
 
@@ -63,7 +64,10 @@ func New(conf *config.Config) Formatter {
 			if op != nil {
 				n.SetupFormatting(w, op.Fmt)
 			}
-			n.WriteMenu(w)
+			err := n.WriteMenu(w)
+			if err != nil {
+				io.PrintErr(err)
+			}
 		},
 	})
 
@@ -79,10 +83,8 @@ func New(conf *config.Config) Formatter {
 		},
 	})
 
-
 	return n
 }
-
 
 func (n *NFmt) getOp(file string) (*Op, string) {
 	ext := n.getExt(file, ".txt")

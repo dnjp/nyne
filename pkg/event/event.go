@@ -14,27 +14,27 @@ import (
 // 	Win  *Win
 // }
 
-
 type AcmeOp int
+
 const (
 	NEW   AcmeOp = iota // window creation
 	ZEROX               // window creation via zerox
 	GET                 // load file into window
 	PUT                 // write window to the named file
 	DEL                 // window deletion
-	FOCUS                 // window focus
+	FOCUS               // window focus
 )
 
 type Event struct {
-	Origin ActionOrigin
-	Type ActionType
-	Text []byte
+	Origin  ActionOrigin
+	Type    ActionType
+	Text    []byte
 	Builtin *AcmeOp
-	Flag Flag
-	File string
-	ID int
-	Win *Win
-	raw *acme.Event
+	Flag    Flag
+	File    string
+	ID      int
+	Win     *Win
+	raw     *acme.Event
 }
 
 func parseOp(in string) (*AcmeOp, error) {
@@ -59,12 +59,14 @@ func parseOp(in string) (*AcmeOp, error) {
 }
 
 type ActionOrigin int
+
 const (
 	BodyOrTag ActionOrigin = iota
 	WindowFiles
 	Keyboard
 	Mouse
 )
+
 func parseActionOrigin(event *acme.Event) (*ActionOrigin, error) {
 	var origin ActionOrigin
 	c := rune(event.C1)
@@ -84,6 +86,7 @@ func parseActionOrigin(event *acme.Event) (*ActionOrigin, error) {
 }
 
 type ActionType int
+
 const (
 	BodyDelete ActionType = iota
 	TagDelete
@@ -94,6 +97,7 @@ const (
 	B2Body
 	B2Tag
 )
+
 func parseActionType(event *acme.Event) (*ActionType, error) {
 	var action ActionType
 	c := rune(event.C2)
@@ -126,6 +130,7 @@ func parseActionType(event *acme.Event) (*ActionType, error) {
 // will cause the action to be applied to the file exactly as it
 // would have been if the event file had not been open.
 type Flag int
+
 const (
 	// when action is B2Body and B2Tag
 
@@ -144,7 +149,6 @@ const (
 	// in the form of a fully-qualified button 3 style address.
 	HasChordedArg
 
-
 	// when action is B3Body or B3Tag
 
 	// if acme can interpret the action without loading a new file
@@ -160,6 +164,7 @@ const (
 
 	// TODO: determine what flag with value '3' means
 )
+
 func parseFlag(actionType ActionType, event *acme.Event) *Flag {
 	var flag Flag
 	if actionType == B2Body || actionType == B2Tag {
@@ -229,13 +234,13 @@ func (a *Acme) tokenizeEvent(w *acme.Win, event *acme.Event, id int) (*Event, er
 
 	flag := parseFlag(*actionType, event)
 	return &Event{
-		Origin: *actionOrigin,
-		Type: *actionType,
-		Text: event.Text,
+		Origin:  *actionOrigin,
+		Type:    *actionType,
+		Text:    event.Text,
 		Builtin: builtin,
-		Flag: *flag,
-		File: a.windows[id],
-		ID: id,
+		Flag:    *flag,
+		File:    a.windows[id],
+		ID:      id,
 		Win: &Win{
 			handle: w,
 		},

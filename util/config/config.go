@@ -19,22 +19,22 @@ func Load(path string) (*Config, error) {
 }
 
 type Config struct {
-	Spec []Spec `json:"spec"`
+	Spec []Spec   `json:"spec"`
 	Menu []string `json:"menu"`
 }
 
 type Spec struct {
-	Ext []string `json:"ext"`
+	Ext []string  `json:"ext"`
 	Cmd []Command `json:"cmd"`
-	Fmt Format `json:"fmt"`
+	Fmt Format    `json:"fmt"`
 }
 
 type Format struct {
-	Indent int `json:"indent"`
+	Indent int  `json:"indent"`
 	Expand bool `json:"expand"`
 }
 
 type Command struct {
-	Exec string `json:"exec"`
+	Exec string   `json:"exec"`
 	Args []string `json:"args"`
 }
