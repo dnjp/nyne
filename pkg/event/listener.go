@@ -1,8 +1,8 @@
 package event
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -161,7 +161,6 @@ func (a *Acme) startEventListener(id int) {
 
 		event, err := a.tokenizeEvent(w, e, id)
 		if err != nil {
-			w.WriteEvent(e)
 			if a.debug {
 				log.Println(err)
 			}
@@ -186,26 +185,54 @@ func (a *Acme) SetTabexpand(w *Win, width int) {
 	}
 
 	for e := range w.handle.EventChan() {
-		evtType := fmt.Sprintf("%s%s", string(e.C1), string(e.C2))
-		switch (evtType) {
-		case "KI":
-    			if string(e.Text) == "	" {
-				err := w.handle.Addr("#%d;+#1", e.Q0)
-				if err != nil {
-					log.Print(err)
-				}
-				w.handle.Write("data", tab)
-
-				e.C1 = 70
-				e.C2 = 73
-				e.Q1 = e.Q0 + utf8.RuneCount(tab)
-				e.OrigQ1 = e.Q0 + utf8.RuneCount(tab)
-				e.Nr = utf8.RuneCount(tab)
-				e.Text = tab
-				w.handle.WriteEvent(e)
+		if e.C1 == 0 && e.C2 == 0 {
+			if a.debug {
+				log.Println("received empty event: treating as del")
 			}
-		default:
 			w.handle.WriteEvent(e)
+			break
+		}	
+		event, err := a.tokenizeEvent(w.handle, e, w.ID)
+		if err != nil {
+			if a.debug {
+				log.Println(err)
+			}
+			w.handle.WriteEvent(e)
+			break
+		}	
+	
+		if event.Origin == Keyboard && event.Type == BodyInsert {
+			evalKeyCmd(event, width)
+			event.Write()	
+		} else {
+			event.Write()
 		}
+	}
+}
+
+func evalKeyCmd(event *Event, tabwidth int) {
+	if len(event.Text) == 0 {
+		return
+	}
+	r, _ := utf8.DecodeRune(event.Text)
+	switch (r) {
+	case '\t':
+		var tab []byte
+		for i := 0; i < tabwidth; i++ {
+			tab = append(tab, ' ')
+		}	
+		err := event.Win.SetAddr(fmt.Sprintf("#%d;+#1", event.SelBegin))
+		if err != nil {
+			log.Println(err)
+			event.Write()
+		}
+		event.Win.SetData(tab)
+		endaddr := event.SelBegin + utf8.RuneCount(tab)
+		event.Origin = WindowFiles
+		event.Type = BodyInsert
+		event.SelEnd = endaddr
+		event.OrigSelEnd = endaddr
+		event.NumRunes = utf8.RuneCount(tab)
+		event.Text = tab
 	}
 }

@@ -26,14 +26,20 @@ const (
 
 // Event contains metadata for each Acme event
 type Event struct {
+	ID      int
+	Win     *Win
+	File    string
 	Origin  ActionOrigin
 	Type    ActionType
 	Text    []byte
 	Builtin *AcmeOp
 	Flag    Flag
-	File    string
-	ID      int
-	Win     *Win
+	SelBegin, SelEnd int
+	OrigSelBegin, OrigSelEnd int
+	NumBytes int
+	NumRunes int
+	ChordArg []byte
+	ChordLoc []byte
 	raw     *acme.Event
 }
 
@@ -67,6 +73,21 @@ func parseActionOrigin(event *acme.Event) (*ActionOrigin, error) {
 		return nil, fmt.Errorf("%c is not a known ActionOrigin", c)
 	}
 	return &origin, nil
+}
+
+func getActionOriginCode(event *Event) rune {
+	var origin rune
+	switch event.Origin {
+	case BodyOrTag:
+		origin = 'E'
+	case WindowFiles:
+		origin = 'F'
+	case Keyboard:
+		origin = 'K'
+	case Mouse:
+		origin = 'M'
+	}
+	return origin
 }
 
 // ActionType describes what kind of action was taken
@@ -115,6 +136,29 @@ func parseActionType(event *acme.Event) (*ActionType, error) {
 		return nil, fmt.Errorf("'%c' is not a known ActionType", c)
 	}
 	return &action, nil
+}
+
+func getActionTypeCode(event *Event) rune {
+	var action rune
+	switch event.Type {
+	case BodyDelete:
+		action = 'D'
+	case TagDelete:
+		action = 'd'
+	case BodyInsert:
+		action = 'I'
+	case TagInsert:
+		action = 'i'
+	case B3Body:
+		action = 'L'
+	case B3Tag:
+		action = 'l'
+	case B2Body:
+		action = 'X'
+	case B2Tag:
+		action = 'x'
+	}
+	return action
 }
 
 // Flag contains the flag for the event. For BodyDelete, TagDelete,
@@ -230,16 +274,42 @@ func (a *Acme) tokenizeEvent(w *acme.Win, event *acme.Event, id int) (*Event, er
 
 	flag := parseFlag(*actionType, event)
 	return &Event{
+		ID:      id,
+		Win: &Win{
+			handle: w,
+		},	
+		File:    a.windows[id],
 		Origin:  *actionOrigin,
 		Type:    *actionType,
 		Text:    event.Text,
 		Builtin: builtin,
 		Flag:    *flag,
-		File:    a.windows[id],
-		ID:      id,
-		Win: &Win{
-			handle: w,
-		},
+		SelBegin: event.Q0,
+		SelEnd: event.Q1,
+		OrigSelBegin: event.OrigQ0,
+		OrigSelEnd: event.OrigQ1,
+		NumBytes: event.Nb,
+		NumRunes: event.Nr,
+		ChordArg: event.Arg,
+		ChordLoc: event.Loc,
 		raw: event,
 	}, nil
+}
+
+func (e *Event) Write() {
+	event := acme.Event{
+		C1: getActionOriginCode(e),
+		C2: getActionTypeCode(e),
+		Q0: e.SelBegin,
+		Q1: e.SelEnd,
+		OrigQ0: e.OrigSelBegin,
+		OrigQ1: e.OrigSelEnd ,
+		Flag: int(e.Flag),
+		Nb: e.NumBytes,
+		Nr: e.NumRunes,
+		Text: e.Text,
+		Arg: e.ChordArg,
+		Loc: e.ChordLoc,	
+	}
+	e.Win.handle.WriteEvent(&event)
 }
