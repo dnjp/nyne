@@ -27,7 +27,6 @@ const (
 // Event contains metadata for each Acme event
 type Event struct {
 	ID      int
-	Win     *Win
 	File    string
 	Origin  ActionOrigin
 	Type    ActionType
@@ -40,7 +39,6 @@ type Event struct {
 	NumRunes int
 	ChordArg []byte
 	ChordLoc []byte
-	raw     *acme.Event
 }
 
 // ActionOrigin is the entity that originated the action
@@ -55,12 +53,16 @@ const (
 	Keyboard
 	// Mouse represents an action taken by the mouse
 	Mouse
+	// DelOrigin represents a delete event
+	DelOrigin
 )
 
 func (e *Event) setActionOrigin(event *acme.Event) error {
 	var origin ActionOrigin
 	c := rune(event.C1)
 	switch c {
+	case '0':
+		origin = DelOrigin
 	case 'E':
 		origin = BodyOrTag
 	case 'F':
@@ -87,6 +89,8 @@ func (e *Event) getActionOriginCode() rune {
 		origin = 'K'
 	case Mouse:
 		origin = 'M'
+	case DelOrigin:
+		origin = '0'
 	}
 	return origin
 }
@@ -111,6 +115,8 @@ const (
 	B2Body
 	// B2Tag is a middle click event in the window tag
 	B2Tag
+	// DelType represents a delete event
+	DelType
 )
 
 func (e *Event) setActionType(event *acme.Event) error {
@@ -133,6 +139,8 @@ func (e *Event) setActionType(event *acme.Event) error {
 		action = B2Body
 	case 'x':
 		action = B2Tag
+	case '0':
+		action = DelType
 	default:
 		return fmt.Errorf("'%c' is not a known ActionType", c)
 	}
@@ -159,6 +167,8 @@ func (e *Event) getActionTypeCode() rune {
 		action = 'X'
 	case B2Tag:
 		action = 'x'
+	case DelType:
+		action = '0'
 	}
 	return action
 }
@@ -236,6 +246,7 @@ func (e *Event) setFlag(event *acme.Event) {
 func (e *Event) setBuiltin(event *acme.Event) error {
 	text := string(event.Text)
 	action := strings.ToLower(text)
+	
 	var op AcmeOp
 	switch action {
 	case "new":
@@ -248,8 +259,6 @@ func (e *Event) setBuiltin(event *acme.Event) error {
 		op = PUT
 	case "del":
 		op = DEL
-	default:
-		return fmt.Errorf("could not parse action '%s'", action)
 	}
 	e.Builtin = op
 	return nil
@@ -289,38 +298,29 @@ func (e *Event) setMeta(event *acme.Event) {
 // it is included in the message; otherwise it is elided, the fourth number
 // is 0, and the program must read it from the data file if needed. No text
 // is sent on a D or d message.
-func (a *Acme) tokenizeEvent(w *acme.Win, event *acme.Event, id int) (*Event, error) {
-	e := &Event{		
-		ID:      id,
-		Win: &Win{
-			handle: w,
-		},	
-		File:    a.windows[id],
-		raw: event,
+func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
+	e := Event{		
+		ID:      id,	
+		File:    file,
 	}
 
 	if err := e.setActionOrigin(event); err != nil {
-		return nil, err
+		return e, err
 	}
 	if err := e.setActionType(event); err != nil {
-		return nil, err
+		return e, err
 	}
 	if err := e.setBuiltin(event); err != nil {
-		return nil, err
+		return e, err
 	}
 	e.setFlag(event)
 	e.setMeta(event)
 
-	// keep file names in sync
-	if e.Builtin == PUT {
-		a.mapWindows()
-	}
-
 	return e, nil
 }
 
-func (e *Event) Write() {
-	event := acme.Event{
+func (e *Event) GetLog() acme.Event {
+	return acme.Event{
 		C1: e.getActionOriginCode(),
 		C2: e.getActionTypeCode(),
 		Q0: e.SelBegin,
@@ -334,5 +334,4 @@ func (e *Event) Write() {
 		Arg: e.ChordArg,
 		Loc: e.ChordLoc,	
 	}
-	e.Win.handle.WriteEvent(&event)
 }

@@ -17,10 +17,10 @@ import (
 // Formatter listens for Acme events and applies formatting rules to the active buffer
 type Formatter interface {
 	Run()
-	ExecCmds(event *event.Event, commands []config.Command, ext string) error
+	ExecCmds(event event.Event, commands []config.Command, ext string) error
 	WriteMenu(w *event.Win) error
 	SetupFormatting(*event.Win, Fmt) error
-	Refmt(*event.Event, string, []string, string) ([]byte, error)
+	Refmt(event.Event, string, []string, string) ([]byte, error)
 }
 
 // NFmt implements the Formatter inferface for $NYNERULES
@@ -85,7 +85,7 @@ func New(conf *config.Config) Formatter {
 	})
 
 	n.listener.RegisterPHook(event.EventHook{
-		Handler: func(evt *event.Event) *event.Event {
+		Handler: func(evt event.Event) event.Event {
 			op, ext := n.getOp(evt.File)
 			if op == nil {
 				return evt
@@ -112,7 +112,7 @@ func (n *NFmt) Run() {
 // ExecCmds executes commands that operate on stdin/stdout against the Acme buffer
 // TODO: this should read the file once, create a unified diff, and apply the diff
 //             to the buffer instead of doing so for each command
-func (n *NFmt) ExecCmds(evt *event.Event, commands []config.Command, ext string) error {
+func (n *NFmt) ExecCmds(evt event.Event, commands []config.Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range commands {
 		args := replaceName(cmd.Args, evt.File)
@@ -158,16 +158,17 @@ func (n *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
 
 	if format.tabexpand {
 		go n.listener.SetTabexpand(w, format.indent)
-// 		if err := w.ExecInTag("nynetab", strconv.Itoa(format.indent)); err != nil {
-// 			return err
-// 		}
 	}
 	return nil
 }
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
-func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]byte, error) {
-	old, err := evt.Win.ReadBody()
+func (n *NFmt) Refmt(evt event.Event, x string, args []string, ext string) ([]byte, error) {
+	l := n.listener.GetEventLoopByID(evt.ID)
+	if l == nil {
+		return []byte{}, fmt.Errorf("no event loop found")
+	}
+	old, err := l.GetWin().ReadBody()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -182,12 +183,17 @@ func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]b
 }
 
 // WriteUpdates writes the updated contents to the file
-func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
+func (n *NFmt) WriteUpdates(evt event.Event, updates [][]byte) error {
+	l := n.listener.GetEventLoopByID(evt.ID)
+	if l == nil {
+		return fmt.Errorf("no event loop found")
+	}
+	w := l.GetWin()
 	for _, update := range updates {
-		if err := evt.Win.SetAddr(","); err != nil {
+		if err := w.SetAddr(","); err != nil {
 			return err
 		}
-		if err := evt.Win.SetData(update); err != nil {
+		if err := w.SetData(update); err != nil {
 			return err
 		}
 	}

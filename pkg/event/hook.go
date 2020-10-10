@@ -3,7 +3,7 @@ package event
 import "log"
 
 // EventHandler listens for acme Events
-type EventHandler func(*Event) *Event
+type EventHandler func(Event) Event
 
 // WinHandler listens for new acme Windows
 type WinHandler func(*Win)
@@ -38,11 +38,11 @@ func (a *Acme) RegisterNHook(hook WinHook) {
 	a.winHooks[NEW] = hooks
 }
 
-func (a *Acme) runWinHooks(w *Win) {
-	if a.debug {
+func (f *FileLoop) runWinHooks(w *Win) {
+	if f.debug {
 		log.Println("running win hooks")
 	}
-	hooks := a.winHooks[NEW]
+	hooks := f.winHooks[NEW]
 	if len(hooks) == 0 {
 		return
 	}
@@ -53,12 +53,12 @@ func (a *Acme) runWinHooks(w *Win) {
 	}
 }
 
-func (a *Acme) runEventHooks(event *Event) *Event {
-	if a.debug {
+func (f *FileLoop) runEventHooks(event Event) Event {
+	if f.debug {
 		log.Println("running event hooks")
 	}
 
-	hooks := a.eventHooks[event.Builtin]
+	hooks := f.eventHooks[event.Builtin]
 	if len(hooks) == 0 {
 		return event
 	}

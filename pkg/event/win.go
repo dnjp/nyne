@@ -23,6 +23,35 @@ func NewWin(w *acme.Win) *Win {
 	}
 }
 
+// OpenWin opens an acme window
+func OpenWin(id int, file string) (*Win, error) {
+	w, err := acme.Open(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &Win{
+		ID:     id,
+		File:   file,
+		handle: w,
+	}, nil
+}
+
+// OpenEventChan opens a channel to raw acme events
+func (w *Win) OpenEventChan() <-chan *acme.Event {
+	return w.handle.EventChan()
+}
+
+// Close closes down the window with associated files
+func (w *Win) Close() {
+	w.handle.CloseFiles()
+}
+
+// WriteEvent writes the acme event to the log
+func (w *Win) WriteEvent(e Event) error {
+	raw := e.GetLog()
+	return w.handle.WriteEvent(&raw)
+}
+
 // ExecInTag executes the given command in the window tag
 func (w *Win) ExecInTag(exec string, args ...string) error {
 	if w == nil || w.handle == nil {
