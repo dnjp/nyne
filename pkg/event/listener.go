@@ -2,10 +2,12 @@ package event
 
 import (
 	"log"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
-
+	"unicode/utf8"
+	
 	"9fans.net/go/acme"
 )
 
@@ -14,6 +16,7 @@ type Listener interface {
 	Listen() error
 	RegisterPHook(hook EventHook)
 	RegisterNHook(hook WinHook)
+	SetTabexpand(w *Win, width int)	
 }
 
 // Acme implements the Listener interface for acme events
@@ -173,5 +176,36 @@ func (a *Acme) startEventListener(id int) {
 
 		newEvent := a.runEventHooks(event)
 		w.WriteEvent(newEvent.raw)
+	}
+}
+
+func (a *Acme) SetTabexpand(w *Win, width int) {
+	var tab []byte
+	for i := 0; i < width; i++ {
+		tab = append(tab, ' ')
+	}
+
+	for e := range w.handle.EventChan() {
+		evtType := fmt.Sprintf("%s%s", string(e.C1), string(e.C2))
+		switch (evtType) {
+		case "KI":
+    			if string(e.Text) == "	" {
+				err := w.handle.Addr("#%d;+#1", e.Q0)
+				if err != nil {
+					log.Print(err)
+				}
+				w.handle.Write("data", tab)
+
+				e.C1 = 70
+				e.C2 = 73
+				e.Q1 = e.Q0 + utf8.RuneCount(tab)
+				e.OrigQ1 = e.Q0 + utf8.RuneCount(tab)
+				e.Nr = utf8.RuneCount(tab)
+				e.Text = tab
+				w.handle.WriteEvent(e)
+			}
+		default:
+			w.handle.WriteEvent(e)
+		}
 	}
 }

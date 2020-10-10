@@ -10,13 +10,15 @@ supports running multiple commands for a group of file extensions and
 requires the $NAME macro to be placed in a sensible location within the
 args passed to each command.
 
-
-# Dependencies 
-The "tabexpand" option depends on
-[nynetab](https://git.sr.ht/~danieljamespost/nynetab) that implements tab
-expansion with the command `nynetab <width>`. Nynetab can be installed
-with `go get git.sr.ht/~danieljamespost/nynetab`.
-
 # Install 
 `go get git.sr.ht/~danieljamespost/nyne/cmd/nyne` and then execute
 `nyne` in acme.
+
+# Nynetab
+Nynetab is what is used under the hood for tab expansion in Nyne. To only
+install Nynetab, run `go get git.sr.ht/~danieljamespost/nyne/cmd/nynetab`
+and then execute `nynetab <tab size>` in Acme to begin tab expansion.
+
+ 
+
+

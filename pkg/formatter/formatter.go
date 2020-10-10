@@ -157,9 +157,10 @@ func (n *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
 	}
 
 	if format.tabexpand {
-		if err := w.ExecInTag("nynetab", strconv.Itoa(format.indent)); err != nil {
-			return err
-		}
+		go n.listener.SetTabexpand(w, format.indent)
+// 		if err := w.ExecInTag("nynetab", strconv.Itoa(format.indent)); err != nil {
+// 			return err
+// 		}
 	}
 	return nil
 }

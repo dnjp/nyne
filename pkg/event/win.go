@@ -16,6 +16,13 @@ type Win struct {
 	handle *acme.Win
 }
 
+// NewWin constructs a Win object from acme window
+func NewWin(w *acme.Win) *Win {
+	return &Win{
+		handle: w,
+	}
+}
+
 // ExecInTag executes the given command in the window tag
 func (w *Win) ExecInTag(exec string, args ...string) error {
 	if w == nil || w.handle == nil {
