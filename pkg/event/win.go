@@ -2,7 +2,7 @@ package event
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"strings"
 	"unicode/utf8"
 
@@ -25,12 +25,14 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 
 	tag, err := w.ReadTag()
 	if err != nil {
-		log.Print(err)
+		panic(err)
+		// log.Print(err)
 	}
 	offset := utf8.RuneCount(tag)
 	cmdlen := utf8.RuneCountInString(cmd)
 	if err := w.WriteToTag(cmd); err != nil {
-		log.Print(err)
+		panic(err)
+		// log.Print(err)
 	}
 	evt := new(acme.Event)
 	evt.C1 = 'M'
@@ -85,6 +87,7 @@ func (w *Win) ClearTagText() error {
 	return w.write("ctl", []byte("cleartag"))
 }
 
+// ReadTag returns the tag contents
 func (w *Win) ReadTag() ([]byte, error) {
 	if w == nil || w.handle == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
@@ -92,6 +95,7 @@ func (w *Win) ReadTag() ([]byte, error) {
 	return w.handle.ReadAll("tag")
 }
 
+// ReadBody returns the window body
 func (w *Win) ReadBody() ([]byte, error) {
 	if w == nil || w.handle == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
@@ -99,6 +103,7 @@ func (w *Win) ReadBody() ([]byte, error) {
 	return w.handle.ReadAll("body")
 }
 
+// ReadAddr returns the current address of the window
 func (w *Win) ReadAddr() ([]byte, error) {
 	if w == nil || w.handle == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
@@ -142,7 +147,7 @@ func (w *Win) SetAddr(addr string) error {
 	return w.write("addr", []byte(addr))
 }
 
-// data   is used in conjunction with addr for random access to the
+// SetData is used in conjunction with addr for random access to the
 // contents of the body. The file offset is ignored when writing the
 // data file; instead the location of the data to be read or written is
 // determined by the state of the addr file. Text, which must contain only
@@ -156,6 +161,7 @@ func (w *Win) SetData(data []byte) error {
 	return w.write("data", data)
 }
 
+// WriteToTag writes to the windows tag
 func (w *Win) WriteToTag(text string) error {
 	if w == nil || w.handle == nil {
 		return fmt.Errorf("window handle lost")

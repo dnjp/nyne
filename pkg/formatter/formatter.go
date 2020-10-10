@@ -11,7 +11,7 @@ import (
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
+	// "git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
@@ -34,7 +34,7 @@ type NFmt struct {
 
 // Fmt specifies formatting rules for a given extension
 type Fmt struct {
-	indent int
+	indent    int
 	tabexpand bool
 }
 
@@ -59,10 +59,10 @@ func New(conf *config.Config) Formatter {
 			if !strings.Contains(ext, ".") {
 				n.extWithoutDot = append(n.extWithoutDot, ext)
 			}
-		
+
 			n.ops[ext] = &Op{
 				Fmt: Fmt{
-					indent: spec.Indent,
+					indent:    spec.Indent,
 					tabexpand: spec.Tabexpand,
 				},
 				Cmd: spec.Commands,
@@ -70,8 +70,7 @@ func New(conf *config.Config) Formatter {
 		}
 	}
 
-	n.listener.RegisterOpenHook(event.OpenHook{
-		Op: event.NEW,
+	n.listener.RegisterNHook(event.WinHook{
 		Handler: func(w *event.Win) {
 			op, _ := n.getOp(w.File)
 			if op != nil {
@@ -79,13 +78,13 @@ func New(conf *config.Config) Formatter {
 			}
 			err := n.WriteMenu(w)
 			if err != nil {
-				io.PrintErr(err)
+				panic(err)
+				// io.PrintErr(err)
 			}
 		},
 	})
 
-	n.listener.RegisterHook(event.Hook{
-		Op: event.PUT,
+	n.listener.RegisterPHook(event.EventHook{
 		Handler: func(evt *event.Event) *event.Event {
 			op, ext := n.getOp(evt.File)
 			if op == nil {
@@ -145,7 +144,7 @@ func (n *NFmt) WriteMenu(w *event.Win) error {
 
 // SetupFormatting opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
-func (f *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
+func (n *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
@@ -181,6 +180,7 @@ func (n *NFmt) Refmt(evt *event.Event, x string, args []string, ext string) ([]b
 	return new, nil
 }
 
+// WriteUpdates writes the updated contents to the file
 func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
 	for _, update := range updates {
 		if err := evt.Win.SetAddr(","); err != nil {

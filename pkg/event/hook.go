@@ -1,33 +1,37 @@
 package event
 
-type Handler func(*Event) *Event
+// EventHandler listens for acme Events
+type EventHandler func(*Event) *Event
 
-type OpenHandler func(*Win)
+// WinHandler listens for new acme Windows
+type WinHandler func(*Win)
 
-type Hook struct {
-	Op      AcmeOp
-	Handler Handler
+// EventHook contains properties for event handlers
+type EventHook struct {
+	Handler EventHandler
 }
 
-type OpenHook struct {
-	Op      AcmeOp
-	Handler OpenHandler
+// WinHook contains properties for window handlers
+type WinHook struct {
+	Handler WinHandler
 }
 
-func (a *Acme) RegisterHook(hook Hook) {
-	hooks := a.hooks[hook.Op]
+// RegisterPHook registers hook on acme 'Put' events
+func (a *Acme) RegisterPHook(hook EventHook) {
+	hooks := a.eventHooks[PUT]
 	hooks = append(hooks, hook)
-	a.hooks[hook.Op] = hooks
+	a.eventHooks[PUT] = hooks
 }
 
-func (a *Acme) RegisterOpenHook(hook OpenHook) {
-	hooks := a.openHooks[hook.Op]
+// RegisterNHook registers the hook on acme 'New' events
+func (a *Acme) RegisterNHook(hook WinHook) {
+	hooks := a.winHooks[NEW]
 	hooks = append(hooks, hook)
-	a.openHooks[hook.Op] = hooks
+	a.winHooks[NEW] = hooks
 }
 
-func (a *Acme) runOpenHooks(w *Win) {
-	hooks := a.openHooks[NEW]
+func (a *Acme) runNHooks(w *Win) {
+	hooks := a.winHooks[NEW]
 	if len(hooks) == 0 {
 		return
 	}
@@ -43,7 +47,7 @@ func (a *Acme) runEventHooks(event *Event) *Event {
 		return event
 	}
 
-	hooks := a.hooks[*event.Builtin]
+	hooks := a.eventHooks[*event.Builtin]
 	if len(hooks) == 0 {
 		return event
 	}

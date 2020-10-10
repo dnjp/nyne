@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	f := formatter.New(conf)
 	f.Run()
 }

@@ -2,33 +2,41 @@ package event
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
-	"log"
+	"sync"
 
 	"9fans.net/go/acme"
 )
 
+// Listener can listen for acme Event and Window hooks
 type Listener interface {
 	Listen() error
-	RegisterHook(hook Hook)
-	RegisterOpenHook(hook OpenHook)
-}
-type Acme struct {
-	hooks     map[AcmeOp][]Hook
-	openHooks map[AcmeOp][]OpenHook
-	windows   map[int]string
-	debug     bool
+	RegisterPHook(hook EventHook)
+	RegisterNHook(hook WinHook)
 }
 
+// Acme implements the Listener interface for acme events
+type Acme struct {
+	eventHooks map[AcmeOp][]EventHook
+	winHooks   map[AcmeOp][]WinHook
+	windows    map[int]string
+	debug      bool
+	mux        sync.Mutex
+}
+
+// NewListener constructs an Acme Listener
 func NewListener() Listener {
 	return &Acme{
-		hooks:     make(map[AcmeOp][]Hook),
-		openHooks: make(map[AcmeOp][]OpenHook),
-		windows:   make(map[int]string),
+		eventHooks: make(map[AcmeOp][]EventHook),
+		winHooks:   make(map[AcmeOp][]WinHook),
+		windows:    make(map[int]string),
 	}
 }
 
+// Listen watches the acme event log for events and executes hooks
+// based on those events
 func (a *Acme) Listen() error {
 	if len(os.Getenv("DEBUG")) > 0 {
 		a.debug = true
@@ -75,6 +83,9 @@ func (a *Acme) mapWindows() error {
 	if err != nil {
 		return err
 	}
+	a.mux.Lock()
+	defer a.mux.Unlock()
+	a.windows = make(map[int]string)
 	for _, w := range ws {
 		a.windows[w.ID] = w.Name
 	}
@@ -85,19 +96,21 @@ func (a *Acme) startEventListener(id int) {
 	if a.debug {
 		fmt.Println("starting event listener")
 	}
+	// open window for modification
 	w, err := acme.Open(id, nil)
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
 
-	a.runOpenHooks(&Win{
+	// runs hooks for acme 'new' event
+	a.runNHooks(&Win{
 		File:   a.windows[id],
 		ID:     id,
 		handle: w,
 	})
 
 	if w == nil {
-		log.Printf("lost window handler")
+		log.Printf("lost window handle")
 		return
 	}
 	for e := range w.EventChan() {
