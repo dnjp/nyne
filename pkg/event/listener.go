@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -42,21 +41,40 @@ func (a *Acme) Listen() error {
 		a.debug = true
 	}
 
+	if a.debug {
+		log.Println("opening acme log")
+	}
 	l, err := acme.Log()
 	if err != nil {
+		if a.debug {
+			log.Printf("failed to read acme log: %v\n", err)
+		}
 		return err
 	}
 	for {
+		if a.debug {
+			log.Println("reading acme event")
+		}
 		event, err := l.Read()
 		if err != nil {
+			if a.debug {
+				log.Printf("failed to read acme event: %v\n", err)
+			}
 			return err
 		}
-
+		// skip directory windows
+		if strings.HasSuffix(event.Name, "/") {
+			continue
+		}
 		// create listener on new window events
 		if event.Op == "new" {
 			err := a.mapWindows()
 			if err != nil {
-				fmt.Println(err)
+				if a.debug {
+					log.Println("failed to map win IDs")
+				}
+				log.Println(err)
+				continue
 			}
 			if a.isDisabled(event.ID) {
 				continue
@@ -79,6 +97,9 @@ func (a *Acme) isDisabled(id int) bool {
 }
 
 func (a *Acme) mapWindows() error {
+	if a.debug {
+		log.Println("mapping win IDs to names")
+	}
 	ws, err := acme.Windows()
 	if err != nil {
 		return err
@@ -94,34 +115,44 @@ func (a *Acme) mapWindows() error {
 
 func (a *Acme) startEventListener(id int) {
 	if a.debug {
-		fmt.Println("starting event listener")
+		log.Println("opening acme window")
 	}
 	// open window for modification
 	w, err := acme.Open(id, nil)
 	if err != nil {
-		panic(err)
+		if a.debug {
+			log.Println("failed to open acme window")
+		}
+		log.Println(err)
+		return
 	}
 
 	// runs hooks for acme 'new' event
-	a.runNHooks(&Win{
+	a.runWinHooks(&Win{
 		File:   a.windows[id],
 		ID:     id,
 		handle: w,
 	})
 
 	if w == nil {
-		log.Printf("lost window handle")
+		if a.debug {
+			log.Printf("lost window handle")
+		}
 		return
 	}
 	for e := range w.EventChan() {
 		if a.debug {
-			fmt.Printf("RAW: %+v\n", *e)
+			log.Printf("RAW: %+v\n", *e)
 		}
 
 		// empty event received on delete
 		if e.C1 == 0 && e.C2 == 0 {
+			if a.debug {
+				log.Println("received empty event: treating as del")
+			}
 			w.CloseFiles()
 			go a.mapWindows()
+			w.WriteEvent(e)
 			break
 		}
 
@@ -129,14 +160,15 @@ func (a *Acme) startEventListener(id int) {
 		if err != nil {
 			w.WriteEvent(e)
 			if a.debug {
-				fmt.Println(err)
+				log.Println(err)
 			}
+			w.WriteEvent(e)
 			return
 		}
 
 		if a.debug {
-			fmt.Printf("TOKEN: %+v\n", *event)
-			fmt.Printf("\n")
+			log.Printf("TOKEN: %+v\n", *event)
+			log.Printf("\n")
 		}
 
 		newEvent := a.runEventHooks(event)
