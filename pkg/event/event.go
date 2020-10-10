@@ -37,27 +37,6 @@ type Event struct {
 	raw     *acme.Event
 }
 
-func parseOp(in string) (*AcmeOp, error) {
-	var op AcmeOp
-	switch in {
-	case "new":
-		op = NEW
-	case "zerox":
-		op = ZEROX
-	case "get":
-		op = GET
-	case "put":
-		op = PUT
-	case "del":
-		op = DEL
-	case "focus":
-		op = FOCUS
-	default:
-		return nil, fmt.Errorf("cannot handle '%s' event", in)
-	}
-	return &op, nil
-}
-
 type ActionOrigin int
 
 const (

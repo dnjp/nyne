@@ -18,6 +18,9 @@ type Win struct {
 
 // ExecInTag executes the given command in the window tag
 func (w *Win) ExecInTag(exec string, args ...string) error {
+	if w == nil || w.handle == nil {
+		return fmt.Errorf("window handle lost")
+	}
 	cmd := fmt.Sprintf("%s %s", exec, strings.Join(args, " "))
 
 	tag, err := w.ReadTag()
@@ -79,23 +82,27 @@ func (w *Win) MarkWinDirty() error {
 
 // ClearTagText removes all text in the tag after the vertical bar.
 func (w *Win) ClearTagText() error {
-	// 	if err := w.Ctl("cleartag"); err != nil {
-	// 		log.Print(err)
-	// 		return
-	// 	}
-
 	return w.write("ctl", []byte("cleartag"))
 }
 
 func (w *Win) ReadTag() ([]byte, error) {
+	if w == nil || w.handle == nil {
+		return []byte{}, fmt.Errorf("window handle lost")
+	}
 	return w.handle.ReadAll("tag")
 }
 
 func (w *Win) ReadBody() ([]byte, error) {
+	if w == nil || w.handle == nil {
+		return []byte{}, fmt.Errorf("window handle lost")
+	}
 	return w.handle.ReadAll("body")
 }
 
 func (w *Win) ReadAddr() ([]byte, error) {
+	if w == nil || w.handle == nil {
+		return []byte{}, fmt.Errorf("window handle lost")
+	}
 	return w.handle.ReadAll("addr")
 }
 
@@ -150,14 +157,16 @@ func (w *Win) SetData(data []byte) error {
 }
 
 func (w *Win) WriteToTag(text string) error {
+	if w == nil || w.handle == nil {
+		return fmt.Errorf("window handle lost")
+	}
 	return w.handle.Fprintf("tag", "%s", text)
 }
 
 func (w *Win) write(file string, data []byte) error {
+	if w == nil || w.handle == nil {
+		return fmt.Errorf("window handle lost")
+	}
 	_, err := w.handle.Write(file, data)
 	return err
-}
-
-func (w *Win) closeFiles() {
-	w.handle.CloseFiles()
 }

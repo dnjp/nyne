@@ -115,6 +115,9 @@ func (n *NFmt) ExecCmds(evt *event.Event, commands []config.Command, ext string)
 
 // WriteMenu writes the specified menu options to the Acme buffer
 func (n *NFmt) WriteMenu(w *event.Win) error {
+	if w == nil {
+		return fmt.Errorf("state has drifted: *event.Win is nil")
+	}
 	if err := w.WriteToTag("\n"); err != nil {
 		return err
 	}
@@ -130,6 +133,9 @@ func (n *NFmt) WriteMenu(w *event.Win) error {
 // SetupFormatting opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
 func (f *NFmt) SetupFormatting(w *event.Win, format config.Format) error {
+	if w == nil {
+		return fmt.Errorf("state has drifted: *event.Win is nil")
+	}
 	if format.Indent == 0 {
 		return nil
 	}
@@ -170,19 +176,6 @@ func (n *NFmt) WriteUpdates(evt *event.Event, updates [][]byte) error {
 		if err := evt.Win.SetData(update); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (n *NFmt) resetView(evt *event.Event) error {
-	if err := evt.Win.SetAddr("0,0"); err != nil {
-		return err
-	}
-	if err := evt.Win.SetTextToAddr(); err != nil {
-		return err
-	}
-	if err := evt.Win.ExecShow(); err != nil {
-		return err
 	}
 	return nil
 }

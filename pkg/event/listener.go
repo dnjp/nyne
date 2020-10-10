@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"log"
 
 	"9fans.net/go/acme"
 )
@@ -95,6 +96,10 @@ func (a *Acme) startEventListener(id int) {
 		handle: w,
 	})
 
+	if w == nil {
+		log.Errorf("lost window handler")
+		return
+	}
 	for e := range w.EventChan() {
 		if a.debug {
 			fmt.Printf("RAW: %+v\n", *e)
@@ -103,6 +108,7 @@ func (a *Acme) startEventListener(id int) {
 		// empty event received on delete
 		if e.C1 == 0 && e.C2 == 0 {
 			w.CloseFiles()
+			go w.mapWindows()
 			break
 		}
 
