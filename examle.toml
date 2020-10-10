@@ -1,0 +1,118 @@
+
+[tag]
+
+    menu = [
+      "Put",
+      "Undo",
+      "Redo",
+      "|com",
+      "|ind",
+      "|ui",
+      "Ldef",
+      "Lrefs",
+      "Lcomp",
+      "win"
+    ]
+
+[format]
+
+    [format.go]
+    extensions = [".go"]
+    indent = 8
+    tabexpand = false
+    
+    [[format.go.commands]]
+    exec = "gofmt"
+    args = [ "$NAME" ]   
+    
+    
+    [format.c]
+    extensions = [".c", ".h"]
+    indent = 8
+    tabexpand = false
+
+    [[format.c.commands]]
+    exec = "indent"
+    args = [
+        "-st",
+        "-bap",
+        "-bli0",
+        "-i4",
+        "-l79",
+        "-ncs",
+        "-npcs",
+        "-npsl",
+        "-fca",
+        "-lc79",
+        "-fc1",
+        "-ts4",
+        "$NAME"
+    ]
+    
+    
+    [format.cpp]
+    extensions = [".cc", ".cpp", ".hpp", ".cxx", ".hxx"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.js]
+    extensions = [".js"]
+    indent = 2
+    tabexpand = true
+    
+    [[format.js.commands]]
+    exec = "eslint"
+    args = [ "--fix", "$NAME" ]
+    
+    [[format.js.commands]]
+    exec = "prettier"
+    args = [ "$NAME", "--write", "--loglevel", "error" ]
+
+
+    [format.make]
+    extensions = ["Makefile"]
+    indent = 8
+    tabexpand = false
+    
+
+    [format.shell]
+    extensions = [".rc", ".sh"]
+    indent = 8
+    tabexpand = false
+
+
+    [format.tf]
+    extensions = [".tf"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.html]
+    extensions = [".html"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.java]
+    extensions = [".java"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.yaml]
+    extensions = [".yml", ".yaml"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.json]
+    extensions = [".json"]
+    indent = 2
+    tabexpand = true
+
+
+    [format.markdown]
+    extensions = [".md"]
+    indent = 2
+    tabexpand = true

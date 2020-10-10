@@ -1,40 +1,34 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"github.com/BurntSushi/toml"
 )
 
 func Load(path string) (*Config, error) {
-	conf, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("error reading config file: %s", err)
+	var config Config
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		return nil, err
 	}
-	var cfg = new(Config)
-	if err := json.Unmarshal(conf, cfg); err != nil {
-		return nil, fmt.Errorf("error decoding config file: %s", err)
-	}
-	return cfg, nil
+	return &config, nil
 }
 
 type Config struct {
-	Spec []Spec   `json:"spec"`
-	Menu []string `json:"menu"`
+	Format map[string]Spec   
+	Tag Tag
+}
+
+type Tag struct {
+	Menu []string 
 }
 
 type Spec struct {
-	Ext []string  `json:"ext"`
-	Cmd []Command `json:"cmd"`
-	Fmt Format    `json:"fmt"`
-}
-
-type Format struct {
-	Indent int  `json:"indent"`
-	Expand bool `json:"expand"`
+	Indent int 
+	Tabexpand bool
+	Extensions []string  
+	Commands []Command
 }
 
 type Command struct {
-	Exec string   `json:"exec"`
-	Args []string `json:"args"`
+	Exec string 
+	Args []string
 }

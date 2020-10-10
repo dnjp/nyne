@@ -19,7 +19,7 @@ type Formatter interface {
 	Run()
 	ExecCmds(event *event.Event, commands []config.Command, ext string) error
 	WriteMenu(w *event.Win) error
-	SetupFormatting(*event.Win, config.Format) error
+	SetupFormatting(*event.Win, Fmt) error
 	Refmt(*event.Event, string, []string, string) ([]byte, error)
 }
 
@@ -32,9 +32,15 @@ type NFmt struct {
 	extWithoutDot []string
 }
 
+// Fmt specifies formatting rules for a given extension
+type Fmt struct {
+	indent int
+	tabexpand bool
+}
+
 // Op specifies a formatting operation to be performed on an Acme buffer
 type Op struct {
-	Fmt config.Format
+	Fmt Fmt
 	Cmd []config.Command
 }
 
@@ -42,17 +48,24 @@ type Op struct {
 func New(conf *config.Config) Formatter {
 	n := &NFmt{
 		ops:           make(map[string]*Op),
-		menu:          conf.Menu,
+		menu:          conf.Tag.Menu,
 		listener:      event.NewListener(),
 		debug:         len(os.Getenv("DEBUG")) > 0,
-		extWithoutDot: []string{"Makefile"},
+		extWithoutDot: []string{},
 	}
 
-	for _, spec := range conf.Spec {
-		for _, ext := range spec.Ext {
+	for _, spec := range conf.Format {
+		for _, ext := range spec.Extensions {
+			if !strings.Contains(ext, ".") {
+				n.extWithoutDot = append(n.extWithoutDot, ext)
+			}
+		
 			n.ops[ext] = &Op{
-				Fmt: spec.Fmt,
-				Cmd: spec.Cmd,
+				Fmt: Fmt{
+					indent: spec.Indent,
+					tabexpand: spec.Tabexpand,
+				},
+				Cmd: spec.Commands,
 			}
 		}
 	}
@@ -132,20 +145,20 @@ func (n *NFmt) WriteMenu(w *event.Win) error {
 
 // SetupFormatting opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
-func (f *NFmt) SetupFormatting(w *event.Win, format config.Format) error {
+func (f *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
-	if format.Indent == 0 {
+	if format.indent == 0 {
 		return nil
 	}
 
-	if err := w.ExecInTag("Tab", strconv.Itoa(format.Indent)); err != nil {
+	if err := w.ExecInTag("Tab", strconv.Itoa(format.indent)); err != nil {
 		return err
 	}
 
-	if format.Expand {
-		if err := w.ExecInTag("nynetab", strconv.Itoa(format.Indent)); err != nil {
+	if format.tabexpand {
+		if err := w.ExecInTag("nynetab", strconv.Itoa(format.indent)); err != nil {
 			return err
 		}
 	}

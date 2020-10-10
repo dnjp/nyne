@@ -97,7 +97,7 @@ func (a *Acme) startEventListener(id int) {
 	})
 
 	if w == nil {
-		log.Errorf("lost window handler")
+		log.Printf("lost window handler")
 		return
 	}
 	for e := range w.EventChan() {
@@ -108,7 +108,7 @@ func (a *Acme) startEventListener(id int) {
 		// empty event received on delete
 		if e.C1 == 0 && e.C2 == 0 {
 			w.CloseFiles()
-			go w.mapWindows()
+			go a.mapWindows()
 			break
 		}
 
