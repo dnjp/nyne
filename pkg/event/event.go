@@ -32,7 +32,7 @@ type Event struct {
 	Origin  ActionOrigin
 	Type    ActionType
 	Text    []byte
-	Builtin *AcmeOp
+	Builtin AcmeOp
 	Flag    Flag
 	SelBegin, SelEnd int
 	OrigSelBegin, OrigSelEnd int
@@ -57,7 +57,7 @@ const (
 	Mouse
 )
 
-func parseActionOrigin(event *acme.Event) (*ActionOrigin, error) {
+func (e *Event) setActionOrigin(event *acme.Event) error {
 	var origin ActionOrigin
 	c := rune(event.C1)
 	switch c {
@@ -70,14 +70,15 @@ func parseActionOrigin(event *acme.Event) (*ActionOrigin, error) {
 	case 'M':
 		origin = Mouse
 	default:
-		return nil, fmt.Errorf("%c is not a known ActionOrigin", c)
+		return fmt.Errorf("%c is not a known ActionOrigin", c)
 	}
-	return &origin, nil
+	e.Origin = origin
+	return nil
 }
 
-func getActionOriginCode(event *Event) rune {
+func (e *Event) getActionOriginCode() rune {
 	var origin rune
-	switch event.Origin {
+	switch e.Origin {
 	case BodyOrTag:
 		origin = 'E'
 	case WindowFiles:
@@ -112,7 +113,7 @@ const (
 	B2Tag
 )
 
-func parseActionType(event *acme.Event) (*ActionType, error) {
+func (e *Event) setActionType(event *acme.Event) error {
 	var action ActionType
 	c := rune(event.C2)
 	switch c {
@@ -133,14 +134,15 @@ func parseActionType(event *acme.Event) (*ActionType, error) {
 	case 'x':
 		action = B2Tag
 	default:
-		return nil, fmt.Errorf("'%c' is not a known ActionType", c)
+		return fmt.Errorf("'%c' is not a known ActionType", c)
 	}
-	return &action, nil
+	e.Type = action
+	return nil
 }
 
-func getActionTypeCode(event *Event) rune {
+func (e *Event) getActionTypeCode() rune {
 	var action rune
-	switch event.Type {
+	switch e.Type {
 	case BodyDelete:
 		action = 'D'
 	case TagDelete:
@@ -205,9 +207,9 @@ const (
 	// TODO: determine what flag with value '3' means
 )
 
-func parseFlag(actionType ActionType, event *acme.Event) *Flag {
+func (e *Event) setFlag(event *acme.Event) {
 	var flag Flag
-	if actionType == B2Body || actionType == B2Tag {
+	if e.Type == B2Body || e.Type == B2Tag {
 		switch event.Flag {
 		case 1:
 			flag = IsBuiltin
@@ -218,7 +220,7 @@ func parseFlag(actionType ActionType, event *acme.Event) *Flag {
 		}
 	}
 
-	if actionType == B3Body || actionType == B3Tag {
+	if e.Type == B3Body || e.Type == B3Tag {
 		switch event.Flag {
 		case 1:
 			flag = NoReloadNeeded
@@ -228,10 +230,10 @@ func parseFlag(actionType ActionType, event *acme.Event) *Flag {
 			flag = IsFileOrWindow
 		}
 	}
-	return &flag
+	e.Flag = flag
 }
 
-func parseBuiltin(event *acme.Event) *AcmeOp {
+func (e *Event) setBuiltin(event *acme.Event) error {
 	text := string(event.Text)
 	action := strings.ToLower(text)
 	var op AcmeOp
@@ -247,9 +249,40 @@ func parseBuiltin(event *acme.Event) *AcmeOp {
 	case "del":
 		op = DEL
 	default:
-		return nil
+		return fmt.Errorf("could not parse action '%s'", action)
 	}
-	return &op
+	e.Builtin = op
+	return nil
+}
+
+func (e *Event) getBuiltin() string {
+	var op string
+
+	switch e.Builtin {
+	case NEW:
+		op = "new"
+	case ZEROX:
+		op = "zerox"
+	case GET:
+		op = "get"
+	case PUT:
+		op = "put"
+	case DEL:
+		op = "del"
+	}
+	return op
+}
+
+func (e *Event) setMeta(event *acme.Event) {
+	e.Text = event.Text
+	e.SelBegin = event.Q0
+	e.SelEnd = event.Q1
+	e.OrigSelBegin = event.OrigQ0
+	e.OrigSelEnd = event.OrigQ1
+	e.NumBytes = event.Nb
+	e.NumRunes = event.Nr
+	e.ChordArg = event.Arg
+	e.ChordLoc = event.Loc
 }
 
 // If the relevant text has less than 256 characters,
@@ -257,49 +290,39 @@ func parseBuiltin(event *acme.Event) *AcmeOp {
 // is 0, and the program must read it from the data file if needed. No text
 // is sent on a D or d message.
 func (a *Acme) tokenizeEvent(w *acme.Win, event *acme.Event, id int) (*Event, error) {
-	actionOrigin, err := parseActionOrigin(event)
-	if err != nil {
-		return nil, err
-	}
-	actionType, err := parseActionType(event)
-	if err != nil {
-		return nil, err
-	}
-	builtin := parseBuiltin(event)
-
-	// keep file names in sync
-	if builtin != nil && *builtin == PUT {
-		a.mapWindows()
-	}
-
-	flag := parseFlag(*actionType, event)
-	return &Event{
+	e := &Event{		
 		ID:      id,
 		Win: &Win{
 			handle: w,
 		},	
 		File:    a.windows[id],
-		Origin:  *actionOrigin,
-		Type:    *actionType,
-		Text:    event.Text,
-		Builtin: builtin,
-		Flag:    *flag,
-		SelBegin: event.Q0,
-		SelEnd: event.Q1,
-		OrigSelBegin: event.OrigQ0,
-		OrigSelEnd: event.OrigQ1,
-		NumBytes: event.Nb,
-		NumRunes: event.Nr,
-		ChordArg: event.Arg,
-		ChordLoc: event.Loc,
 		raw: event,
-	}, nil
+	}
+
+	if err := e.setActionOrigin(event); err != nil {
+		return nil, err
+	}
+	if err := e.setActionType(event); err != nil {
+		return nil, err
+	}
+	if err := e.setBuiltin(event); err != nil {
+		return nil, err
+	}
+	e.setFlag(event)
+	e.setMeta(event)
+
+	// keep file names in sync
+	if e.Builtin == PUT {
+		a.mapWindows()
+	}
+
+	return e, nil
 }
 
 func (e *Event) Write() {
 	event := acme.Event{
-		C1: getActionOriginCode(e),
-		C2: getActionTypeCode(e),
+		C1: e.getActionOriginCode(),
+		C2: e.getActionTypeCode(),
 		Q0: e.SelBegin,
 		Q1: e.SelEnd,
 		OrigQ0: e.OrigSelBegin,

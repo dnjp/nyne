@@ -57,11 +57,8 @@ func (a *Acme) runEventHooks(event *Event) *Event {
 	if a.debug {
 		log.Println("running event hooks")
 	}
-	if event.Builtin == nil {
-		return event
-	}
 
-	hooks := a.eventHooks[*event.Builtin]
+	hooks := a.eventHooks[event.Builtin]
 	if len(hooks) == 0 {
 		return event
 	}
