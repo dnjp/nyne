@@ -16,6 +16,7 @@ type Listener interface {
 	Listen() error
 	RegisterPHook(hook EventHook)
 	RegisterNHook(hook WinHook)
+	RegisterKeyCmdHook(KeyCmdHook)
 	SetTabexpand(w *Win, width int)
 	GetEventLoopByID(id int) *FileLoop	
 }
@@ -24,8 +25,9 @@ type Listener interface {
 type Acme struct {
 	eventHooks map[AcmeOp][]EventHook
 	winHooks   map[AcmeOp][]WinHook
+	keyCmdHooks map[rune]*KeyCmdHook
 	windows    map[int]string
-	eventLoops map[int]*FileLoop	
+	eventLoops map[int]*FileLoop
 	debug      bool
 	mux        sync.Mutex
 }
@@ -42,6 +44,7 @@ type FileLoop struct {
 	debug bool
 	eventHooks map[AcmeOp][]EventHook
 	winHooks   map[AcmeOp][]WinHook
+	keyCmdHooks map[rune]*KeyCmdHook
 }
 
 // NewListener constructs an Acme Listener
@@ -51,6 +54,7 @@ func NewListener() Listener {
 		winHooks:   make(map[AcmeOp][]WinHook),
 		windows:    make(map[int]string),
 		eventLoops: make(map[int]*FileLoop),
+		keyCmdHooks: make(map[rune]*KeyCmdHook),
 	}
 }
 
@@ -106,6 +110,7 @@ func (a *Acme) Listen() error {
 				debug: a.debug,
 				eventHooks: a.eventHooks,
 				winHooks: a.winHooks,
+				keyCmdHooks: a.keyCmdHooks,
 			}
 			a.eventLoops[event.ID] = f
 			go a.startEventLoop(f)		
@@ -114,7 +119,10 @@ func (a *Acme) Listen() error {
 }
 
 func (a *Acme) startEventLoop(f *FileLoop) {
-	log.Fatal(f.Start())
+	err := f.Start()
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (a *Acme) isDisabled(id int) bool {
@@ -180,6 +188,9 @@ func (f *FileLoop) Start() error {
 		}
 		
 		if event.Origin == DelOrigin && event.Type == DelType {
+			if f.debug {
+				log.Println("delete event received")
+			}
 			f.Win.WriteEvent(event)
 			f.Win.Close()
 			return nil	

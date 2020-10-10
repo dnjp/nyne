@@ -61,7 +61,7 @@ func (e *Event) setActionOrigin(event *acme.Event) error {
 	var origin ActionOrigin
 	c := rune(event.C1)
 	switch c {
-	case '0':
+	case 0x0:
 		origin = DelOrigin
 	case 'E':
 		origin = BodyOrTag
@@ -72,7 +72,7 @@ func (e *Event) setActionOrigin(event *acme.Event) error {
 	case 'M':
 		origin = Mouse
 	default:
-		return fmt.Errorf("%c is not a known ActionOrigin", c)
+		return fmt.Errorf("%#U %c is not a known ActionOrigin", c, c)
 	}
 	e.Origin = origin
 	return nil
@@ -139,7 +139,7 @@ func (e *Event) setActionType(event *acme.Event) error {
 		action = B2Body
 	case 'x':
 		action = B2Tag
-	case '0':
+	case 0x0:
 		action = DelType
 	default:
 		return fmt.Errorf("'%c' is not a known ActionType", c)
