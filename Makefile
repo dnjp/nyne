@@ -1,4 +1,8 @@
 
+all: nyne nynetab
+.PHONY: all
+
+
 .PHONY: nyne
 nyne:
 	go build cmd/nyne/nyne.go

@@ -16,10 +16,9 @@ func main() {
 		io.Error(err)
 		return
 	}
-
 	cfgPath := fmt.Sprintf("%s/.config/nyne/nyne.toml", usr.HomeDir)
 	npath := os.Getenv("NYNERULES")
-	if npath != "" {
+	if len(npath) > 0 {
 		cfgPath = npath
 	}
 	conf, err := config.Load(cfgPath)
@@ -27,7 +26,6 @@ func main() {
 		io.Error(err)
 		return
 	}
-
 	f := formatter.New(conf)
 	f.Run()
 }

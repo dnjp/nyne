@@ -105,33 +105,33 @@ func (a *Acme) Listen() error {
 		}
 		// create listener on new window events
 		if event.Op == "new" {
-
-			err := a.mapWindows()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			if a.isDisabled(event.ID) {
-				continue
-			}
-			f := &Buf{
-				ID:          event.ID,
-				File:        a.windows[event.ID],
-				debug:       a.debug,
-				eventHooks:  a.eventHooks,
-				winHooks:    a.winHooks,
-				keyCmdHooks: a.keyCmdHooks,
-			}
-			a.eventBufListeners[event.ID] = f
-			go a.startBufListener(f)
+			go a.handleNewOp(event.ID)
 		}
 	}
 }
 
-func (a *Acme) startBufListener(b *Buf) {
-	err := b.Start()
+func (a *Acme) handleNewOp(id int) {
+	err := a.mapWindows()
 	if err != nil {
 		io.Error(err)
+		return
+	}
+	if a.isDisabled(id) {
+		return
+	}
+	f := &Buf{
+		ID:          id,
+		File:        a.windows[id],
+		debug:       a.debug,
+		eventHooks:  a.eventHooks,
+		winHooks:    a.winHooks,
+		keyCmdHooks: a.keyCmdHooks,
+	}
+	a.eventBufListeners[id] = f
+	err = f.Start()
+	if err != nil {
+		io.Error(err)
+		return
 	}
 }
 
@@ -210,7 +210,7 @@ func (b *Buf) Start() error {
 
 		b.Win.WriteEvent(event)
 
-		// TODO: encapsulate this as an optional post-save hook
+		// maintain current address after formatting buffer
 		if event.Builtin == PUT {
 			if err := b.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
 				return err

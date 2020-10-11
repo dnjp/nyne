@@ -37,6 +37,14 @@ Once your configuration file is in place, simply execute `nyne` in Acme
 by middle clicking on the text "nyne" typed in the upper most window tag.
 
 
+# Building Locally
+
+The following will build and install nyne and nynetab using Go modules:
+
+```
+$: make
+$: make install
+```
 
 
  

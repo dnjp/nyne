@@ -25,6 +25,10 @@ const (
 )
 
 // Event contains metadata for each Acme event
+//
+// The message includes the text if it is less than 256 chars. If it
+// is longer than that, the fourth number is 0 and the body must be read
+// through the data file
 type Event struct {
 	ID                       int
 	File                     string
@@ -277,10 +281,6 @@ func (e *Event) setMeta(event *acme.Event) {
 }
 
 // TokenizeEvent parses a raw acme event into the Event type
-// If the relevant text has less than 256 characters,
-// it is included in the message; otherwise it is elided, the fourth number
-// is 0, and the program must read it from the data file if needed. No text
-// is sent on a D or d message.
 func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
 	e := Event{
 		ID:   id,

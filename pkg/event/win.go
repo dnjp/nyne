@@ -76,7 +76,11 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 	}
 	log := evt.GetLog()
 
-	return w.handle.WriteEvent(&log)
+	err = w.handle.WriteEvent(&log)
+	if err != nil {
+		return err
+	}
+	return w.ClearTagText()
 }
 
 // ExecGet is the equivalent to the Get interactive command with no arguments; accepts no arguments.

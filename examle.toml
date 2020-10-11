@@ -1,24 +1,22 @@
-
 #######################
 #
 #  Tag Configuration options
 #
 #######################
 [tag]
-
-    # Items in "menu" will be automatically written to the tag
-    menu = [
-      "Put",
-      "Undo",
-      "Redo",
-      "|com",
-      "|ind",
-      "|ui",
-      "Ldef",
-      "Lrefs",
-      "Lcomp",
-      "win"
-    ]
+	menu = [
+	  "Put",
+	  "Undo",
+	  "Redo",
+	  "|fmt",
+	  "|com",
+	  "|ui",
+	  "|ind",
+	  "Ldef",
+	  "Lrefs",
+	  "Lcomp",
+	  "win"
+	]
 
 #######################
 #
@@ -26,107 +24,109 @@
 #
 #######################
 [format]
+	# This will automatically format Go buffers with hard tabs and 8
+	# character width indentation
+	[format.go]
+	extensions = [".go"]
+	indent = 8
+	tabexpand = false
+	
+		# run gofmt on save
+		[[format.go.commands]]
+		exec = "gofmt"
+		args = [ "$NAME" ]
+		printsToStdout = true
+	
+	[format.c]
+	extensions = [".c", ".h"]
+	indent = 8
+	tabexpand = false
 
-    # This will automatically format Go buffers with hard tabs and 8
-    # character width indentation
-    [format.go]
-    extensions = [".go"]
-    indent = 8
-    tabexpand = false
-    
-    # Automatically run gofmt on save
-    [[format.go.commands]]
-    exec = "gofmt"
-    args = [ "$NAME" ]   
-    
-    
-    [format.c]
-    extensions = [".c", ".h"]
-    indent = 8
-    tabexpand = false
+		[[format.c.commands]]
+		exec = "indent"
+		args = [
+			"-st",
+			"-bap",
+			"-bli0",
+			"-i4",
+			"-l79",
+			"-ncs",
+			"-npcs",
+			"-npsl",
+			"-fca",
+			"-lc79",
+			"-fc1",
+			"-ts4",
+			"$NAME"
+		]
+		printsToStdout = true
+	
+	[format.cpp]
+	extensions = [".cc", ".cpp", ".hpp", ".cxx", ".hxx"]
+	indent = 2
+	tabexpand = true
 
-    [[format.c.commands]]
-    exec = "indent"
-    args = [
-        "-st",
-        "-bap",
-        "-bli0",
-        "-i4",
-        "-l79",
-        "-ncs",
-        "-npcs",
-        "-npsl",
-        "-fca",
-        "-lc79",
-        "-fc1",
-        "-ts4",
-        "$NAME"
-    ]
-    
-    
-    [format.cpp]
-    extensions = [".cc", ".cpp", ".hpp", ".cxx", ".hxx"]
-    indent = 2
-    tabexpand = true
+	[format.js]
+	extensions = [".js"]
+	indent = 2
+	tabexpand = true
+	
+		[[format.js.commands]]
+		exec = "prettier"
+		args = [ "$NAME", "--write", "--loglevel", "error" ]
+		printsToStdout = false
 
+	[format.make]
+	extensions = ["Makefile"]
+	indent = 8
+	tabexpand = false
+	
+	[format.shell]
+	extensions = [".rc", ".sh"]
+	indent = 8
+	tabexpand = false
 
-    [format.js]
-    extensions = [".js"]
-    indent = 2
-    tabexpand = true
-    
-    [[format.js.commands]]
-    exec = "eslint"
-    args = [ "--fix", "$NAME" ]
-    
-    [[format.js.commands]]
-    exec = "prettier"
-    args = [ "$NAME", "--write", "--loglevel", "error" ]
+	[format.tf]
+	extensions = [".tf"]
+	indent = 2
+	tabexpand = true
+	
+		[[format.tf.commands]]
+		exec = "terraform"
+		args = [ "fmt", "$NAME"]
+		printsToStdout = false
 
+	[format.html]
+	extensions = [".html"]
+	indent = 2
+	tabexpand = true
 
-    [format.make]
-    extensions = ["Makefile"]
-    indent = 8
-    tabexpand = false
-    
+	[format.java]
+	extensions = [".java"]
+	indent = 2
+	tabexpand = true
+	
+		[[format.java.commands]]
+		exec = "google-java-format"
+		args = [ "$NAME" ]
+		printsToStdout = true
 
-    [format.shell]
-    extensions = [".rc", ".sh"]
-    indent = 8
-    tabexpand = false
+	[format.yaml]
+	extensions = [".yml", ".yaml"]
+	indent = 2
+	tabexpand = true
 
+	[format.json]
+	extensions = [".json"]
+	indent = 2
+	tabexpand = true
 
-    [format.tf]
-    extensions = [".tf"]
-    indent = 2
-    tabexpand = true
+	[format.markdown]
+	extensions = [".md"]
+	indent = 2
+	tabexpand = true
 
-
-    [format.html]
-    extensions = [".html"]
-    indent = 2
-    tabexpand = true
-
-
-    [format.java]
-    extensions = [".java"]
-    indent = 2
-    tabexpand = true
-
-
-    [format.yaml]
-    extensions = [".yml", ".yaml"]
-    indent = 2
-    tabexpand = true
-
-
-    [format.json]
-    extensions = [".json"]
-    indent = 2
-    tabexpand = true
-
-
-    [format.markdown]
-    extensions = [".md"]
-    indent = 2
-    tabexpand = true
+	[format.toml]
+	extensions = [".toml"]
+	indent = 8
+	tabexpand = false

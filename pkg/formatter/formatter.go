@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	// "path/filepath"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
@@ -43,6 +42,7 @@ func New(conf *config.Config) Formatter {
 		extWithoutDot: []string{},
 	}
 
+	// map formatting spec to extension name
 	for _, spec := range conf.Format {
 		copy := &config.Spec{
 			Indent:     spec.Indent,
@@ -115,18 +115,13 @@ func New(conf *config.Config) Formatter {
 	return n
 }
 
-func (n *Nyne) getSpec(file string) (*config.Spec, string) {
-	ext := n.getExt(file, ".txt")
-	spec := n.specs[ext]
-	return spec, ext
-}
-
 // Run tells the Formatter to begin listening for Acme events
 func (n *Nyne) Run() {
 	log.Fatal(n.listener.Listen())
 }
 
-// ExecCmds executes commands that operate on stdin/stdout against the Acme buffer
+// ExecCmds executes commands that operate on stdin/stdout against the
+// Acme buffer
 func (n *Nyne) ExecCmds(evt event.Event, cmds []config.Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
@@ -145,9 +140,19 @@ func (n *Nyne) WriteMenu(w *event.Win) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
+
+	builtin := []string{"Put", "Undo", "Redo"}
+	for _, opt := range builtin {
+		cmd := fmt.Sprintf("  %s", opt)
+		if err := w.WriteToTag(cmd); err != nil {
+			return err
+		}
+	}
+
 	if err := w.WriteToTag("\n"); err != nil {
 		return err
 	}
+
 	for _, opt := range n.menu {
 		cmd := fmt.Sprintf("  %s", opt)
 		if err := w.WriteToTag(cmd); err != nil {
@@ -157,8 +162,8 @@ func (n *Nyne) WriteMenu(w *event.Win) error {
 	return nil
 }
 
-// SetupFormatting opens the Acme buffer for writing and applies the indentation and
-// tab expansion options provided in $NYNERULES
+// SetupFormatting opens the Acme buffer for writing and applies the
+// indentation and tab expansion options provided in $NYNERULES
 func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
@@ -175,7 +180,8 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 	return nil
 }
 
-// Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
+// Refmt executes a command to the Acme buffer and refreshes the buffer
+// with updated contents
 func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, error) {
 	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
@@ -194,7 +200,6 @@ func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, e
 		return []byte{}, err
 	}
 	defer os.Remove(tmp.Name())
-
 	if _, err := tmp.Write(old); err != nil {
 		return []byte{}, err
 	}
@@ -206,6 +211,7 @@ func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, e
 		return []byte{}, err
 	}
 
+	// handle formatting commands that both do and do not write to stdout
 	var new []byte
 	if cmd.PrintsToStdout {
 		new = out
@@ -247,6 +253,12 @@ func replaceName(arr []string, name string) []string {
 		}
 	}
 	return newArr
+}
+
+func (n *Nyne) getSpec(file string) (*config.Spec, string) {
+	ext := n.getExt(file, ".txt")
+	spec := n.specs[ext]
+	return spec, ext
 }
 
 func (n *Nyne) getExt(in string, def string) string {
