@@ -8,11 +8,10 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"unicode/utf8"
+	"io/ioutil"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
-	// "git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
@@ -79,8 +78,7 @@ func New(conf *config.Config) Formatter {
 			}
 			err := n.WriteMenu(w)
 			if err != nil {
-				panic(err)
-				// io.PrintErr(err)
+				log.Println(err)
 			}
 		},
 	})
@@ -95,49 +93,9 @@ func New(conf *config.Config) Formatter {
 			return evt
 		},
 	})
-	
+
 	// Tabexpand
-	n.listener.RegisterKeyCmdHook(event.KeyCmdHook{
-		Key: '\t',
-		Condition: func(evt event.Event) bool {
-			op, _ := n.getOp(evt.File)
-			if op == nil {
-				return false
-			}
-			return op.Fmt.tabexpand		
-		},
-		Handler: func(evt event.Event) event.Event {
-			op, _ := n.getOp(evt.File)
-			if op == nil {
-				return evt
-			}		
-			l := n.listener.GetEventLoopByID(evt.ID)
-			if l == nil {
-				log.Println("could not find event loop")
-				return evt
-			}
-			win := l.GetWin()			
-			var tab []byte
-			for i := 0; i < op.Fmt.indent; i++ {
-				tab = append(tab, ' ')
-			}	
-			err := win.SetAddr(fmt.Sprintf("#%d;+#1", evt.SelBegin))
-			if err != nil {
-				log.Println(err)
-				win.WriteEvent(evt)
-			}
-			win.SetData(tab)
-			runeCount := utf8.RuneCount(tab)
-			selEnd := evt.SelBegin + runeCount
-			evt.Origin = event.WindowFiles
-			evt.Type = event.BodyInsert
-			evt.SelEnd = selEnd
-			evt.OrigSelEnd = selEnd
-			evt.NumRunes = runeCount
-			evt.Text = tab		
-			return evt
-		},
-	})
+	n.listener.RegisterKeyCmdHook(n.Tabexpand())
 
 	return n
 }
@@ -159,8 +117,7 @@ func (n *NFmt) Run() {
 func (n *NFmt) ExecCmds(evt event.Event, commands []config.Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range commands {
-		args := replaceName(cmd.Args, evt.File)
-		new, err := n.Refmt(evt, cmd.Exec, args, ext)
+		new, err := n.Refmt(evt, cmd.Exec, cmd.Args, ext)
 		if err != nil {
 			return err
 		}
@@ -216,7 +173,19 @@ func (n *NFmt) Refmt(evt event.Event, x string, args []string, ext string) ([]by
 	if err != nil {
 		return []byte{}, err
 	}
-	new, err := exec.Command(x, args...).CombinedOutput()
+	tmp, err := ioutil.TempFile("", fmt.Sprintf("nyne%s", ext))     
+	if err != nil {
+		return []byte{}, err
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(old); err != nil {
+		return []byte{}, err
+	}
+	if err := tmp.Close(); err != nil {
+		return []byte{}, err
+	}
+	nargs := replaceName(args, tmp.Name())
+	new, err := exec.Command(x, nargs...).CombinedOutput()
 	if err != nil {
 		return []byte{}, err
 	}
