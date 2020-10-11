@@ -32,6 +32,9 @@
 		[[format.go.commands]]
 		exec = "gofmt"
 		args = [ "$NAME" ]
+		
+		# if the command you want to run does not print to stdout,
+		# set this to false
 		printsToStdout = true
 	
 	[format.c]
