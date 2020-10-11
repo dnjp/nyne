@@ -1,4 +1,6 @@
-![](./resources/glenda.jpg =250x)
+
+<img src="./resources/glenda.jpg" alt="drawing" width="200"/>
+
 *By Renée French*
 
 # Nyne
