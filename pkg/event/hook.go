@@ -1,12 +1,11 @@
 package event
 
 import (
-	"log"
 	"unicode/utf8"
 )
 
-// EventHandler listens for acme Events
-type EventHandler func(Event) Event
+// PutHandler listens for acme Events
+type PutHandler func(Event) Event
 
 // WinHandler listens for new acme Windows
 type WinHandler func(*Win)
@@ -17,9 +16,9 @@ type KeyCmdHandler func(Event) Event
 // Condition is a function that returns under what condition to run event
 type Condition func(Event) bool
 
-// EventHook contains properties for event handlers
-type EventHook struct {
-	Handler EventHandler
+// PutHook contains properties for event handlers
+type PutHook struct {
+	Handler PutHandler
 }
 
 // WinHook contains properties for window handlers
@@ -34,116 +33,77 @@ type KeyCmdHook struct {
 	Handler   KeyCmdHandler
 }
 
-// RegisterPHook registers hook on acme 'Put' events
-func (a *Acme) RegisterPHook(hook EventHook) {
-	if a.debug {
-		log.Println("registered Put hook")
-	}
+// RegisterPutHook registers hook on acme 'Put' events
+func (a *Acme) RegisterPutHook(hook PutHook) {
 	hooks := a.eventHooks[PUT]
 	hooks = append(hooks, hook)
 	a.eventHooks[PUT] = hooks
 }
 
-// RegisterNHook registers the hook on acme 'New' events
-func (a *Acme) RegisterNHook(hook WinHook) {
-	if a.debug {
-		log.Println("registered New hook")
-	}
+// RegisterWinHook registers the hook on acme 'New' events
+func (a *Acme) RegisterWinHook(hook WinHook) {
 	hooks := a.winHooks[NEW]
 	hooks = append(hooks, hook)
 	a.winHooks[NEW] = hooks
 }
 
-// RedisterKeyCmdHook registers hook for key events
+// RegisterKeyCmdHook registers hook for key events
 func (a *Acme) RegisterKeyCmdHook(hook KeyCmdHook) {
-	if a.debug {
-		log.Println("registered key cmd hook")
-	}
 	a.keyCmdHooks[hook.Key] = &hook
 }
 
-// RegisterPHook registers hook on acme 'Put' events
-func (f *FileLoop) RegisterPHook(hook EventHook) {
-	if f.debug {
-		log.Println("registered Put hook")
-	}
-	hooks := f.eventHooks[PUT]
+// RegisterPutHook registers hook on acme 'Put' events
+func (b *Buf) RegisterPutHook(hook PutHook) {
+	hooks := b.eventHooks[PUT]
 	hooks = append(hooks, hook)
-	f.eventHooks[PUT] = hooks
+	b.eventHooks[PUT] = hooks
 }
 
-// RegisterNHook registers the hook on acme 'New' events
-func (f *FileLoop) RegisterNHook(hook WinHook) {
-	if f.debug {
-		log.Println("registered New hook")
-	}
-	hooks := f.winHooks[NEW]
+// RegisterWinHook registers the hook on acme 'New' events
+func (b *Buf) RegisterWinHook(hook WinHook) {
+	hooks := b.winHooks[NEW]
 	hooks = append(hooks, hook)
-	f.winHooks[NEW] = hooks
+	b.winHooks[NEW] = hooks
 }
 
-// RedisterKeyCmdHook registers hook for key events
-func (f *FileLoop) RegisterKeyCmdHook(hook KeyCmdHook) {
-	if f.debug {
-		log.Println("registered key cmd hook")
-	}
-	f.keyCmdHooks[hook.Key] = &hook
+// RegisterKeyCmdHook registers hook for key events
+func (b *Buf) RegisterKeyCmdHook(hook KeyCmdHook) {
+	b.keyCmdHooks[hook.Key] = &hook
 }
 
-func (f *FileLoop) runWinHooks(w *Win) {
-	if f.debug {
-		log.Println("running win hooks")
-	}
-	hooks := f.winHooks[NEW]
+func (b *Buf) runWinHooks(w *Win) {
+	hooks := b.winHooks[NEW]
 	if len(hooks) == 0 {
 		return
 	}
-
 	for _, hook := range hooks {
 		fn := hook.Handler
 		fn(w)
 	}
 }
 
-func (f *FileLoop) runKeyCmdHooks(event Event) Event {
-	if f.debug {
-		log.Println("running key cmd hooks")
-	}
+func (b *Buf) runKeyCmdHooks(event Event) Event {
 	r, _ := utf8.DecodeRune(event.Text)
-	keyCmdHook := f.keyCmdHooks[r]
+	keyCmdHook := b.keyCmdHooks[r]
 	if keyCmdHook == nil {
 		return event
 	}
-	if f.debug {
-		log.Printf("found key cmd for %c", r)
-	}
-	condition := keyCmdHook.Condition
-	if condition(event) {
-		if f.debug {
-			log.Printf("%c condition met")
-		}
-		fn := keyCmdHook.Handler
-		evt := fn(event)
+	if keyCmdHook.Condition(event) {
+		evt := keyCmdHook.Handler(event)
 		return evt
 	}
 	return event
 }
 
-func (f *FileLoop) runEventHooks(event Event) Event {
-	if f.debug {
-		log.Println("running event hooks")
-	}
-
-	hooks := f.eventHooks[event.Builtin]
+func (b *Buf) runPutHooks(event Event) Event {
+	hooks := b.eventHooks[event.Builtin]
 	if len(hooks) == 0 {
 		return event
 	}
-
 	// allow progressive mutation of event
 	newEvent := event
 	for _, hook := range hooks {
-		fn := hook.Handler
-		newEvent = fn(newEvent)
+		newEvent = hook.Handler(newEvent)
 	}
 	return newEvent
 }

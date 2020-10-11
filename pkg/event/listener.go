@@ -1,8 +1,8 @@
 package event
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -13,37 +13,40 @@ import (
 // Listener can listen for acme Event and Window hooks
 type Listener interface {
 	Listen() error
-	RegisterPHook(hook EventHook)
-	RegisterNHook(hook WinHook)
+	RegisterPutHook(hook PutHook)
+	RegisterWinHook(hook WinHook)
 	RegisterKeyCmdHook(KeyCmdHook)
-	GetEventLoopByID(id int) *FileLoop
+	GetBufListener(id int) *Buf
 }
 
 // Acme implements the Listener interface for acme events
 type Acme struct {
-	eventHooks  map[AcmeOp][]EventHook
-	winHooks    map[AcmeOp][]WinHook
-	keyCmdHooks map[rune]*KeyCmdHook
-	windows     map[int]string
-	eventLoops  map[int]*FileLoop
-	debug       bool
-	mux         sync.Mutex
+	eventHooks        map[AcmeOp][]PutHook
+	winHooks          map[AcmeOp][]WinHook
+	keyCmdHooks       map[rune]*KeyCmdHook
+	windows           map[int]string
+	eventBufListeners map[int]*Buf
+	debug             bool
+	mux               sync.Mutex
 }
 
-type EventLoop interface {
+// BufListener processes hooks on acme events
+type BufListener interface {
 	GetWin() *Win
 	Start() error
-	RegisterPHook(hook EventHook)
-	RegisterNHook(hook WinHook)
+	RegisterPutHook(hook PutHook)
+	RegisterWinHook(hook WinHook)
 	RegisterKeyCmdHook(KeyCmdHook)
 }
 
-type FileLoop struct {
+// Buf implements the BufListener interface and runs on opened
+// acme buffers
+type Buf struct {
 	ID          int
 	File        string
 	Win         *Win
 	debug       bool
-	eventHooks  map[AcmeOp][]EventHook
+	eventHooks  map[AcmeOp][]PutHook
 	winHooks    map[AcmeOp][]WinHook
 	keyCmdHooks map[rune]*KeyCmdHook
 }
@@ -51,20 +54,20 @@ type FileLoop struct {
 // NewListener constructs an Acme Listener
 func NewListener() Listener {
 	return &Acme{
-		eventHooks:  make(map[AcmeOp][]EventHook),
-		winHooks:    make(map[AcmeOp][]WinHook),
-		keyCmdHooks: make(map[rune]*KeyCmdHook),
-		windows:     make(map[int]string),
-		eventLoops:  make(map[int]*FileLoop),
+		eventHooks:        make(map[AcmeOp][]PutHook),
+		winHooks:          make(map[AcmeOp][]WinHook),
+		keyCmdHooks:       make(map[rune]*KeyCmdHook),
+		windows:           make(map[int]string),
+		eventBufListeners: make(map[int]*Buf),
 	}
 }
 
-// NewEventLoop constructs an event loop
-func NewEventLoop(id int, file string) EventLoop {
-	return &FileLoop{
+// NewBufListener constructs an event loop
+func NewBufListener(id int, file string) BufListener {
+	return &Buf{
 		ID:          id,
 		File:        file,
-		eventHooks:  make(map[AcmeOp][]EventHook),
+		eventHooks:  make(map[AcmeOp][]PutHook),
 		winHooks:    make(map[AcmeOp][]WinHook),
 		keyCmdHooks: make(map[rune]*KeyCmdHook),
 	}
@@ -93,9 +96,6 @@ func (a *Acme) Listen() error {
 		}
 		event, err := l.Read()
 		if err != nil {
-			if a.debug {
-				log.Printf("failed to read acme event: %v\n", err)
-			}
 			return err
 		}
 		// skip directory windows
@@ -107,16 +107,13 @@ func (a *Acme) Listen() error {
 
 			err := a.mapWindows()
 			if err != nil {
-				if a.debug {
-					log.Println("failed to map win IDs")
-				}
 				log.Println(err)
 				continue
 			}
 			if a.isDisabled(event.ID) {
 				continue
 			}
-			f := &FileLoop{
+			f := &Buf{
 				ID:          event.ID,
 				File:        a.windows[event.ID],
 				debug:       a.debug,
@@ -124,19 +121,18 @@ func (a *Acme) Listen() error {
 				winHooks:    a.winHooks,
 				keyCmdHooks: a.keyCmdHooks,
 			}
-			a.eventLoops[event.ID] = f
-			go a.startEventLoop(f)
+			a.eventBufListeners[event.ID] = f
+			go a.startBufListener(f)
 		}
 	}
 }
 
-func (a *Acme) startEventLoop(f *FileLoop) {
-	log.Fatal(f.Start())
+func (a *Acme) startBufListener(b *Buf) {
+	log.Fatal(b.Start())
 }
 
 func (a *Acme) isDisabled(id int) bool {
 	filename := a.windows[id]
-	// TODO: this should be decerned in a more intelligent way
 	disabledNames := []string{"/-", "Del", "xplor"}
 	for _, name := range disabledNames {
 		if strings.Contains(filename, name) {
@@ -147,9 +143,6 @@ func (a *Acme) isDisabled(id int) bool {
 }
 
 func (a *Acme) mapWindows() error {
-	if a.debug {
-		log.Println("mapping win IDs to names")
-	}
 	ws, err := acme.Windows()
 	if err != nil {
 		return err
@@ -163,75 +156,65 @@ func (a *Acme) mapWindows() error {
 	return nil
 }
 
-func (a *Acme) GetEventLoopByID(id int) *FileLoop {
-	return a.eventLoops[id]
+// GetBufListener returns the running Buf by its ID
+func (a *Acme) GetBufListener(id int) *Buf {
+	return a.eventBufListeners[id]
 }
 
-func (f *FileLoop) GetWin() *Win {
-	return f.Win
+// GetWin returns the active acme Window
+func (b *Buf) GetWin() *Win {
+	return b.Win
 }
 
-var lastpoint int = 0
-func (f *FileLoop) Start() error {
-	if f.debug {
-		log.Println("opening acme window")
-	}
-	// open window for modification
-	w, err := OpenWin(f.ID, f.File)
+// Start begins the event listener for the window
+func (b *Buf) Start() error {
+	w, err := OpenWin(b.ID, b.File)
 	if err != nil {
-		if f.debug {
-			log.Println("failed to open acme window: %v", err)
-		}
 		return err
 	}
-	f.Win = w
+	b.Win = w
 
 	// runs hooks for acme 'new' event
-	f.runWinHooks(f.Win)
+	b.runWinHooks(b.Win)
 
-	for e := range f.Win.OpenEventChan() {
-		if f.debug {
+	lastpoint := 0
+	for e := range b.Win.OpenEventChan() {
+		if b.debug {
 			log.Printf("RAW: %+v\n", *e)
 		}
 
-		event, err := TokenizeEvent(e, f.ID, f.File)
+		event, err := TokenizeEvent(e, b.ID, b.File)
 		if err != nil {
 			return err
 		}
 
 		if event.Origin == Keyboard {
 			lastpoint = event.SelBegin
-			event = f.runKeyCmdHooks(event)
-		}
-
-		if event.Origin == DelOrigin && event.Type == DelType {
-			if f.debug {
-				log.Println("delete event received")
+			event = b.runKeyCmdHooks(event)
+		} else {
+			if event.Origin == DelOrigin && event.Type == DelType {
+				b.Win.WriteEvent(event)
+				b.Win.Close()
+				return nil
 			}
-			f.Win.WriteEvent(event)
-			f.Win.Close()
-			return nil
+			event = b.runPutHooks(event)
 		}
 
-		if f.debug {
+		if b.debug {
 			log.Printf("TOKEN: %+v\n", event)
 		}
 
-		event = f.runEventHooks(event)
-		if f.debug {
-			log.Printf("NewEvent: %+v\n", event)
-		}
-		f.Win.WriteEvent(event)
-		
-		// TODO: encapsulate this as an optional post save hook
+		b.Win.WriteEvent(event)
+
+		// TODO: encapsulate this as an optional post-save hook
 		if event.Builtin == PUT {
-			if err := f.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
+			if err := b.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
 				return err
 			}
-			if err := f.Win.SetTextToAddr(); err != nil {
+			if err := b.Win.SetTextToAddr(); err != nil {
 				return err
 			}
-			if err := f.Win.ExecShow(); err != nil {
+			if err := b.Win.ExecShow(); err != nil {
 				return err
 			}
 		}

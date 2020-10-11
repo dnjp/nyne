@@ -70,13 +70,13 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 		return err
 	}
 	evt := Event{
-		Origin: Mouse,
-		Type: B2Tag,
+		Origin:   Mouse,
+		Type:     B2Tag,
 		SelBegin: offset,
-		SelEnd: offset + cmdlen,
+		SelEnd:   offset + cmdlen,
 	}
 	log := evt.GetLog()
-	
+
 	return w.handle.WriteEvent(&log)
 }
 

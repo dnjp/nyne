@@ -3,12 +3,12 @@ package formatter
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"io/ioutil"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
@@ -17,37 +17,25 @@ import (
 // Formatter listens for Acme events and applies formatting rules to the active buffer
 type Formatter interface {
 	Run()
-	ExecCmds(event event.Event, commands []config.Command, ext string) error
+	ExecCmds(event event.Event, cmds []config.Command, ext string) error
 	WriteMenu(w *event.Win) error
-	SetupFormatting(*event.Win, Fmt) error
+	SetupFormatting(*event.Win, *config.Spec) error
 	Refmt(event.Event, string, []string, string) ([]byte, error)
 }
 
-// NFmt implements the Formatter inferface for $NYNERULES
-type NFmt struct {
-	ops           map[string]*Op
+// Nyne implements the Formatter inferface for $NYNERULES
+type Nyne struct {
+	specs         map[string]*config.Spec
 	menu          []string
 	listener      event.Listener
 	debug         bool
 	extWithoutDot []string
 }
 
-// Fmt specifies formatting rules for a given extension
-type Fmt struct {
-	indent    int
-	tabexpand bool
-}
-
-// Op specifies a formatting operation to be performed on an Acme buffer
-type Op struct {
-	Fmt Fmt
-	Cmd []config.Command
-}
-
 // New constructs a Formatter that uses $NYNERULES for formatting
 func New(conf *config.Config) Formatter {
-	n := &NFmt{
-		ops:           make(map[string]*Op),
+	n := &Nyne{
+		specs:         make(map[string]*config.Spec),
 		menu:          conf.Tag.Menu,
 		listener:      event.NewListener(),
 		debug:         len(os.Getenv("DEBUG")) > 0,
@@ -60,21 +48,15 @@ func New(conf *config.Config) Formatter {
 				n.extWithoutDot = append(n.extWithoutDot, ext)
 			}
 
-			n.ops[ext] = &Op{
-				Fmt: Fmt{
-					indent:    spec.Indent,
-					tabexpand: spec.Tabexpand,
-				},
-				Cmd: spec.Commands,
-			}
+			n.specs[ext] = &spec
 		}
 	}
 
-	n.listener.RegisterNHook(event.WinHook{
+	n.listener.RegisterWinHook(event.WinHook{
 		Handler: func(w *event.Win) {
-			op, _ := n.getOp(w.File)
-			if op != nil {
-				n.SetupFormatting(w, op.Fmt)
+			spec, _ := n.getSpec(w.File)
+			if spec != nil {
+				n.SetupFormatting(w, spec)
 			}
 			err := n.WriteMenu(w)
 			if err != nil {
@@ -84,63 +66,61 @@ func New(conf *config.Config) Formatter {
 		},
 	})
 
-	n.listener.RegisterPHook(event.EventHook{
+	n.listener.RegisterPutHook(event.PutHook{
 		Handler: func(evt event.Event) event.Event {
-			op, ext := n.getOp(evt.File)
-			if op == nil {
+			spec, ext := n.getSpec(evt.File)
+			if spec == nil {
 				return evt
 			}
-			n.ExecCmds(evt, op.Cmd, ext)
+			n.ExecCmds(evt, spec.Commands, ext)
 			return evt
 		},
 	})
 
 	km := &Keymap{
 		GetWinFn: func(id int) (*event.Win, error) {
-			l := n.listener.GetEventLoopByID(id)
+			l := n.listener.GetBufListener(id)
 			if l == nil {
 				return nil, fmt.Errorf("could not find event loop")
 			}
-			return l.GetWin(), nil	
+			return l.GetWin(), nil
 		},
 		GetIndentFn: func(evt event.Event) int {
-			op, _ := n.getOp(evt.File)
-			if op == nil {
+			spec, _ := n.getSpec(evt.File)
+			if spec == nil {
 				return 8 // default
 			}
-			return op.Fmt.indent		
+			return spec.Indent
 		},
 	}
 
 	// Tabexpand
 	n.listener.RegisterKeyCmdHook(km.Tabexpand(func(evt event.Event) bool {
-		op, _ := n.getOp(evt.File)
-		if op == nil {
+		spec, _ := n.getSpec(evt.File)
+		if spec == nil {
 			return false
 		}
-		return op.Fmt.tabexpand		
+		return spec.Tabexpand
 	}))
 
 	return n
 }
 
-func (n *NFmt) getOp(file string) (*Op, string) {
+func (n *Nyne) getSpec(file string) (*config.Spec, string) {
 	ext := n.getExt(file, ".txt")
-	op := n.ops[ext]
-	return op, ext
+	spec := n.specs[ext]
+	return spec, ext
 }
 
 // Run tells the Formatter to begin listening for Acme events
-func (n *NFmt) Run() {
+func (n *Nyne) Run() {
 	log.Fatal(n.listener.Listen())
 }
 
 // ExecCmds executes commands that operate on stdin/stdout against the Acme buffer
-// TODO: this should read the file once, create a unified diff, and apply the diff
-//             to the buffer instead of doing so for each command
-func (n *NFmt) ExecCmds(evt event.Event, commands []config.Command, ext string) error {
+func (n *Nyne) ExecCmds(evt event.Event, cmds []config.Command, ext string) error {
 	updates := [][]byte{}
-	for _, cmd := range commands {
+	for _, cmd := range cmds {
 		new, err := n.Refmt(evt, cmd.Exec, cmd.Args, ext)
 		if err != nil {
 			return err
@@ -151,7 +131,7 @@ func (n *NFmt) ExecCmds(evt event.Event, commands []config.Command, ext string) 
 }
 
 // WriteMenu writes the specified menu options to the Acme buffer
-func (n *NFmt) WriteMenu(w *event.Win) error {
+func (n *Nyne) WriteMenu(w *event.Win) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
@@ -169,25 +149,25 @@ func (n *NFmt) WriteMenu(w *event.Win) error {
 
 // SetupFormatting opens the Acme buffer for writing and applies the indentation and
 // tab expansion options provided in $NYNERULES
-func (n *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
+func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
-	if format.indent == 0 {
+	if spec.Indent == 0 {
 		return nil
 	}
 	if err := w.WriteToTag("\n"); err != nil {
 		return err
-	}	
-	if err := w.ExecInTag("Tab", strconv.Itoa(format.indent)); err != nil {
+	}
+	if err := w.ExecInTag("Tab", strconv.Itoa(spec.Indent)); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
-func (n *NFmt) Refmt(evt event.Event, x string, args []string, ext string) ([]byte, error) {
-	l := n.listener.GetEventLoopByID(evt.ID)
+func (n *Nyne) Refmt(evt event.Event, x string, args []string, ext string) ([]byte, error) {
+	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
 	}
@@ -195,7 +175,7 @@ func (n *NFmt) Refmt(evt event.Event, x string, args []string, ext string) ([]by
 	if err != nil {
 		return []byte{}, err
 	}
-	tmp, err := ioutil.TempFile("", fmt.Sprintf("nyne%s", ext))     
+	tmp, err := ioutil.TempFile("", fmt.Sprintf("nyne%s", ext))
 	if err != nil {
 		return []byte{}, err
 	}
@@ -218,8 +198,8 @@ func (n *NFmt) Refmt(evt event.Event, x string, args []string, ext string) ([]by
 }
 
 // WriteUpdates writes the updated contents to the file
-func (n *NFmt) WriteUpdates(evt event.Event, updates [][]byte) error {
-	l := n.listener.GetEventLoopByID(evt.ID)
+func (n *Nyne) WriteUpdates(evt event.Event, updates [][]byte) error {
+	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return fmt.Errorf("no event loop found")
 	}
@@ -247,7 +227,7 @@ func replaceName(arr []string, name string) []string {
 	return newArr
 }
 
-func (n *NFmt) getExt(in string, def string) string {
+func (n *Nyne) getExt(in string, def string) string {
 	filename := getFileName(in)
 	if includes(filename, n.extWithoutDot) {
 		return filename

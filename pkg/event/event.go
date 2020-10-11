@@ -26,19 +26,19 @@ const (
 
 // Event contains metadata for each Acme event
 type Event struct {
-	ID      int
-	File    string
-	Origin  ActionOrigin
-	Type    ActionType
-	Text    []byte
-	Builtin AcmeOp
-	Flag    Flag
-	SelBegin, SelEnd int
+	ID                       int
+	File                     string
+	Origin                   ActionOrigin
+	Type                     ActionType
+	Text                     []byte
+	Builtin                  AcmeOp
+	Flag                     Flag
+	SelBegin, SelEnd         int
 	OrigSelBegin, OrigSelEnd int
-	NumBytes int
-	NumRunes int
-	ChordArg []byte
-	ChordLoc []byte
+	NumBytes                 int
+	NumRunes                 int
+	ChordArg                 []byte
+	ChordLoc                 []byte
 }
 
 // ActionOrigin is the entity that originated the action
@@ -246,7 +246,7 @@ func (e *Event) setFlag(event *acme.Event) {
 func (e *Event) setBuiltin(event *acme.Event) error {
 	text := string(event.Text)
 	action := strings.ToLower(text)
-	
+
 	var op AcmeOp
 	switch action {
 	case "new":
@@ -264,24 +264,6 @@ func (e *Event) setBuiltin(event *acme.Event) error {
 	return nil
 }
 
-func (e *Event) getBuiltin() string {
-	var op string
-
-	switch e.Builtin {
-	case NEW:
-		op = "new"
-	case ZEROX:
-		op = "zerox"
-	case GET:
-		op = "get"
-	case PUT:
-		op = "put"
-	case DEL:
-		op = "del"
-	}
-	return op
-}
-
 func (e *Event) setMeta(event *acme.Event) {
 	e.Text = event.Text
 	e.SelBegin = event.Q0
@@ -294,16 +276,16 @@ func (e *Event) setMeta(event *acme.Event) {
 	e.ChordLoc = event.Loc
 }
 
+// TokenizeEvent parses a raw acme event into the Event type
 // If the relevant text has less than 256 characters,
 // it is included in the message; otherwise it is elided, the fourth number
 // is 0, and the program must read it from the data file if needed. No text
 // is sent on a D or d message.
 func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
-	e := Event{		
-		ID:      id,	
-		File:    file,
+	e := Event{
+		ID:   id,
+		File: file,
 	}
-
 	if err := e.setActionOrigin(event); err != nil {
 		return e, err
 	}
@@ -315,23 +297,23 @@ func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
 	}
 	e.setFlag(event)
 	e.setMeta(event)
-
 	return e, nil
 }
 
+// GetLog returns a raw acme log event for the Event type
 func (e *Event) GetLog() acme.Event {
 	return acme.Event{
-		C1: e.getActionOriginCode(),
-		C2: e.getActionTypeCode(),
-		Q0: e.SelBegin,
-		Q1: e.SelEnd,
+		C1:     e.getActionOriginCode(),
+		C2:     e.getActionTypeCode(),
+		Q0:     e.SelBegin,
+		Q1:     e.SelEnd,
 		OrigQ0: e.OrigSelBegin,
-		OrigQ1: e.OrigSelEnd ,
-		Flag: int(e.Flag),
-		Nb: e.NumBytes,
-		Nr: e.NumRunes,
-		Text: e.Text,
-		Arg: e.ChordArg,
-		Loc: e.ChordLoc,	
+		OrigQ1: e.OrigSelEnd,
+		Flag:   int(e.Flag),
+		Nb:     e.NumBytes,
+		Nr:     e.NumRunes,
+		Text:   e.Text,
+		Arg:    e.ChordArg,
+		Loc:    e.ChordLoc,
 	}
 }
