@@ -1,6 +1,12 @@
 
+#######################
+#
+#  Tag Configuration options
+#
+#######################
 [tag]
 
+    # Items in "menu" will be automatically written to the tag
     menu = [
       "Put",
       "Undo",
@@ -14,13 +20,21 @@
       "win"
     ]
 
+#######################
+#
+#  Buffer Formatting Options
+#
+#######################
 [format]
 
+    # This will automatically format Go buffers with hard tabs and 8
+    # character width indentation
     [format.go]
     extensions = [".go"]
     indent = 8
     tabexpand = false
     
+    # Automatically run gofmt on save
     [[format.go.commands]]
     exec = "gofmt"
     args = [ "$NAME" ]   

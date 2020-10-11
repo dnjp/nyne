@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"9fans.net/go/acme"
 )
 
@@ -128,7 +129,10 @@ func (a *Acme) Listen() error {
 }
 
 func (a *Acme) startBufListener(b *Buf) {
-	log.Fatal(b.Start())
+	err := b.Start()
+	if err != nil {
+		io.Error(err)
+	}
 }
 
 func (a *Acme) isDisabled(id int) bool {

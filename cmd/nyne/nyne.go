@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/formatter"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 func main() {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		io.Error(err)
+		return
 	}
 
 	cfgPath := fmt.Sprintf("%s/.config/nyne/nyne.toml", usr.HomeDir)
@@ -23,7 +24,8 @@ func main() {
 	}
 	conf, err := config.Load(cfgPath)
 	if err != nil {
-		log.Fatal(err)
+		io.Error(err)
+		return
 	}
 
 	f := formatter.New(conf)

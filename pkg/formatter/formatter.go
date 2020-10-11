@@ -1,7 +1,6 @@
 package formatter
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,8 +8,10 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	// "path/filepath"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
@@ -20,7 +21,7 @@ type Formatter interface {
 	ExecCmds(event event.Event, cmds []config.Command, ext string) error
 	WriteMenu(w *event.Win) error
 	SetupFormatting(*event.Win, *config.Spec) error
-	Refmt(event.Event, string, []string, string) ([]byte, error)
+	Refmt(event.Event, config.Command, string) ([]byte, error)
 }
 
 // Nyne implements the Formatter inferface for $NYNERULES
@@ -43,12 +44,17 @@ func New(conf *config.Config) Formatter {
 	}
 
 	for _, spec := range conf.Format {
-		for _, ext := range spec.Extensions {
+		copy := &config.Spec{
+			Indent: spec.Indent,
+			Tabexpand: spec.Tabexpand,
+			Extensions: spec.Extensions,
+			Commands: spec.Commands,
+		}		
+		for _, ext := range copy.Extensions {
 			if !strings.Contains(ext, ".") {
 				n.extWithoutDot = append(n.extWithoutDot, ext)
 			}
-
-			n.specs[ext] = &spec
+			n.specs[ext] = copy
 		}
 	}
 
@@ -60,9 +66,8 @@ func New(conf *config.Config) Formatter {
 			}
 			err := n.WriteMenu(w)
 			if err != nil {
-				log.Println(err)
+				io.Error(err)
 			}
-
 		},
 	})
 
@@ -72,7 +77,11 @@ func New(conf *config.Config) Formatter {
 			if spec == nil {
 				return evt
 			}
-			n.ExecCmds(evt, spec.Commands, ext)
+			err := n.ExecCmds(evt, spec.Commands, ext)
+			if err != nil {
+				io.Error(err)
+				return evt
+			}
 			return evt
 		},
 	})
@@ -121,8 +130,9 @@ func (n *Nyne) Run() {
 func (n *Nyne) ExecCmds(evt event.Event, cmds []config.Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
-		new, err := n.Refmt(evt, cmd.Exec, cmd.Args, ext)
+		new, err := n.Refmt(evt, cmd, ext)
 		if err != nil {
+			fmt.Println("ERROR: ", err)
 			return err
 		}
 		updates = append(updates, new)
@@ -166,33 +176,45 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 }
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer with updated contents
-func (n *Nyne) Refmt(evt event.Event, x string, args []string, ext string) ([]byte, error) {
+func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, error) {
 	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
 	}
+	
+	// get current body
 	old, err := l.GetWin().ReadBody()
 	if err != nil {
 		return []byte{}, err
 	}
-	tmp, err := ioutil.TempFile("", fmt.Sprintf("nyne%s", ext))
+	
+	// write current body to temporary file
+	tmp, err := ioutil.TempFile("", fmt.Sprintf("*%s", ext))
 	if err != nil {
 		return []byte{}, err
 	}
 	defer os.Remove(tmp.Name())
+	
 	if _, err := tmp.Write(old); err != nil {
 		return []byte{}, err
 	}
-	if err := tmp.Close(); err != nil {
-		return []byte{}, err
-	}
-	nargs := replaceName(args, tmp.Name())
-	new, err := exec.Command(x, nargs...).CombinedOutput()
+	
+	// replace name with the temporary file
+	nargs := replaceName(cmd.Args, tmp.Name())
+	out, err := exec.Command(cmd.Exec, nargs...).CombinedOutput()
 	if err != nil {
 		return []byte{}, err
 	}
-	if bytes.Equal(old, new) {
-		return old, nil
+
+	var new []byte
+	if cmd.PrintsToStdout {
+		new = out			
+	} else {
+		// read the temporary file that has been written to
+		new, err = ioutil.ReadFile(tmp.Name())
+		if err != nil {
+			return []byte{}, err
+		}	
 	}
 	return new, nil
 }

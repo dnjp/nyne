@@ -37,4 +37,5 @@ type Spec struct {
 type Command struct {
 	Exec string
 	Args []string
+	PrintsToStdout bool
 }

@@ -63,7 +63,6 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(tag))
 	offset := utf8.RuneCount(tag)
 	cmdlen := utf8.RuneCountInString(cmd)
 	if err := w.WriteToTag(cmd); err != nil {

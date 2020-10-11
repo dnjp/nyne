@@ -20,6 +20,9 @@ func (k *Keymap) Tabexpand(condition event.Condition) event.KeyCmdHook {
 		Key:       '\t',
 		Condition: condition,
 		Handler: func(evt event.Event) event.Event {
+			if !condition(evt) {
+				return evt
+			}
 			win, err := k.GetWinFn(evt.ID)
 			if err != nil {
 				log.Println(err)
