@@ -1,8 +1,7 @@
 <div style="text-align:center">
   <img src="https://git.sr.ht/~danieljamespost/nyne/blob/0.1/resources/glenda.jpg" alt="drawing" width="200"/>
+  <p style="font-style: italic;">By Renée French</p>
 </div>
-
-*By Renée French*
 
 # Nyne
 Nyne automates what are typically manual tasks when using Acme. Instead
