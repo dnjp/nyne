@@ -47,6 +47,24 @@ $: make
 $: make install
 ```
 
+# Bugs or Feature Requests
+
+If you find a bug or if there is a feature you would like
+to see in Nyne, please post it in the official [Issue
+Tracker](https://todo.sr.ht/~danieljamespost/nyne).
+
+# Contributing
+
+Please do! Nyne uses an email based workflow for managing patches. If
+you've never used the `git-send-email` command before, checkout
+this [interactive guide](https://git-send-email.io/) for how
+to set it up and get comfortable with the workflow. Patches
+or questions about the submission process can be sent to
+[~danieljamespost/nyne@lists.sr.ht](mailto:~danieljamespost/nyne@lists.sr.ht).
+
+
+
+
 
  
 
