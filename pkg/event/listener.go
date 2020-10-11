@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"9fans.net/go/acme"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Listener can listen for acme Event and Window hooks

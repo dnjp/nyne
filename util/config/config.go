@@ -35,7 +35,7 @@ type Spec struct {
 // Command contains options for executing a given command against an
 // acme window
 type Command struct {
-	Exec string
-	Args []string
+	Exec           string
+	Args           []string
 	PrintsToStdout bool
 }

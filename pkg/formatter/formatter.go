@@ -11,8 +11,8 @@ import (
 	// "path/filepath"
 
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"git.sr.ht/~danieljamespost/nyne/util/config"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
@@ -45,11 +45,11 @@ func New(conf *config.Config) Formatter {
 
 	for _, spec := range conf.Format {
 		copy := &config.Spec{
-			Indent: spec.Indent,
-			Tabexpand: spec.Tabexpand,
+			Indent:     spec.Indent,
+			Tabexpand:  spec.Tabexpand,
 			Extensions: spec.Extensions,
-			Commands: spec.Commands,
-		}		
+			Commands:   spec.Commands,
+		}
 		for _, ext := range copy.Extensions {
 			if !strings.Contains(ext, ".") {
 				n.extWithoutDot = append(n.extWithoutDot, ext)
@@ -181,24 +181,24 @@ func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, e
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
 	}
-	
+
 	// get current body
 	old, err := l.GetWin().ReadBody()
 	if err != nil {
 		return []byte{}, err
 	}
-	
+
 	// write current body to temporary file
 	tmp, err := ioutil.TempFile("", fmt.Sprintf("*%s", ext))
 	if err != nil {
 		return []byte{}, err
 	}
 	defer os.Remove(tmp.Name())
-	
+
 	if _, err := tmp.Write(old); err != nil {
 		return []byte{}, err
 	}
-	
+
 	// replace name with the temporary file
 	nargs := replaceName(cmd.Args, tmp.Name())
 	out, err := exec.Command(cmd.Exec, nargs...).CombinedOutput()
@@ -208,13 +208,13 @@ func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, e
 
 	var new []byte
 	if cmd.PrintsToStdout {
-		new = out			
+		new = out
 	} else {
 		// read the temporary file that has been written to
 		new, err = ioutil.ReadFile(tmp.Name())
 		if err != nil {
 			return []byte{}, err
-		}	
+		}
 	}
 	return new, nil
 }
