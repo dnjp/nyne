@@ -8,33 +8,32 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
 )
 
+// Keymap contains parameters for constructing a custom keymap
+type Keymap struct {
+	GetWinFn func(int) (*event.Win, error)
+	GetIndentFn func(event.Event) int
+}
+
 // Tabexpand expands tabs to spaces
-func (n *NFmt) Tabexpand() event.KeyCmdHook {
+func (k *Keymap) Tabexpand(condition event.Condition) event.KeyCmdHook {
 	return event.KeyCmdHook{
 		Key: '\t',
-		Condition: func(evt event.Event) bool {
-			op, _ := n.getOp(evt.File)
-			if op == nil {
-				return false
-			}
-			return op.Fmt.tabexpand
-		},
-		Handler: func(evt event.Event) event.Event {	
-			op, _ := n.getOp(evt.File)
-			if op == nil {
+		Condition: condition,
+		Handler: func(evt event.Event) event.Event {
+			if !condition(evt) {
+				return evt
+			}	
+			win, err := k.GetWinFn(evt.ID)
+			if err != nil {
+				log.Println(err)
 				return evt
 			}
-			l := n.listener.GetEventLoopByID(evt.ID)
-			if l == nil {
-				log.Println("could not find event loop")
-				return evt
-			}
-			win := l.GetWin()
+			indent := k.GetIndentFn(evt)
 			var tab []byte
-			for i := 0; i < op.Fmt.indent; i++ {
+			for i := 0; i < indent; i++ {
 				tab = append(tab, ' ')
 			}
-			err := win.SetAddr(fmt.Sprintf("#%d;+#1", evt.SelBegin))
+			err = win.SetAddr(fmt.Sprintf("#%d;+#1", evt.SelBegin))
 			if err != nil {
 				log.Println(err)
 				win.WriteEvent(evt)

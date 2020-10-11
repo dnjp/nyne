@@ -2,7 +2,7 @@ package event
 
 import (
 	"fmt"
-	// "log"
+
 	"strings"
 	"unicode/utf8"
 
@@ -61,21 +61,23 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 
 	tag, err := w.ReadTag()
 	if err != nil {
-		panic(err)
-		// log.Print(err)
+		return err
 	}
+	fmt.Println(string(tag))
 	offset := utf8.RuneCount(tag)
 	cmdlen := utf8.RuneCountInString(cmd)
 	if err := w.WriteToTag(cmd); err != nil {
-		panic(err)
-		// log.Print(err)
+		return err
 	}
-	evt := new(acme.Event)
-	evt.C1 = 'M'
-	evt.C2 = 'x'
-	evt.Q0 = offset
-	evt.Q1 = offset + cmdlen
-	return w.handle.WriteEvent(evt)
+	evt := Event{
+		Origin: Mouse,
+		Type: B2Tag,
+		SelBegin: offset,
+		SelEnd: offset + cmdlen,
+	}
+	log := evt.GetLog()
+	
+	return w.handle.WriteEvent(&log)
 }
 
 // ExecGet is the equivalent to the Get interactive command with no arguments; accepts no arguments.

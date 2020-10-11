@@ -80,6 +80,7 @@ func New(conf *config.Config) Formatter {
 			if err != nil {
 				log.Println(err)
 			}
+
 		},
 	})
 
@@ -94,8 +95,31 @@ func New(conf *config.Config) Formatter {
 		},
 	})
 
+	km := &Keymap{
+		GetWinFn: func(id int) (*event.Win, error) {
+			l := n.listener.GetEventLoopByID(id)
+			if l == nil {
+				return nil, fmt.Errorf("could not find event loop")
+			}
+			return l.GetWin(), nil	
+		},
+		GetIndentFn: func(evt event.Event) int {
+			op, _ := n.getOp(evt.File)
+			if op == nil {
+				return 8 // default
+			}
+			return op.Fmt.indent		
+		},
+	}
+
 	// Tabexpand
-	n.listener.RegisterKeyCmdHook(n.Tabexpand())
+	n.listener.RegisterKeyCmdHook(km.Tabexpand(func(evt event.Event) bool {
+		op, _ := n.getOp(evt.File)
+		if op == nil {
+			return false
+		}
+		return op.Fmt.tabexpand		
+	}))
 
 	return n
 }
@@ -152,13 +176,11 @@ func (n *NFmt) SetupFormatting(w *event.Win, format Fmt) error {
 	if format.indent == 0 {
 		return nil
 	}
-
+	if err := w.WriteToTag("\n"); err != nil {
+		return err
+	}	
 	if err := w.ExecInTag("Tab", strconv.Itoa(format.indent)); err != nil {
 		return err
-	}
-
-	if format.tabexpand {
-		go n.listener.SetTabexpand(w, format.indent)
 	}
 	return nil
 }

@@ -12,7 +12,7 @@ type EventHandler func(Event) Event
 type WinHandler func(*Win)
 
 // KeyCmdHandler modifies keyboard mappings
-type KeyCmdHandler func (Event) Event
+type KeyCmdHandler func(Event) Event
 
 // Condition is a function that returns under what condition to run event
 type Condition func(Event) bool
@@ -29,9 +29,9 @@ type WinHook struct {
 
 // KeyCmdHook contains properties for key handlers
 type KeyCmdHook struct {
-	Key rune
+	Key       rune
 	Condition Condition
-	Handler KeyCmdHandler
+	Handler   KeyCmdHandler
 }
 
 // RegisterPHook registers hook on acme 'Put' events
@@ -62,6 +62,34 @@ func (a *Acme) RegisterKeyCmdHook(hook KeyCmdHook) {
 	a.keyCmdHooks[hook.Key] = &hook
 }
 
+// RegisterPHook registers hook on acme 'Put' events
+func (f *FileLoop) RegisterPHook(hook EventHook) {
+	if f.debug {
+		log.Println("registered Put hook")
+	}
+	hooks := f.eventHooks[PUT]
+	hooks = append(hooks, hook)
+	f.eventHooks[PUT] = hooks
+}
+
+// RegisterNHook registers the hook on acme 'New' events
+func (f *FileLoop) RegisterNHook(hook WinHook) {
+	if f.debug {
+		log.Println("registered New hook")
+	}
+	hooks := f.winHooks[NEW]
+	hooks = append(hooks, hook)
+	f.winHooks[NEW] = hooks
+}
+
+// RedisterKeyCmdHook registers hook for key events
+func (f *FileLoop) RegisterKeyCmdHook(hook KeyCmdHook) {
+	if f.debug {
+		log.Println("registered key cmd hook")
+	}
+	f.keyCmdHooks[hook.Key] = &hook
+}
+
 func (f *FileLoop) runWinHooks(w *Win) {
 	if f.debug {
 		log.Println("running win hooks")
@@ -77,6 +105,30 @@ func (f *FileLoop) runWinHooks(w *Win) {
 	}
 }
 
+func (f *FileLoop) runKeyCmdHooks(event Event) Event {
+	if f.debug {
+		log.Println("running key cmd hooks")
+	}
+	r, _ := utf8.DecodeRune(event.Text)
+	keyCmdHook := f.keyCmdHooks[r]
+	if keyCmdHook == nil {
+		return event
+	}
+	if f.debug {
+		log.Printf("found key cmd for %c", r)
+	}
+	condition := keyCmdHook.Condition
+	if condition(event) {
+		if f.debug {
+			log.Printf("%c condition met")
+		}
+		fn := keyCmdHook.Handler
+		evt := fn(event)
+		return evt
+	}
+	return event
+}
+
 func (f *FileLoop) runEventHooks(event Event) Event {
 	if f.debug {
 		log.Println("running event hooks")
@@ -85,17 +137,6 @@ func (f *FileLoop) runEventHooks(event Event) Event {
 	hooks := f.eventHooks[event.Builtin]
 	if len(hooks) == 0 {
 		return event
-	}
-	
-	r, _ := utf8.DecodeRune(event.Text)
-	keyCmdHook := f.keyCmdHooks[r]
-	if keyCmdHook != nil {
-		condition := keyCmdHook.Condition
-		if condition(event) {
-			fn := keyCmdHook.Handler
-			evt := fn(event)
-			return evt
-		}
 	}
 
 	// allow progressive mutation of event
