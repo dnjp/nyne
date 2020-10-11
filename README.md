@@ -1,7 +1,13 @@
+
 <div style="text-align:center">
   <img src="https://git.sr.ht/~danieljamespost/nyne/blob/master/resources/glenda.jpg" alt="drawing" width="200"/>
   <p style="font-style: italic;">By Renée French</p>
 </div>
+
+# Moved
+
+Source has moved to [git.sr.ht/~danieljamespost/nyne](https://git.sr.ht/~danieljamespost/nyne)
+
 
 # Nyne
 Nyne automates what are typically manual tasks when using Acme. Instead
@@ -61,11 +67,3 @@ this [interactive guide](https://git-send-email.io/) for how
 to set it up and get comfortable with the workflow. Patches
 or questions about the submission process can be sent to
 [~danieljamespost/nyne@lists.sr.ht](mailto:~danieljamespost/nyne@lists.sr.ht).
-
-
-
-
-
- 
-
-
