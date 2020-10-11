@@ -1,4 +1,4 @@
-![](./resources/glenda.jpg)
+![](./resources/glenda.jpg =250x)
 *By Renée French*
 
 # Nyne
