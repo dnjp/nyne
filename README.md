@@ -1,5 +1,6 @@
-
-<img src="https://git.sr.ht/~danieljamespost/nyne/blob/0.1/resources/glenda.jpg" alt="drawing" width="200"/>
+<div style="text-align:center">
+  <img src="https://git.sr.ht/~danieljamespost/nyne/blob/0.1/resources/glenda.jpg" alt="drawing" width="200"/>
+</div>
 
 *By Renée French*
 
