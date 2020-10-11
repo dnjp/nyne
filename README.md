@@ -20,7 +20,7 @@ go get git.sr.ht/~danieljamespost/nyne/cmd/nyne
 Configuration for Nyne is done through a
 [TOML](https://github.com/toml-lang/toml) formatted config file
 located at $HOME/.config/nyne/nyne.toml by default. You can copy the
-[example](./example.toml) to this location and modify it for your
+[example](./examle.toml) to this location and modify it for your
 needs to give it a try. The path to the config file can also be
 set by exporting the $NYNERULES variable in your environment like
 `NYNERULES=/home/daniel/.nyne`. As you can see in the example, Nyne
