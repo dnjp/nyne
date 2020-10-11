@@ -2,6 +2,7 @@ package event
 
 import (
 	"log"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -130,10 +131,7 @@ func (a *Acme) Listen() error {
 }
 
 func (a *Acme) startEventLoop(f *FileLoop) {
-	err := f.Start()
-	if err != nil {
-		log.Println(err)
-	}
+	log.Fatal(f.Start())
 }
 
 func (a *Acme) isDisabled(id int) bool {
@@ -168,9 +166,12 @@ func (a *Acme) mapWindows() error {
 func (a *Acme) GetEventLoopByID(id int) *FileLoop {
 	return a.eventLoops[id]
 }
+
 func (f *FileLoop) GetWin() *Win {
 	return f.Win
 }
+
+var lastpoint int = 0
 func (f *FileLoop) Start() error {
 	if f.debug {
 		log.Println("opening acme window")
@@ -199,6 +200,7 @@ func (f *FileLoop) Start() error {
 		}
 
 		if event.Origin == Keyboard {
+			lastpoint = event.SelBegin
 			event = f.runKeyCmdHooks(event)
 		}
 
@@ -220,6 +222,19 @@ func (f *FileLoop) Start() error {
 			log.Printf("NewEvent: %+v\n", event)
 		}
 		f.Win.WriteEvent(event)
+		
+		// TODO: encapsulate this as an optional post save hook
+		if event.Builtin == PUT {
+			if err := f.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
+				return err
+			}
+			if err := f.Win.SetTextToAddr(); err != nil {
+				return err
+			}
+			if err := f.Win.ExecShow(); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

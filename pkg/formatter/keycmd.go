@@ -10,19 +10,19 @@ import (
 
 // Keymap contains parameters for constructing a custom keymap
 type Keymap struct {
-	GetWinFn func(int) (*event.Win, error)
+	GetWinFn    func(int) (*event.Win, error)
 	GetIndentFn func(event.Event) int
 }
 
 // Tabexpand expands tabs to spaces
 func (k *Keymap) Tabexpand(condition event.Condition) event.KeyCmdHook {
 	return event.KeyCmdHook{
-		Key: '\t',
+		Key:       '\t',
 		Condition: condition,
 		Handler: func(evt event.Event) event.Event {
 			if !condition(evt) {
 				return evt
-			}	
+			}
 			win, err := k.GetWinFn(evt.ID)
 			if err != nil {
 				log.Println(err)
