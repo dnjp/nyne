@@ -1,13 +1,10 @@
-#######################
+###########################
 #
 #  Tag Configuration options
 #
-#######################
+###########################
 [tag]
 	menu = [
-	  "Put",
-	  "Undo",
-	  "Redo",
 	  "|fmt",
 	  "|com",
 	  "|ui",
@@ -18,11 +15,11 @@
 	  "win"
 	]
 
-#######################
+###########################
 #
 #  Buffer Formatting Options
 #
-#######################
+###########################
 [format]
 	# This will automatically format Go buffers with hard tabs and 8
 	# character width indentation
