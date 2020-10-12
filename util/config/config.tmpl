@@ -1,0 +1,16 @@
+package internal
+
+// GENERATED CODE: DO NOT EDIT
+type Spec struct {
+	{{ range .SpecProps }}
+	{{ .Name }} {{ .DataType }}
+	{{ end }}
+}
+
+var FmtConfig map[string]*Spec = make(map[string]*Spec)
+
+func Init() {
+	{{ range .Specs }}
+	FmtConfig[{{ .Ext }}] = {{ .Spec }}
+	{{ end }}	
+}

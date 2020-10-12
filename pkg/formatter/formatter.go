@@ -154,6 +154,9 @@ func (n *Nyne) WriteMenu(w *event.Win) error {
 	}
 
 	for _, opt := range n.menu {
+		if strings.Contains(opt, " ") {
+			opt = fmt.Sprintf("(%s)", opt)
+		}
 		cmd := fmt.Sprintf("  %s", opt)
 		if err := w.WriteToTag(cmd); err != nil {
 			return err
@@ -176,6 +179,11 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 	}
 	if err := w.ExecInTag("Tab", strconv.Itoa(spec.Indent)); err != nil {
 		return err
+	}
+	if spec.Tabexpand {
+		if err := w.ExecInTag("tabexpand=true"); err != nil {
+			return err
+		}
 	}
 	return nil
 }

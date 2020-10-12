@@ -26,6 +26,9 @@ ui:
 install:
 	go install cmd/nynetab/nynetab.go
 	go install cmd/nyne/nyne.go
+	go install cmd/com/com.go
+	go install cmd/ind/ind.go
+	go install cmd/ui/ui.go
 	
 check:
 	go test -count=1 ./...
