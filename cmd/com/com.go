@@ -1,12 +1,11 @@
 package main
 
 import (
-
 	"fmt"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"os"
 	"strings"
 	"unicode"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 func main() {
@@ -24,27 +23,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	out := []string{}
-	for _, line := range strings.Split(string(in), "\n") {
+
+	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
-			out = append(out, line)
-			continue
+			return line
 		}
 		if strings.Contains(line, comment) {
 			nline := strings.Replace(line, comment+" ", "", 1)
-			out = append(out, nline)
-		} else {
-			first := 0
-			for _, ch := range line {
-				if unicode.IsLetter(ch) {
-					break
-				}
-				first += 1	
-			}
-			nline := line[:first] + comment + " " + line[first:]
-			out = append(out, nline)		
+			return nline
 		}
-
-	}
-	fmt.Printf(strings.Join(out, "\n"))
+		first := 0
+		for _, ch := range line {
+			if unicode.IsLetter(ch) {
+				break
+			}
+			first += 1
+		}
+		nline := line[:first] + comment + " " + line[first:]
+		return nline
+	})
 }

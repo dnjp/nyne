@@ -1,12 +1,14 @@
 package io
 
 import (
-	"os"
-	"fmt"
 	"bufio"
+	"fmt"
 	"io"
+	"os"
+	"strings"
 )
 
+// PipeIn reads from piped stdin and returns the result
 func PipeIn() ([]rune, error) {
 	reader := bufio.NewReader(os.Stdin)
 	var in []rune
@@ -21,4 +23,16 @@ func PipeIn() ([]rune, error) {
 		return in, fmt.Errorf("must be used with pipe")
 	}
 	return in, nil
+}
+
+// PipeOut applies the given line transformation for each line before
+// printing to stdout
+func PipeOut(in []rune, fn func(string) string) {
+	out := []string{}
+	lines := strings.Split(string(in), "\n")
+	for _, line := range lines {
+		nline := fn(line)
+		out = append(out, nline)
+	}
+	fmt.Print(strings.Join(out, "\n"))
 }

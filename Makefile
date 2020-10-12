@@ -1,5 +1,5 @@
 
-all: nyne nynetab com
+all: nyne nynetab com ind
 .PHONY: all
 
 
@@ -14,6 +14,10 @@ nynetab:
 .PHONY: com
 com:
 	go build cmd/com/com.go
+
+.PHONY: ind
+ind:
+	go build cmd/ind/ind.go
 
 install:
 	go install cmd/nynetab/nynetab.go
