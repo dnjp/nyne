@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
+
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"unicode"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 func main() {
@@ -20,17 +20,9 @@ func main() {
 		panic(fmt.Errorf("no comment type supplied, " +
 			"expected arg or $COMMENTC"))
 	}
-	reader := bufio.NewReader(os.Stdin)
-	var in []rune
-	for {
-		input, _, err := reader.ReadRune()
-		if err != nil && err == io.EOF {
-			break
-		}
-		in = append(in, input)
-	}
-	if len(in) == 0 {
-		panic("must be used with pipe")
+	in, err := io.PipeIn()
+	if err != nil {
+		panic(err)
 	}
 	out := []string{}
 	for _, line := range strings.Split(string(in), "\n") {
