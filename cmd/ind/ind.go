@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
-	"os"
 	"strconv"
+	"fmt"
+	"os"
 )
 
 func main() {
@@ -16,18 +16,18 @@ func main() {
 		if len(tss) == 0 {
 			panic(fmt.Errorf("$tabstop not set"))
 		}
-		nts, err := strconv.Atoi(tss)
+		nts, err := strconv.Atoi(tss)	
 		if err != nil {
 			panic(err)
 		}
 		ts = nts
 	}
-
+	
 	in, err := io.PipeIn()
 	if err != nil {
 		panic(err)
 	}
-
+	
 	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
@@ -37,9 +37,8 @@ func main() {
 			for i := 0; i < ts; i++ {
 				tab += " "
 			}
-			return tab
+			return tab+line
 		}
-		nline := "\t" + line
-		return nline
-	})
+		return "\t" + line
+	})	
 }
