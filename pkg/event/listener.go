@@ -137,7 +137,7 @@ func (a *Acme) handleNewOp(id int) {
 
 func (a *Acme) isDisabled(id int) bool {
 	filename := a.windows[id]
-	disabledNames := []string{"/-", "Del", "xplor"}
+	disabledNames := []string{"/-", "Del", "xplor", "+Errors"}
 	for _, name := range disabledNames {
 		if strings.Contains(filename, name) {
 			return true
