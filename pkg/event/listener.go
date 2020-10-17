@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -209,19 +208,6 @@ func (b *Buf) Start() error {
 		}
 
 		b.Win.WriteEvent(event)
-
-		// maintain current address after formatting buffer
-		if event.Builtin == PUT {
-			if err := b.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
-				return err
-			}
-			if err := b.Win.SetTextToAddr(); err != nil {
-				return err
-			}
-			if err := b.Win.ExecShow(); err != nil {
-				return err
-			}
-		}
 	}
 	return nil
 }

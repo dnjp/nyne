@@ -239,6 +239,18 @@ func (n *Nyne) WriteUpdates(evt event.Event, updates [][]byte) error {
 		if err := w.SetData(update); err != nil {
 			return err
 		}
+		if len(update) > w.Lastpoint {
+			w.Lastpoint = len(update)
+		}
+		if err := w.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
+			return err
+		}
+		if err := w.SetTextToAddr(); err != nil {
+			return err
+		}
+		if err := w.ExecShow(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
