@@ -180,7 +180,6 @@ func (b *Buf) Start() error {
 	// runs hooks for acme 'new' event
 	b.runWinHooks(b.Win)
 
-	lastpoint := 0
 	for e := range b.Win.OpenEventChan() {
 		if b.debug {
 			log.Printf("RAW: %+v\n", *e)
@@ -192,7 +191,7 @@ func (b *Buf) Start() error {
 		}
 
 		if event.Origin == Keyboard {
-			lastpoint = event.SelBegin
+			w.Lastpoint = event.SelBegin
 			event = b.runKeyCmdHooks(event)
 		} else {
 			if event.Origin == DelOrigin && event.Type == DelType {
