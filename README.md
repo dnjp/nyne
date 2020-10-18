@@ -72,6 +72,7 @@ commentstyle = "// "
     printsToStdout = true
 ```
 
+
 Think of `nyne.toml` as the equavalent of a `config.def.h` file used to
 configure many C programs. Because this file is used to generate static
 configuration for Nyne that is baked into the binary, any changes made
