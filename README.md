@@ -72,7 +72,6 @@ commentstyle = "// "
     printsToStdout = true
 ```
 
-
 Think of `nyne.toml` as the equavalent of a `config.def.h` file used to
 configure many C programs. Because this file is used to generate static
 configuration for Nyne that is baked into the binary, any changes made
@@ -92,7 +91,7 @@ page and follow the installation guide for your system.
 To install nyne, first clone this repository:
 
 ```
-%: git clone https://git.sr.ht/~danieljamespost/nyne
+%: git clone https://git.sr.ht/~danieljamespost/nyne --branch 0.1.1 --single-branch
 ```
 
 Then use [mk](https://9fans.github.io/plan9port/man/man1/mk.html) to
