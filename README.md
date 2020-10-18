@@ -37,7 +37,7 @@ to this file after build will not be noticed. In order for the changes
 to be picked up, you must rebuild nyne and restart the `nyne` executable
 if already running.
 
-## Scratch Area
+### Scratch Area
 
 In the [example](./example.toml), you will see a section marked "tag"
 at the top. This section contains one configuration for the "menu"
@@ -62,7 +62,7 @@ Along with the default "Put", "Undo", and "Redo" commands, these menu
 options will be written to the acme scratch area when a new window
 is opened.
 
-## Code Formatting
+### Code Formatting
 
 Looking at the `format` block in the [example](./example.toml) configuration file, you
 will see a block for each language that looks like the following. The
