@@ -5,11 +5,11 @@
 
 # Nyne
 
-Nyne automates what are typically manual tasks when using Acme. Instead
-of needing to set custom indentation settings and manually run external
-commands like clang-format against your file, Nyne does all of that for
-you. It can also optionally expand hard tabs to soft tabs, which is a
-feature not included in Acme by default.
+Nyne automates what are typically manual tasks when using Acme. Think of
+nyne as the `.vimrc` of Acme. Instead of needing to set custom indentation
+settings and manually run external commands like clang-format against your
+file, nyne does all of that for you. It can also optionally expand hard
+tabs to soft tabs, which is a feature not included in Acme by default.
 
 Included in a full install of nyne are bundled utilities for acme:
 
