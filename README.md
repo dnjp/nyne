@@ -33,11 +33,12 @@ to this location and modify it for your needs before building nyne.
 Think of `nyne.toml` as roughly the equavalent of a `config.h` file used
 to configure many C programs. Because this file is used to generate static
 configuration for Nyne that is baked into the binary, any changes made
-to this file after build will not be noticed. In order for the changes
-to be picked up, you must rebuild nyne and restart the `nyne` executable
-if already running. This has the added benefit that the bundled utilities
-can executed without nyne running and without having to re-read a config
-file while maintaining all of your configuration options.
+to this file after build will not be noticed. In order for the changes to
+be picked up, you must rebuild nyne and restart the `nyne` executable if
+already running. This has the added benefit that the bundled utilities
+can be executed without nyne running and without having to re-read a
+config file while maintaining all of your configuration options.
+
 
 ### Scratch Area
 
