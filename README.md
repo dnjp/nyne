@@ -16,8 +16,8 @@ Included in a full install of nyne are bundled utilities for acme:
 - `nyne`: The core autoformatting engine that is run from within acme
 - `nynetab`: Implements tab expansion for the given buffer if not configured
   for nyne
-- `a+`: Indent selected source code `a-`: Unindent selected source
-  code
+- `a+`: Indent selected source code
+- `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
 
 ## Configuration
