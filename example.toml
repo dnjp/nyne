@@ -138,7 +138,11 @@
 	
 		[[format.markdown.commands]]
 		exec = "prettier"
-		args = [ "$NAME", "--write", "--loglevel", "error" ]
+		args = [ 
+			"--print-width", "80", 
+			"--prose-wrap", "always", 
+			"--write", "$NAME",
+		]
 		printsToStdout = false	
 
 	[format.toml]
