@@ -22,11 +22,11 @@ Included in a full install of nyne are bundled utilities for acme:
 
 ## Configuration
 
-Nyne and the bundled utilities use a
-[TOML](https://github.com/toml-lang/toml)configuration file during the build to
-generate static code used for all formatting rules. This file is expected to be
-located at `$HOME/.config/nyne/nyne.toml` by default, but can be overriden by by
-exporting the `$NYNERULES` variable in your environment like
+Nyne and the bundled utilities use a [TOML](https://github.com/toml-lang/toml)
+configuration file during the build to generate static code used for all
+formatting rules. This file is expected to be located at
+`$HOME/.config/nyne/nyne.toml` by default, but can be overriden by by exporting
+the `$NYNERULES` variable in your environment like
 `NYNERULES=/home/daniel/.nyne`. Copy the [example](./example.toml) to this
 location and modify it for your needs beforebuilding nyne.
 
