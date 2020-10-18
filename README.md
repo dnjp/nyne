@@ -84,7 +84,11 @@ indent = 8
 # indentation
 tabexpand = false
 
-# A string that contains the comment style for the given language
+# A string that contains the comment style for the given language.
+# If the comment style has a defined start and end comment structure
+# (/* */ in C), then set commentstyle to the complete comment structure
+# like this: `commentstyle = "/* */"`. com will infer that this means /*
+# should be placed at the beginning and */ should be placed at the end.
 commentstyle = "// "
 
     # The "commands" blocks is used to define the external program to
