@@ -33,7 +33,7 @@ func main() {
 			return line
 		}
 		if strings.Contains(line, comment) {
-			nline := strings.Replace(line, comment+" ", "", 1)
+			nline := strings.Replace(line, comment, "", 1)
 			return nline
 		}
 		first := 0
@@ -41,9 +41,9 @@ func main() {
 			if unicode.IsLetter(ch) {
 				break
 			}
-			first += 1
+			first++
 		}
-		nline := line[:first] + comment + " " + line[first:]
+		nline := line[:first] + comment + line[first:]
 		return nline
 	})
 }

@@ -11,7 +11,8 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
-type TC struct {
+// GenConf is the configuration for the generated formatting specification
+type GenConf struct {
 	Ext          string
 	Indent       int
 	Tabexpand    bool
@@ -19,7 +20,7 @@ type TC struct {
 }
 
 var tmpl string = `
-// GENERATED CODE - DO NOT EDIT
+// Package gen CONTAINS GENERATED CODE - DO NOT EDIT
 package gen
 
 import "strings"
@@ -43,6 +44,7 @@ var Conf = map[string]Spec{
 {{ end }}
 }
 
+// GetExt parses the file extension given a file name
 func GetExt(in string, def string) string {
 	filename := GetFileName(in)
 	if !strings.Contains(filename, ".") {
@@ -55,6 +57,7 @@ func GetExt(in string, def string) string {
 	return "." + pts[len(pts)-1]
 }
 
+// GetFileName takes the absolute path to a file and returns just the name of the file
 func GetFileName(in string) string {
 	path := strings.Split(in, "/")
 	return path[len(path)-1]
@@ -77,10 +80,10 @@ func main() {
 		panic(err)
 	}
 
-	specs := []TC{}
+	specs := []GenConf{}
 	for _, spec := range conf.Format {
 		for _, ext := range spec.Extensions {
-			ts := TC{
+			ts := GenConf{
 				Ext:          ext,
 				CommentStyle: spec.CommentStyle,
 				Indent:       spec.Indent,
