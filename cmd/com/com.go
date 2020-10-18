@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"git.sr.ht/~danieljamespost/nyne/gen"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"os"
 	"strings"
@@ -13,7 +14,10 @@ func main() {
 	if len(os.Args) > 1 {
 		comment = os.Args[1]
 	} else {
-		comment = os.Getenv("COMMENTC")
+		filename := gen.GetFileName(os.Getenv("samfile"))
+		ext := gen.GetExt(filename, ".txt")
+		comment = gen.Conf[ext].CommentStyle
+
 	}
 	if len(comment) == 0 {
 		panic(fmt.Errorf("no comment type supplied, " +

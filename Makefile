@@ -25,7 +25,8 @@ ui:
 	
 .PHONY: gen
 gen:
-	go build cmd/gen/gen.go	
+	mkdir -p ./gen
+	go run cmd/gen/gen.go > ./gen/gen.go
 
 install:
 	go install cmd/nynetab/nynetab.go

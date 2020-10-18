@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"git.sr.ht/~danieljamespost/nyne/gen"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"os"
 	"strconv"
@@ -9,17 +10,15 @@ import (
 )
 
 func main() {
-	ts := 0
-	te := false
-	if len(os.Getenv("tabexpand")) > 0 {
-		te = true
-		tss := os.Getenv("tabstop")
-		if len(tss) == 0 {
-			panic(fmt.Errorf("$tabstop not set"))
-		}
-		nts, err := strconv.Atoi(tss)
+	filename := gen.GetFileName(os.Getenv("samfile"))
+	ext := gen.GetExt(filename, ".txt")
+	spec := gen.Conf[ext]
+	ts := spec.Indent
+	te := spec.Tabexpand
+	if ts == 0 {
+		nts, err := strconv.Atoi(os.Getenv("tabstop"))
 		if err != nil {
-			panic(err)
+			panic(fmt.Errorf("invalid $tabstop: %v", err))
 		}
 		ts = nts
 	}

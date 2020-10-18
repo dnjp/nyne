@@ -18,10 +18,10 @@ type Tag struct {
 // Spec contains the formatting specified by the config file
 type Spec struct {
 	CommentStyle string
-	Indent     int
-	Tabexpand  bool
-	Extensions []string
-	Commands   []Command
+	Indent       int
+	Tabexpand    bool
+	Extensions   []string
+	Commands     []Command
 }
 
 // Command contains options for executing a given command against an
