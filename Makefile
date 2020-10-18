@@ -1,5 +1,5 @@
 
-all: nyne nynetab com ind ui
+all: nyne nynetab com ind ui gen
 .PHONY: all
 
 
@@ -22,6 +22,10 @@ ind:
 .PHONY: ui
 ui:
 	go build cmd/ui/ui.go
+	
+.PHONY: gen
+gen:
+	go build cmd/gen/gen.go	
 
 install:
 	go install cmd/nynetab/nynetab.go
