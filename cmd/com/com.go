@@ -20,20 +20,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	var startcom string
 	var endcom string
 	parts := strings.Split(comment, " ")
 	if len(parts) > 1 {
-		startcom = parts[0]+" "
-		endcom = " "+parts[1]
+		startcom = parts[0] + " "
+		endcom = " " + parts[1]
 	}
 
 	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
 		}
-		
+
 		if len(parts) > 0 {
 			hasbegin := strings.Contains(line, startcom)
 			hasend := strings.Contains(line, endcom)
@@ -48,8 +48,7 @@ func main() {
 				return nline
 			}
 		}
-		
-		
+
 		first := 0
 		for _, ch := range line {
 			if ch == ' ' || ch == '\t' {

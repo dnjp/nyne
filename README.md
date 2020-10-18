@@ -35,7 +35,9 @@ to configure many C programs. Because this file is used to generate static
 configuration for Nyne that is baked into the binary, any changes made
 to this file after build will not be noticed. In order for the changes
 to be picked up, you must rebuild nyne and restart the `nyne` executable
-if already running.
+if already running. This has the added benefit that the bundled utilities
+can executed without nyne running and without having to re-read a config
+file while maintaining all of your configuration options.
 
 ### Scratch Area
 
@@ -169,8 +171,11 @@ used to convert tabs to spaces when you enter `tab` with your keyboard.
 ### nynetab
 
 Nynetab is what is used under the hood for tab expansion in nyne. If
-you are editing a buffer that is not managed by nyne, simply execute
-`nynetab <tab size>` in an Acme buffer to begin tab expansion.
+you are editing a buffer that has an extension not configured for
+nyne, simply execute `nynetab <tab size>` in an Acme buffer to begin
+tab expansion. Otherwise, simply executing `nynetab` will start tab
+expansion using your configured settings.
+
 
 ### a+/a-
 
