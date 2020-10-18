@@ -26,6 +26,56 @@ type GenSpec struct {
 	Commands     []config.Command
 }
 
+func main() {
+
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	cfgPath := fmt.Sprintf("%s/.config/nyne/nyne.toml", usr.HomeDir)
+	npath := os.Getenv("NYNERULES")
+	if len(npath) > 0 {
+		cfgPath = npath
+	}
+	conf, err := config.Load(cfgPath)
+	if err != nil {
+		panic(err)
+	}
+
+	specs := []GenSpec{}
+	for _, spec := range conf.Format {
+		for _, ext := range spec.Extensions {
+			ts := GenSpec{
+				Ext:          ext,
+				CommentStyle: spec.CommentStyle,
+				Indent:       spec.Indent,
+				Tabexpand:    spec.Tabexpand,
+				Commands:     spec.Commands,
+			}
+			specs = append(specs, ts)
+		}
+	}
+	cfg := GenConf{
+		Menu:  conf.Tag.Menu,
+		Specs: specs,
+	}
+
+	t, err := template.New("").Parse(tmpl)
+	if err != nil {
+		panic(err)
+	}
+	var buf bytes.Buffer
+	err = t.Execute(&buf, cfg)
+	if err != nil {
+		panic(err)
+	}
+	out, err := format.Source(buf.Bytes())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(out))
+}
+
 var tmpl string = `
 // Package gen CONTAINS GENERATED CODE - DO NOT EDIT
 package gen
@@ -97,55 +147,4 @@ func GetExt(in string, def string) string {
 func GetFileName(in string) string {
 	path := strings.Split(in, "/")
 	return path[len(path)-1]
-}
-`
-
-func main() {
-
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	cfgPath := fmt.Sprintf("%s/.config/nyne/nyne.toml", usr.HomeDir)
-	npath := os.Getenv("NYNERULES")
-	if len(npath) > 0 {
-		cfgPath = npath
-	}
-	conf, err := config.Load(cfgPath)
-	if err != nil {
-		panic(err)
-	}
-
-	specs := []GenSpec{}
-	for _, spec := range conf.Format {
-		for _, ext := range spec.Extensions {
-			ts := GenSpec{
-				Ext:          ext,
-				CommentStyle: spec.CommentStyle,
-				Indent:       spec.Indent,
-				Tabexpand:    spec.Tabexpand,
-				Commands:     spec.Commands,
-			}
-			specs = append(specs, ts)
-		}
-	}
-	cfg := GenConf{
-		Menu:  conf.Tag.Menu,
-		Specs: specs,
-	}
-
-	t, err := template.New("").Parse(tmpl)
-	if err != nil {
-		panic(err)
-	}
-	var buf bytes.Buffer
-	err = t.Execute(&buf, cfg)
-	if err != nil {
-		panic(err)
-	}
-	out, err := format.Source(buf.Bytes())
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(out))
-}
+}`

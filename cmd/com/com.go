@@ -6,19 +6,12 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"os"
 	"strings"
-	"unicode"
 )
 
 func main() {
-	var comment string
-	if len(os.Args) > 1 {
-		comment = os.Args[1]
-	} else {
-		filename := gen.GetFileName(os.Getenv("samfile"))
-		ext := gen.GetExt(filename, ".txt")
-		comment = gen.Conf[ext].CommentStyle
-
-	}
+	filename := gen.GetFileName(os.Getenv("samfile"))
+	ext := gen.GetExt(filename, ".txt")
+	comment := gen.Conf[ext].CommentStyle
 	if len(comment) == 0 {
 		panic(fmt.Errorf("no comment type supplied, " +
 			"expected arg or $COMMENTC"))
@@ -38,10 +31,11 @@ func main() {
 		}
 		first := 0
 		for _, ch := range line {
-			if unicode.IsLetter(ch) {
-				break
+			if ch == ' ' || ch == '\t' {
+				first++
+				continue
 			}
-			first++
+			break
 		}
 		nline := line[:first] + comment + line[first:]
 		return nline
