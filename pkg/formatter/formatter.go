@@ -9,59 +9,39 @@ import (
 	"strconv"
 	"strings"
 
+	"git.sr.ht/~danieljamespost/nyne/gen"
 	"git.sr.ht/~danieljamespost/nyne/pkg/event"
-	"git.sr.ht/~danieljamespost/nyne/util/config"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the active buffer
 type Formatter interface {
 	Run()
-	ExecCmds(event event.Event, cmds []config.Command, ext string) error
+	ExecCmds(event event.Event, cmds []gen.Command, ext string) error
 	WriteMenu(w *event.Win) error
-	SetupFormatting(*event.Win, *config.Spec) error
-	Refmt(event.Event, config.Command, string) ([]byte, error)
+	SetupFormatting(*event.Win, gen.Spec) error
+	Refmt(event.Event, gen.Command, string) ([]byte, error)
 }
 
 // Nyne implements the Formatter inferface for $NYNERULES
 type Nyne struct {
-	specs         map[string]*config.Spec
-	menu          []string
 	listener      event.Listener
 	debug         bool
 	extWithoutDot []string
 }
 
 // New constructs a Formatter that uses $NYNERULES for formatting
-func New(conf *config.Config) Formatter {
+func New() Formatter {
 	n := &Nyne{
-		specs:         make(map[string]*config.Spec),
-		menu:          conf.Tag.Menu,
 		listener:      event.NewListener(),
 		debug:         len(os.Getenv("DEBUG")) > 0,
 		extWithoutDot: []string{},
 	}
 
-	// map formatting spec to extension name
-	for _, spec := range conf.Format {
-		copy := &config.Spec{
-			Indent:     spec.Indent,
-			Tabexpand:  spec.Tabexpand,
-			Extensions: spec.Extensions,
-			Commands:   spec.Commands,
-		}
-		for _, ext := range copy.Extensions {
-			if !strings.Contains(ext, ".") {
-				n.extWithoutDot = append(n.extWithoutDot, ext)
-			}
-			n.specs[ext] = copy
-		}
-	}
-
 	n.listener.RegisterWinHook(event.WinHook{
 		Handler: func(w *event.Win) {
 			spec, _ := n.getSpec(w.File)
-			if spec != nil {
+			if spec.Indent == 0 {
 				n.SetupFormatting(w, spec)
 			}
 			err := n.WriteMenu(w)
@@ -74,7 +54,7 @@ func New(conf *config.Config) Formatter {
 	n.listener.RegisterPutHook(event.PutHook{
 		Handler: func(evt event.Event) event.Event {
 			spec, ext := n.getSpec(evt.File)
-			if spec == nil {
+			if spec.Indent == 0 {
 				return evt
 			}
 			err := n.ExecCmds(evt, spec.Commands, ext)
@@ -96,7 +76,7 @@ func New(conf *config.Config) Formatter {
 		},
 		GetIndentFn: func(evt event.Event) int {
 			spec, _ := n.getSpec(evt.File)
-			if spec == nil {
+			if spec.Indent == 0 {
 				return 8 // default
 			}
 			return spec.Indent
@@ -106,9 +86,6 @@ func New(conf *config.Config) Formatter {
 	// Tabexpand
 	n.listener.RegisterKeyCmdHook(km.Tabexpand(func(evt event.Event) bool {
 		spec, _ := n.getSpec(evt.File)
-		if spec == nil {
-			return false
-		}
 		return spec.Tabexpand
 	}))
 
@@ -122,7 +99,7 @@ func (n *Nyne) Run() {
 
 // ExecCmds executes commands that operate on stdin/stdout against the
 // Acme buffer
-func (n *Nyne) ExecCmds(evt event.Event, cmds []config.Command, ext string) error {
+func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
 		new, err := n.Refmt(evt, cmd, ext)
@@ -153,7 +130,7 @@ func (n *Nyne) WriteMenu(w *event.Win) error {
 		return err
 	}
 
-	for _, opt := range n.menu {
+	for _, opt := range gen.Menu {
 		if strings.Contains(opt, " ") {
 			opt = fmt.Sprintf("(%s)", opt)
 		}
@@ -167,7 +144,7 @@ func (n *Nyne) WriteMenu(w *event.Win) error {
 
 // SetupFormatting opens the Acme buffer for writing and applies the
 // indentation and tab expansion options provided in $NYNERULES
-func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
+func (n *Nyne) SetupFormatting(w *event.Win, spec gen.Spec) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *event.Win is nil")
 	}
@@ -190,7 +167,7 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec *config.Spec) error {
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer
 // with updated contents
-func (n *Nyne) Refmt(evt event.Event, cmd config.Command, ext string) ([]byte, error) {
+func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, error) {
 	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
@@ -263,34 +240,8 @@ func replaceName(arr []string, name string) []string {
 	return newArr
 }
 
-func (n *Nyne) getSpec(file string) (*config.Spec, string) {
-	ext := n.getExt(file, ".txt")
-	spec := n.specs[ext]
+func (n *Nyne) getSpec(file string) (gen.Spec, string) {
+	ext := gen.GetExt(file, ".txt")
+	spec := gen.Conf[ext]
 	return spec, ext
-}
-
-func (n *Nyne) getExt(in string, def string) string {
-	filename := getFileName(in)
-	if includes(filename, n.extWithoutDot) {
-		return filename
-	}
-	pts := strings.Split(filename, ".")
-	if len(pts) == len(in) {
-		return def
-	}
-	return "." + pts[len(pts)-1]
-}
-
-func getFileName(in string) string {
-	path := strings.Split(in, "/")
-	return path[len(path)-1]
-}
-
-func includes(in string, dat []string) bool {
-	for _, val := range dat {
-		if val == in {
-			return true
-		}
-	}
-	return false
 }

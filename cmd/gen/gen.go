@@ -11,12 +11,19 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
-// GenConf is the configuration for the generated formatting specification
+// GenConf contains the specification for generating a static configuration
 type GenConf struct {
+	Menu  []string
+	Specs []GenSpec
+}
+
+// GenSpec is the configuration for the generated formatting specification
+type GenSpec struct {
 	Ext          string
 	Indent       int
 	Tabexpand    bool
 	CommentStyle string
+	Commands     []config.Command
 }
 
 var tmpl string = `
@@ -25,21 +32,50 @@ package gen
 
 import "strings"
 
+// Menu contains the menu options that should be written to the scratch buffer
+var Menu = []string{ 
+	{{ range .Menu }}
+	"{{ . }}",
+	{{ end }}
+}
+
+// Command contains options for executing a given command against an
+// acme window
+type Command struct {
+	Exec           string
+	Args           []string
+	PrintsToStdout bool
+}
+
 // Spec contains the formatting specification for a given file extension
 type Spec struct {
 	Ext string
 	Indent int
 	Tabexpand bool
 	CommentStyle string
+	Commands []Command
 }
 
 // Conf maps file extensions to their formatting specification
 var Conf = map[string]Spec{
-{{ range . }}
+{{ range .Specs }}
 	"{{ .Ext}}": {
 		Indent: {{ .Indent }},
 		Tabexpand: {{ .Tabexpand }},
 		CommentStyle: "{{ .CommentStyle }}",
+		Commands: []Command{
+			{{ range .Commands }}
+			{
+				Exec: "{{ .Exec }}",
+				Args: []string{
+					{{ range .Args }}
+					"{{ . }}",
+					{{ end }}
+				},
+				PrintsToStdout: {{ .PrintsToStdout }},
+			},
+			{{ end }}
+		},
 	},
 {{ end }}
 }
@@ -80,17 +116,22 @@ func main() {
 		panic(err)
 	}
 
-	specs := []GenConf{}
+	specs := []GenSpec{}
 	for _, spec := range conf.Format {
 		for _, ext := range spec.Extensions {
-			ts := GenConf{
+			ts := GenSpec{
 				Ext:          ext,
 				CommentStyle: spec.CommentStyle,
 				Indent:       spec.Indent,
 				Tabexpand:    spec.Tabexpand,
+				Commands:     spec.Commands,
 			}
 			specs = append(specs, ts)
 		}
+	}
+	cfg := GenConf{
+		Menu:  conf.Tag.Menu,
+		Specs: specs,
 	}
 
 	t, err := template.New("").Parse(tmpl)
@@ -98,7 +139,7 @@ func main() {
 		panic(err)
 	}
 	var buf bytes.Buffer
-	err = t.Execute(&buf, specs)
+	err = t.Execute(&buf, cfg)
 	if err != nil {
 		panic(err)
 	}
