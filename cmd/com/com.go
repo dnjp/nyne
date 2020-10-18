@@ -20,15 +20,36 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	
+	var startcom string
+	var endcom string
+	parts := strings.Split(comment, " ")
+	if len(parts) > 1 {
+		startcom = parts[0]+" "
+		endcom = " "+parts[1]
+	}
 
 	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
 		}
-		if strings.Contains(line, comment) {
-			nline := strings.Replace(line, comment, "", 1)
-			return nline
+		
+		if len(parts) > 0 {
+			hasbegin := strings.Contains(line, startcom)
+			hasend := strings.Contains(line, endcom)
+			if hasbegin && hasend {
+				nline := strings.Replace(line, startcom, "", 1)
+				nline = strings.Replace(nline, endcom, "", 1)
+				return nline
+			}
+		} else {
+			if strings.Contains(line, comment) {
+				nline := strings.Replace(line, comment, "", 1)
+				return nline
+			}
 		}
+		
+		
 		first := 0
 		for _, ch := range line {
 			if ch == ' ' || ch == '\t' {
@@ -37,7 +58,12 @@ func main() {
 			}
 			break
 		}
-		nline := line[:first] + comment + line[first:]
+		var nline string
+		if len(parts) > 1 {
+			nline = line[:first] + startcom + line[first:] + endcom
+		} else {
+			nline = line[:first] + comment + line[first:]
+		}
 		return nline
 	})
 }

@@ -42,7 +42,7 @@
 	extensions = [".c", ".h"]
 	indent = 8
 	tabexpand = false
-	commentstyle = "// "
+	commentstyle = "/* */"
 
 		[[format.c.commands]]
 		exec = "indent"
@@ -107,6 +107,7 @@
 	extensions = [".html"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "<!-- -->"
 
 	[format.java]
 	extensions = [".java"]
