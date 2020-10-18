@@ -30,8 +30,8 @@ be overriden by by exporting the $NYNERULES variable in your environment
 like `NYNERULES=/home/daniel/.nyne`. Copy the [example](./example.toml)
 to this location and modify it for your needs before building nyne.
 
-Think of `nyne.toml` as the equavalent of a `config.def.h` file used to
-configure many C programs. Because this file is used to generate static
+Think of `nyne.toml` as roughly the equavalent of a `config.h` file used
+to configure many C programs. Because this file is used to generate static
 configuration for Nyne that is baked into the binary, any changes made
 to this file after build will not be noticed. In order for the changes
 to be picked up, you must rebuild nyne and restart the `nyne` executable
