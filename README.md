@@ -40,7 +40,7 @@ if already running.
 ### Scratch Area
 
 In the [example](./example.toml), you will see a section marked "tag"
-at the top. This section contains one configuration for the "menu"
+at the top. This section contains configuration for the "menu"
 that looks like this:
 
 ```
