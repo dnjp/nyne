@@ -212,6 +212,9 @@ func (b *Buf) Start() error {
 
 		// maintain current address after formatting buffer
 		if event.Builtin == PUT {
+			if event.SelEnd < lastpoint || event.OrigSelEnd < lastpoint {
+				continue
+			}
 			if err := b.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
 				return err
 			}
