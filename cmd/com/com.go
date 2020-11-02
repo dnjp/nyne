@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"git.sr.ht/~danieljamespost/nyne/gen"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 	"os"
@@ -13,8 +12,7 @@ func main() {
 	ext := gen.GetExt(filename, ".txt")
 	comment := gen.Conf[ext].CommentStyle
 	if len(comment) == 0 {
-		panic(fmt.Errorf("no comment type supplied, " +
-			"expected arg or $COMMENTC"))
+		comment = "# "
 	}
 	in, err := io.PipeIn()
 	if err != nil {
@@ -25,10 +23,13 @@ func main() {
 	var endcom string
 	parts := strings.Split(comment, " ")
 	if len(parts) > 1 {
-		startcom = parts[0] + " "
-		endcom = " " + parts[1]
+		if len(parts[0]) > 0 {
+			startcom = parts[0] + " "
+		}
+		if len(parts[1]) > 0 {
+			endcom = " " + parts[1]
+		}
 	}
-
 	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
