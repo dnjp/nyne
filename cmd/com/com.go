@@ -47,7 +47,7 @@ func main() {
 				nline = strings.Replace(nline, endcom, "", 1)
 				return nline
 			}
-		} 
+		}
 
 		// find first non-indentation character
 		first := 0
@@ -65,10 +65,10 @@ func main() {
 			return nline
 		}
 
-		// comment line using appropriate comment structure 
+		// comment line using appropriate comment structure
 		if multipart {
 			return line[:first] + startcom + line[first:] + endcom
-		} 
+		}
 		return line[:first] + comment + line[first:]
 	})
 }
