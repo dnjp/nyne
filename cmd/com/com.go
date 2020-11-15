@@ -19,10 +19,12 @@ func main() {
 		panic(err)
 	}
 
+	// parse starting/ending comment parts if present
+	parts := strings.Split(strings.TrimSuffix(comment, " "), " ")
+	multipart := len(parts) > 1
 	var startcom string
 	var endcom string
-	parts := strings.Split(comment, " ")
-	if len(parts) > 1 {
+	if multipart {
 		if len(parts[0]) > 0 {
 			startcom = parts[0] + " "
 		}
@@ -30,12 +32,14 @@ func main() {
 			endcom = " " + parts[1]
 		}
 	}
+
 	io.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
 		}
 
-		if len(parts) > 0 {
+		if multipart {
+			// uncomment multipart commented line
 			hasbegin := strings.Contains(line, startcom)
 			hasend := strings.Contains(line, endcom)
 			if hasbegin && hasend {
@@ -43,13 +47,9 @@ func main() {
 				nline = strings.Replace(nline, endcom, "", 1)
 				return nline
 			}
-		} else {
-			if strings.Contains(line, comment) {
-				nline := strings.Replace(line, comment, "", 1)
-				return nline
-			}
-		}
+		} 
 
+		// find first non-indentation character
 		first := 0
 		for _, ch := range line {
 			if ch == ' ' || ch == '\t' {
@@ -58,12 +58,17 @@ func main() {
 			}
 			break
 		}
-		var nline string
-		if len(parts) > 1 {
-			nline = line[:first] + startcom + line[first:] + endcom
-		} else {
-			nline = line[:first] + comment + line[first:]
+
+		// uncomment line if beginning charcters are the comment
+		if line[first:first+len(comment)] == comment {
+			nline := strings.Replace(line, comment, "", 1)
+			return nline
 		}
-		return nline
+
+		// comment line using appropriate comment structure 
+		if multipart {
+			return line[:first] + startcom + line[first:] + endcom
+		} 
+		return line[:first] + comment + line[first:]
 	})
 }
