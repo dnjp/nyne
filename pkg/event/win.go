@@ -13,6 +13,7 @@ import (
 type Win struct {
 	ID     int
 	File   string
+	Lastpoint int
 	handle *acme.Win
 }
 

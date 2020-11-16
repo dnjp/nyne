@@ -7,8 +7,8 @@
 	menu = [
 	  "|fmt",
 	  "|com",
-	  "|ui",
-	  "|ind",
+	  "|a-",
+	  "|a+",
 	  "Ldef",
 	  "Lrefs",
 	  "Lcomp",
@@ -27,6 +27,7 @@
 	extensions = [".go"]
 	indent = 8
 	tabexpand = false
+	commentstyle = "// "
 	
 		# run gofmt on save
 		[[format.go.commands]]
@@ -41,6 +42,7 @@
 	extensions = [".c", ".h"]
 	indent = 8
 	tabexpand = false
+	commentstyle = "/* */"
 
 		[[format.c.commands]]
 		exec = "indent"
@@ -65,11 +67,13 @@
 	extensions = [".cc", ".cpp", ".hpp", ".cxx", ".hxx"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "// "
 
 	[format.js]
 	extensions = [".js"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "// "
 	
 		[[format.js.commands]]
 		exec = "prettier"
@@ -80,16 +84,19 @@
 	extensions = ["Makefile"]
 	indent = 8
 	tabexpand = false
+	commentstyle = "# "
 	
 	[format.shell]
 	extensions = [".rc", ".sh"]
 	indent = 8
 	tabexpand = false
+	commentstyle = "# "
 
 	[format.tf]
 	extensions = [".tf"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "# "
 	
 		[[format.tf.commands]]
 		exec = "terraform"
@@ -100,11 +107,13 @@
 	extensions = [".html"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "<!-- -->"
 
 	[format.java]
 	extensions = [".java"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "// "
 	
 		[[format.java.commands]]
 		exec = "google-java-format"
@@ -115,6 +124,7 @@
 	extensions = [".yml", ".yaml"]
 	indent = 2
 	tabexpand = true
+	commentstyle = "# "
 
 	[format.json]
 	extensions = [".json"]
@@ -125,8 +135,18 @@
 	extensions = [".md"]
 	indent = 2
 	tabexpand = true
+	
+		[[format.markdown.commands]]
+		exec = "prettier"
+		args = [ 
+			"--print-width", "80", 
+			"--prose-wrap", "always", 
+			"--write", "$NAME",
+		]
+		printsToStdout = false	
 
 	[format.toml]
 	extensions = [".toml"]
 	indent = 8
 	tabexpand = false
+	commentstyle = "# "

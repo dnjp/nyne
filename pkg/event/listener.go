@@ -1,11 +1,11 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
+	"fmt"
 
 	"9fans.net/go/acme"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
@@ -137,7 +137,7 @@ func (a *Acme) handleNewOp(id int) {
 
 func (a *Acme) isDisabled(id int) bool {
 	filename := a.windows[id]
-	disabledNames := []string{"/-", "Del", "xplor"}
+	disabledNames := []string{"/-", "Del", "xplor", "+Errors"}
 	for _, name := range disabledNames {
 		if strings.Contains(filename, name) {
 			return true
@@ -181,7 +181,6 @@ func (b *Buf) Start() error {
 	// runs hooks for acme 'new' event
 	b.runWinHooks(b.Win)
 
-	lastpoint := 0
 	for e := range b.Win.OpenEventChan() {
 		if b.debug {
 			log.Printf("RAW: %+v\n", *e)
@@ -193,7 +192,7 @@ func (b *Buf) Start() error {
 		}
 
 		if event.Origin == Keyboard {
-			lastpoint = event.SelBegin
+			w.Lastpoint = event.SelBegin
 			event = b.runKeyCmdHooks(event)
 		} else {
 			if event.Origin == DelOrigin && event.Type == DelType {
@@ -212,7 +211,14 @@ func (b *Buf) Start() error {
 
 		// maintain current address after formatting buffer
 		if event.Builtin == PUT {
-			if err := b.Win.SetAddr(fmt.Sprintf("#%d", lastpoint)); err != nil {
+			body, err := b.Win.ReadBody()
+			if err != nil {
+				return err
+			}
+			if len(body) < w.Lastpoint {
+				w.Lastpoint = len(body)
+			}
+			if err := b.Win.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
 				return err
 			}
 			if err := b.Win.SetTextToAddr(); err != nil {

@@ -1,0 +1,74 @@
+package main
+
+import (
+	"git.sr.ht/~danieljamespost/nyne/gen"
+	"git.sr.ht/~danieljamespost/nyne/util/io"
+	"os"
+	"strings"
+)
+
+func main() {
+	filename := gen.GetFileName(os.Getenv("samfile"))
+	ext := gen.GetExt(filename, ".txt")
+	comment := gen.Conf[ext].CommentStyle
+	if len(comment) == 0 {
+		comment = "# "
+	}
+	in, err := io.PipeIn()
+	if err != nil {
+		panic(err)
+	}
+
+	// parse starting/ending comment parts if present
+	parts := strings.Split(strings.TrimSuffix(comment, " "), " ")
+	multipart := len(parts) > 1
+	var startcom string
+	var endcom string
+	if multipart {
+		if len(parts[0]) > 0 {
+			startcom = parts[0] + " "
+		}
+		if len(parts[1]) > 0 {
+			endcom = " " + parts[1]
+		}
+	}
+
+	io.PipeOut(in, func(line string) string {
+		if len(line) == 0 {
+			return line
+		}
+
+		if multipart {
+			// uncomment multipart commented line
+			hasbegin := strings.Contains(line, startcom)
+			hasend := strings.Contains(line, endcom)
+			if hasbegin && hasend {
+				nline := strings.Replace(line, startcom, "", 1)
+				nline = strings.Replace(nline, endcom, "", 1)
+				return nline
+			}
+		}
+
+		// find first non-indentation character
+		first := 0
+		for _, ch := range line {
+			if ch == ' ' || ch == '\t' {
+				first++
+				continue
+			}
+			break
+		}
+
+		// uncomment line if beginning charcters are the comment
+		if line[first:first+len(comment)] == comment {
+			nline := strings.Replace(line, comment, "", 1)
+			return nline
+		}
+
+		// comment line using appropriate comment structure
+		if multipart {
+			return line[:first] + startcom + line[first:] + endcom
+		}
+		return line[:first] + comment + line[first:]
+	})
+}
