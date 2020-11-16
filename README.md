@@ -78,23 +78,23 @@ configuration options are documented below.
 # name must be unique
 [format.go]
 
-# An array of strings that include file extensions that nyne should
-# apply the given formatting rules to
-extensions = [".go"]
+    # An array of strings that include file extensions that nyne should
+    # apply the given formatting rules to
+    extensions = [".go"]
 
-# An integer representing the tab width used for indentation
-indent = 8
+    # An integer representing the tab width used for indentation
+    indent = 8
 
-# A boolean that determines whether to use hard tabs or spaces for
-# indentation
-tabexpand = false
+    # A boolean that determines whether to use hard tabs or spaces for
+    # indentation
+    tabexpand = false
 
-# A string that contains the comment style for the given language.
-# If the comment style has a defined start and end comment structure
-# (/* */ in C), then set commentstyle to the complete comment structure
-# like this: `commentstyle = "/* */"`. com will infer that this means /*
-# should be placed at the beginning and */ should be placed at the end.
-commentstyle = "// "
+    # A string that contains the comment style for the given language.
+    # If the comment style has a defined start and end comment structure
+    # (/* */ in C), then set commentstyle to the complete comment structure
+    # like this: `commentstyle = "/* */"`. com will infer that this means /*
+    # should be placed at the beginning and */ should be placed at the end.
+    commentstyle = "// "
 
     # The "commands" blocks is used to define the external program to
     # be run against against your buffer on file save. Any number of these
