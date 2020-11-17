@@ -11,10 +11,10 @@ import (
 
 // Win represents the active Acme window
 type Win struct {
-	ID     int
-	File   string
+	ID        int
+	File      string
 	Lastpoint int
-	handle *acme.Win
+	handle    *acme.Win
 }
 
 // NewWin constructs a Win object from acme window

@@ -60,7 +60,8 @@ func main() {
 		}
 
 		// uncomment line if beginning charcters are the comment
-		if line[first:first+len(comment)] == comment {
+		comstart := first + len(comment)
+		if len(line) > comstart && line[first:comstart] == comment {
 			nline := strings.Replace(line, comment, "", 1)
 			return nline
 		}

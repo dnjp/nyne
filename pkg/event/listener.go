@@ -1,11 +1,11 @@
 package event
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
-	"fmt"
 
 	"9fans.net/go/acme"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
