@@ -6,7 +6,16 @@ import (
 
 var Cfg config.Config = config.Config{
 	Tag: config.Tag{
-		Menu: []string{"|fmt", "|com", "|a-", "|a+", "Ldef", "Lrefs", "Lcomp", "win"},
+		Menu: []string{
+			"|fmt",
+			"|com",
+			"|a-",
+			"|a+",
+			"Ldef",
+			"Lrefs",
+			"Lcomp",
+			"win",
+		},
 	},
 	Format: map[string]config.Spec{
 		"c": config.Spec{
@@ -56,8 +65,11 @@ var Cfg config.Config = config.Config{
 					PrintsToStdout: true,
 				},
 				{
-					Exec:           "sed",
-					Args:           []string{"s/) {/){/g", "$NAME"},
+					Exec: "sed",
+					Args: []string{
+						"s/) {/){/g",
+						"$NAME",
+					},
 					PrintsToStdout: true,
 				},
 			},
@@ -66,8 +78,14 @@ var Cfg config.Config = config.Config{
 			CommentStyle: "// ",
 			Indent:       2,
 			Tabexpand:    true,
-			Extensions:   []string{".cc", ".cpp", ".hpp", ".cxx", ".hxx"},
-			Commands:     []config.Command{},
+			Extensions: []string{
+				".cc",
+				".cpp",
+				".hpp",
+				".cxx",
+				".hxx",
+			},
+			Commands: []config.Command{},
 		},
 		"go": config.Spec{
 			CommentStyle: "// ",
@@ -109,8 +127,13 @@ var Cfg config.Config = config.Config{
 			Extensions:   []string{".js", ".ts"},
 			Commands: []config.Command{
 				{
-					Exec:           "prettier",
-					Args:           []string{"$NAME", "--write", "--loglevel", "error"},
+					Exec: "prettier",
+					Args: []string{
+						"$NAME",
+						"--write",
+						"--loglevel",
+						"error",
+					},
 					PrintsToStdout: false,
 				},
 			},
@@ -161,8 +184,11 @@ var Cfg config.Config = config.Config{
 			Extensions:   []string{".tf"},
 			Commands: []config.Command{
 				{
-					Exec:           "terraform",
-					Args:           []string{"fmt", "$NAME"},
+					Exec: "terraform",
+					Args: []string{
+						"fmt",
+						"$NAME",
+					},
 					PrintsToStdout: false,
 				},
 			},
