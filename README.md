@@ -22,93 +22,17 @@ Included in a full install of nyne are bundled utilities for acme:
 
 ## Configuration
 
-Nyne and the bundled utilities use a [TOML](https://github.com/toml-lang/toml)
-configuration file during the build to generate static code used for all
-formatting rules. This file is expected to be located at
-`$HOME/.config/nyne/nyne.toml` by default, but can be overriden by by exporting
-the `$NYNERULES` variable in your environment like
-`NYNERULES=/home/daniel/.nyne`. Copy the [example](./example.toml) to this
-location and modify it for your needs beforebuilding nyne.
-
-Think of `nyne.toml` as roughly the equavalent of a `config.h` file used to
-configure many C programs. Because this file is used to generate static
-configuration for Nyne that is baked into the binary, any changes made to this
-file after build will not be noticed. In order for the changes to be picked up,
-you must rebuild nyne and restart the `nyne` executable if already running. This
-has the added benefit that the bundled utilities can be executed without nyne
-running and without having to re-read a config file while maintaining all of
-your configuration options.
-
-### Scratch Area
-
-In the [example](./example.toml), you will see a section marked "tag" at the
-top. This section contains configuration for the "menu" that looks like this:
-
-```
-# Array of strings that contain commands to be written to the acme
-# scratch area
-menu = [
-  "|fmt",
-  "|com",
-  "|a-",
-  "|a+",
-  "Ldef",
-  "Lrefs",
-  "Lcomp",
-  "win"
-]
-```
-
-Along with the default "Put", "Undo", and "Redo" commands, these menu options
-will be written to the acme scratch area when a new window is opened.
-
-### Code Formatting
-
-Looking at the `format` block in the [example](./example.toml) configuration
-file, you will see a block for each language that looks like the following. The
-configuration options are documented below.
-
-```
-# "go" is an arbitrary name given to this configuration block. The
-# name must be unique
-[format.go]
-
-    # An array of strings that include file extensions that nyne should
-    # apply the given formatting rules to
-    extensions = [".go"]
-
-    # An integer representing the tab width used for indentation
-    indent = 8
-
-    # A boolean that determines whether to use hard tabs or spaces for
-    # indentation
-    tabexpand = false
-
-    # A string that contains the comment style for the given language.
-    # If the comment style has a defined start and end comment structure
-    # (/* */ in C), then set commentstyle to the complete comment structure
-    # like this: `commentstyle = "/* */"`. com will infer that this means /*
-    # should be placed at the beginning and */ should be placed at the end.
-    commentstyle = "// "
-
-    # The "commands" blocks is used to define the external program to
-    # be run against against your buffer on file save. Any number of these
-    # blocks may be defined.
-    [[format.go.commands]]
-
-    # A string representing the executable used to format the buffer
-    exec = "gofmt"
-
-    # An array of strings containing the arguments to the
-    # executable. $NAME is a macro that will be replaced with the absolute
-    # path to the file you are working on. This is a required argument.
-    args = [ "$NAME" ]
-
-    # A boolean representing whether the executable will print to
-    # stdout. If the command writes the file in place, be sure to set this
-    # to false.
-    printsToStdout = true
-```
+Nyne and the bundled utilities use a [configuration file](./config.go) during
+the build to generate static code used for all formatting rules. Think of
+`config.go` as roughly the equavalent of a `config.h` file used to configure
+many C programs. Because this file is used to generate static configuration for
+Nyne that is baked into the binary, any changes made to this file after build
+will not be noticed. In order for the changes to be picked up, you must rebuild
+nyne and restart the `nyne` executable if already running. This has the added
+benefit that the bundled utilities can be executed without nyne running and
+without having to re-read a config file while maintaining all of your
+configuration options. The available configuration options are documented in
+[./config.go](./config.go).
 
 ## Install
 

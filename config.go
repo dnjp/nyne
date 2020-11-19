@@ -5,7 +5,14 @@ import (
 )
 
 var Cfg config.Config = config.Config{
+
+	// Tag configures options for the Acme tag
 	Tag: config.Tag{
+
+		// Menu contain commands to be written to the acme
+		// scratch area. Along with the default "Put", "Undo", and
+		// "Redo" commands, these menu options will be written
+		// to the acme scratch area when a new window is opened.
 		Menu: []string{
 			"|fmt",
 			"|com",
@@ -17,15 +24,52 @@ var Cfg config.Config = config.Config{
 			"win",
 		},
 	},
+
+	// Format maps an identifier ("c", "go", etc.) to its formatting
+	// specification. The identifier is an arbitrary name that useful
+	// mostly to logically group formatting directives.
 	Format: map[string]config.Spec{
+
 		"c": config.Spec{
+
+			// A string that contains the comment style for
+			// the given language.  If the comment style has a
+			// defined start and end comment structure (/* */
+			// in C), then set commentstyle to the complete
+			// comment structure like this: `commentstyle =
+			// "/* */"`. com will infer that this means /*
+			// should be placed at the beginning and */ should
+			// be placed at the end.
 			CommentStyle: "/* */",
-			Indent:       8,
-			Tabexpand:    false,
-			Extensions:   []string{".c", ".h"},
+
+			// The tab width used for indentation
+			Indent: 8,
+
+			// Determines whether to use hard tabs or spaces
+			// for indentation
+			Tabexpand: false,
+
+			// A list of file extensions that nyne should apply
+			// the given formatting rules to
+			Extensions: []string{".c", ".h"},
+
+			// The "commands" blocks is used to define the
+			// external program to be run against against your
+			// buffer on file save. Any number of these blocks
+			// may be defined.
 			Commands: []config.Command{
 				{
+					// A string representing the
+					// executable used to format
+					// the buffer
 					Exec: "indent",
+
+					// An array of strings containing the
+					// arguments to the executable. $NAME
+					// is a macro that will be replaced
+					// with the absolute path to the
+					// file you are working on. This
+					// is a required argument.
 					Args: []string{
 						"-ncdb",
 						"-cp33",
@@ -62,6 +106,12 @@ var Cfg config.Config = config.Config{
 						"-st",
 						"$NAME",
 					},
+
+					// A boolean representing whether
+					// the executable will print to
+					// stdout. If the command writes
+					// the file in place, be sure to
+					// set this to false.
 					PrintsToStdout: true,
 				},
 				{
