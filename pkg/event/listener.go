@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"9fans.net/go/acme"
+	"git.sr.ht/~danieljamespost/nyne/gen"
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
@@ -99,10 +100,15 @@ func (a *Acme) Listen() error {
 		if err != nil {
 			return err
 		}
+		ext := gen.GetExt(event.Name, "NONE")
+		if ext == "NONE" || gen.Conf[ext].Indent == 0 {
+			continue
+		}
 		// skip directory windows
 		if strings.HasSuffix(event.Name, "/") {
 			continue
 		}
+
 		// create listener on new window events
 		if event.Op == "new" {
 			go a.handleNewOp(event.ID)
