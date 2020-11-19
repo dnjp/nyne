@@ -57,7 +57,7 @@ func New() Formatter {
 			fn := func(e event.Event) error {
 				spec, ext := n.getSpec(evt.File)
 				if spec.Indent == 0 {
-					return fmt.Errorf("could not find spec")
+					return nil
 				}
 				err := n.ExecCmds(evt, spec.Cmds, ext)
 				if err != nil {
