@@ -7,3 +7,4 @@ tags
 /gen
 /out.go
 /bin
+/cmd/gen/config.go

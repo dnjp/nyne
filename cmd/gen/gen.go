@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"os"
-	"os/user"
 	"text/template"
 
 	"git.sr.ht/~danieljamespost/nyne/util/config"
@@ -27,23 +25,8 @@ type GenSpec struct {
 }
 
 func main() {
-
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	cfgPath := fmt.Sprintf("%s/.config/nyne/nyne.toml", usr.HomeDir)
-	npath := os.Getenv("NYNERULES")
-	if len(npath) > 0 {
-		cfgPath = npath
-	}
-	conf, err := config.Load(cfgPath)
-	if err != nil {
-		panic(err)
-	}
-
 	specs := []GenSpec{}
-	for _, spec := range conf.Format {
+	for _, spec := range Cfg.Format {
 		for _, ext := range spec.Extensions {
 			ts := GenSpec{
 				Ext:          ext,
@@ -56,7 +39,7 @@ func main() {
 		}
 	}
 	cfg := GenConf{
-		Menu:  conf.Tag.Menu,
+		Menu:  Cfg.Tag.Menu,
 		Specs: specs,
 	}
 
@@ -83,7 +66,7 @@ package gen
 import "strings"
 
 // Menu contains the menu options that should be written to the scratch buffer
-var Menu = []string{ 
+var Menu = []string{
 	{{ range .Menu }}
 	"{{ . }}",
 	{{ end }}
