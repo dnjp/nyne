@@ -4,6 +4,7 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
+// Cfg specifies the configuration for nyne and its bundled utilities
 var Cfg config.Config = config.Config{
 
 	// Tag configures options for the Acme tag

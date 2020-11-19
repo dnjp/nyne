@@ -9,7 +9,8 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/config"
 )
 
-// GenConf contains the specification for generating a static configuration
+// GenConf contains the specification for generating a static
+// configuration
 type GenConf struct {
 	Menu  []string
 	Specs []GenSpec
@@ -17,11 +18,11 @@ type GenConf struct {
 
 // GenSpec is the configuration for the generated formatting specification
 type GenSpec struct {
-	Ext          string
-	Indent       int
-	Tabexpand    bool
-	CommentStyle string
-	Commands     []config.Command
+	Ext       string
+	Indent    int
+	Tabexpand bool
+	CmtStyle  string
+	Cmds      []config.Command
 }
 
 func main() {
@@ -29,11 +30,11 @@ func main() {
 	for _, spec := range Cfg.Format {
 		for _, ext := range spec.Extensions {
 			ts := GenSpec{
-				Ext:          ext,
-				CommentStyle: spec.CommentStyle,
-				Indent:       spec.Indent,
-				Tabexpand:    spec.Tabexpand,
-				Commands:     spec.Commands,
+				Ext:       ext,
+				CmtStyle:  spec.CommentStyle,
+				Indent:    spec.Indent,
+				Tabexpand: spec.Tabexpand,
+				Cmds:      spec.Commands,
 			}
 			specs = append(specs, ts)
 		}
@@ -65,16 +66,17 @@ package gen
 
 import "strings"
 
-// Menu contains the menu options that should be written to the scratch buffer
+// Menu contains the menu options that should be written to the scratch
+// buffer
 var Menu = []string{
 	{{ range .Menu }}
 	"{{ . }}",
 	{{ end }}
 }
 
-// Command contains options for executing a given command against an
+// Cmd contains options for executing a given command against an
 // acme window
-type Command struct {
+type Cmd struct {
 	Exec           string
 	Args           []string
 	PrintsToStdout bool
@@ -85,8 +87,8 @@ type Spec struct {
 	Ext string
 	Indent int
 	Tabexpand bool
-	CommentStyle string
-	Commands []Command
+	CmtStyle string
+	Cmds []Cmd
 }
 
 // Conf maps file extensions to their formatting specification
@@ -95,9 +97,9 @@ var Conf = map[string]Spec{
 	"{{ .Ext}}": {
 		Indent: {{ .Indent }},
 		Tabexpand: {{ .Tabexpand }},
-		CommentStyle: "{{ .CommentStyle }}",
-		Commands: []Command{
-			{{ range .Commands }}
+		CmtStyle: "{{ .CmtStyle }}",
+		Cmds: []Cmd{
+			{{ range .Cmds }}
 			{
 				Exec: "{{ .Exec }}",
 				Args: []string{
@@ -126,7 +128,8 @@ func GetExt(in string, def string) string {
 	return "." + pts[len(pts)-1]
 }
 
-// GetFileName takes the absolute path to a file and returns just the name of the file
+// GetFileName takes the absolute path to a file and returns just the name
+// of the file
 func GetFileName(in string) string {
 	path := strings.Split(in, "/")
 	return path[len(path)-1]

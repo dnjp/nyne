@@ -14,13 +14,14 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
-// Formatter listens for Acme events and applies formatting rules to the active buffer
+// Formatter listens for Acme events and applies formatting rules to the
+// active buffer
 type Formatter interface {
 	Run()
-	ExecCmds(event event.Event, cmds []gen.Command, ext string) error
+	ExecCmds(event event.Event, cmds []gen.Cmd, ext string) error
 	WriteMenu(w *event.Win) error
 	SetupFormatting(*event.Win, gen.Spec) error
-	Refmt(event.Event, gen.Command, string) ([]byte, error)
+	Refmt(event.Event, gen.Cmd, string) ([]byte, error)
 }
 
 // Nyne implements the Formatter inferface for $NYNERULES
@@ -58,7 +59,7 @@ func New() Formatter {
 				if spec.Indent == 0 {
 					return fmt.Errorf("could not find spec")
 				}
-				err := n.ExecCmds(evt, spec.Commands, ext)
+				err := n.ExecCmds(evt, spec.Cmds, ext)
 				if err != nil {
 					log.Println(err)
 				}
@@ -102,7 +103,7 @@ func (n *Nyne) Run() {
 
 // ExecCmds executes commands that operate on stdin/stdout against the
 // Acme buffer
-func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Command, ext string) error {
+func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Cmd, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
 		new, err := n.Refmt(evt, cmd, ext)
@@ -169,7 +170,7 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec gen.Spec) error {
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer
 // with updated contents
-func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, error) {
+func (n *Nyne) Refmt(evt event.Event, cmd gen.Cmd, xt string) ([]byte, error) {
 	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
@@ -187,7 +188,7 @@ func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, erro
 		nargs = replaceName(cmd.Args, l.File)
 	} else {
 		// write current body to temporary file
-		tmp, err = ioutil.TempFile("", fmt.Sprintf("*%s", ext))
+		tmp, err = ioutil.TempFile("", fmt.Sprintf("*%s", xt))
 		if err != nil {
 			return []byte{}, err
 		}

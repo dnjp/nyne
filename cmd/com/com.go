@@ -10,7 +10,7 @@ import (
 func main() {
 	filename := gen.GetFileName(os.Getenv("samfile"))
 	ext := gen.GetExt(filename, ".txt")
-	comment := gen.Conf[ext].CommentStyle
+	comment := gen.Conf[ext].CmtStyle
 	if len(comment) == 0 {
 		comment = "# "
 	}
