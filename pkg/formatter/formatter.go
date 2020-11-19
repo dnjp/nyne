@@ -53,15 +53,18 @@ func New() Formatter {
 
 	n.listener.RegisterPutHook(event.PutHook{
 		Handler: func(evt event.Event) event.Event {
-			spec, ext := n.getSpec(evt.File)
-			if spec.Indent == 0 {
-				return evt
+			fn := func(e event.Event) error {
+				spec, ext := n.getSpec(evt.File)
+				if spec.Indent == 0 {
+					return fmt.Errorf("could not find spec")
+				}
+				err := n.ExecCmds(evt, spec.Commands, ext)
+				if err != nil {
+					log.Println(err)
+				}
+				return nil
 			}
-			err := n.ExecCmds(evt, spec.Commands, ext)
-			if err != nil {
-				io.Error(err)
-				return evt
-			}
+			evt.PostHooks = append(evt.PostHooks, fn)
 			return evt
 		},
 	})
@@ -104,7 +107,6 @@ func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Command, ext string) error {
 	for _, cmd := range cmds {
 		new, err := n.Refmt(evt, cmd, ext)
 		if err != nil {
-			fmt.Println("ERROR: ", err)
 			return err
 		}
 		updates = append(updates, new)
@@ -179,21 +181,29 @@ func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, erro
 		return []byte{}, err
 	}
 
-	// write current body to temporary file
-	tmp, err := ioutil.TempFile("", fmt.Sprintf("*%s", ext))
-	if err != nil {
-		return []byte{}, err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(old); err != nil {
-		return []byte{}, err
+	var nargs []string
+	var tmp *os.File
+	if cmd.PrintsToStdout {
+		nargs = replaceName(cmd.Args, l.File)
+	} else {
+		// write current body to temporary file
+		tmp, err = ioutil.TempFile("", fmt.Sprintf("*%s", ext))
+		if err != nil {
+			return []byte{}, err
+		}
+		defer os.Remove(tmp.Name())
+		if _, err = tmp.Write(old); err != nil {
+			return []byte{}, err
+		}
+
+		// replace name with the temporary file
+		nargs = replaceName(cmd.Args, tmp.Name())
 	}
 
-	// replace name with the temporary file
-	nargs := replaceName(cmd.Args, tmp.Name())
+	// Execute the command
 	out, err := exec.Command(cmd.Exec, nargs...).CombinedOutput()
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("Error: %+v\n%s", err, string(out))
 	}
 
 	// handle formatting commands that both do and do not write to stdout
@@ -238,6 +248,7 @@ func (n *Nyne) WriteUpdates(evt event.Event, updates [][]byte) error {
 			return err
 		}
 	}
+	w.WriteEvent(evt)
 	return nil
 }
 

@@ -209,6 +209,12 @@ func (b *Buf) Start() error {
 
 		b.Win.WriteEvent(event)
 
+		for _, h := range event.PostHooks {
+			if err := h(event); err != nil {
+				return err
+			}
+		}
+
 		// maintain current address after formatting buffer
 		if event.Builtin == PUT {
 			body, err := b.Win.ReadBody()
