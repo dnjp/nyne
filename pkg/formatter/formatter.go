@@ -14,13 +14,14 @@ import (
 	"git.sr.ht/~danieljamespost/nyne/util/io"
 )
 
-// Formatter listens for Acme events and applies formatting rules to the active buffer
+// Formatter listens for Acme events and applies formatting rules to the
+// active buffer
 type Formatter interface {
 	Run()
-	ExecCmds(event event.Event, cmds []gen.Command, ext string) error
+	ExecCmds(event event.Event, cmds []gen.Cmd, ext string) error
 	WriteMenu(w *event.Win) error
 	SetupFormatting(*event.Win, gen.Spec) error
-	Refmt(event.Event, gen.Command, string) ([]byte, error)
+	Refmt(event.Event, gen.Cmd, string) ([]byte, error)
 }
 
 // Nyne implements the Formatter inferface for $NYNERULES
@@ -53,15 +54,18 @@ func New() Formatter {
 
 	n.listener.RegisterPutHook(event.PutHook{
 		Handler: func(evt event.Event) event.Event {
-			spec, ext := n.getSpec(evt.File)
-			if spec.Indent == 0 {
-				return evt
+			fn := func(e event.Event) error {
+				spec, ext := n.getSpec(evt.File)
+				if spec.Indent == 0 {
+					return nil
+				}
+				err := n.ExecCmds(evt, spec.Cmds, ext)
+				if err != nil {
+					log.Println(err)
+				}
+				return nil
 			}
-			err := n.ExecCmds(evt, spec.Commands, ext)
-			if err != nil {
-				io.Error(err)
-				return evt
-			}
+			evt.PostHooks = append(evt.PostHooks, fn)
 			return evt
 		},
 	})
@@ -99,12 +103,11 @@ func (n *Nyne) Run() {
 
 // ExecCmds executes commands that operate on stdin/stdout against the
 // Acme buffer
-func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Command, ext string) error {
+func (n *Nyne) ExecCmds(evt event.Event, cmds []gen.Cmd, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
 		new, err := n.Refmt(evt, cmd, ext)
 		if err != nil {
-			fmt.Println("ERROR: ", err)
 			return err
 		}
 		updates = append(updates, new)
@@ -167,7 +170,7 @@ func (n *Nyne) SetupFormatting(w *event.Win, spec gen.Spec) error {
 
 // Refmt executes a command to the Acme buffer and refreshes the buffer
 // with updated contents
-func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, error) {
+func (n *Nyne) Refmt(evt event.Event, cmd gen.Cmd, xt string) ([]byte, error) {
 	l := n.listener.GetBufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
@@ -179,21 +182,29 @@ func (n *Nyne) Refmt(evt event.Event, cmd gen.Command, ext string) ([]byte, erro
 		return []byte{}, err
 	}
 
-	// write current body to temporary file
-	tmp, err := ioutil.TempFile("", fmt.Sprintf("*%s", ext))
-	if err != nil {
-		return []byte{}, err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(old); err != nil {
-		return []byte{}, err
+	var nargs []string
+	var tmp *os.File
+	if cmd.PrintsToStdout {
+		nargs = replaceName(cmd.Args, l.File)
+	} else {
+		// write current body to temporary file
+		tmp, err = ioutil.TempFile("", fmt.Sprintf("*%s", xt))
+		if err != nil {
+			return []byte{}, err
+		}
+		defer os.Remove(tmp.Name())
+		if _, err = tmp.Write(old); err != nil {
+			return []byte{}, err
+		}
+
+		// replace name with the temporary file
+		nargs = replaceName(cmd.Args, tmp.Name())
 	}
 
-	// replace name with the temporary file
-	nargs := replaceName(cmd.Args, tmp.Name())
+	// Execute the command
 	out, err := exec.Command(cmd.Exec, nargs...).CombinedOutput()
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("Error: %+v\n%s", err, string(out))
 	}
 
 	// handle formatting commands that both do and do not write to stdout
@@ -238,6 +249,7 @@ func (n *Nyne) WriteUpdates(evt event.Event, updates [][]byte) error {
 			return err
 		}
 	}
+	w.WriteEvent(evt)
 	return nil
 }
 
