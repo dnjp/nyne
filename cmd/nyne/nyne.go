@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.sr.ht/~danieljamespost/nyne/pkg/formatter"
+	"github.com/dnjp/nyne/formatter"
 )
 
 func main() {

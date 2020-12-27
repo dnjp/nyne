@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"git.sr.ht/~danieljamespost/nyne/gen"
-	"git.sr.ht/~danieljamespost/nyne/pkg/event"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
+	"github.com/dnjp/nyne/event"
+	"github.com/dnjp/nyne/gen"
+	"github.com/dnjp/nyne/util/io"
 )
 
 // Formatter listens for Acme events and applies formatting rules to the

@@ -1,12 +1,7 @@
 <div style="text-align:center">
-  <img src="https://git.sr.ht/~danieljamespost/nyne/blob/master/resources/glenda.jpg" alt="drawing" width="200"/>
+  <img src="https://raw.githubusercontent.com/dnjp/nyne/master/resources/glenda.jpg" alt="drawing" width="200"/>
   <p style="font-style: italic;">By Renée French</p>
 </div>
-
-# Moved
-
-Source has moved to
-[git.sr.ht/~danieljamespost/nyne](https://git.sr.ht/~danieljamespost/nyne)
 
 # Nyne
 
@@ -51,7 +46,7 @@ guide for your system.
 To install nyne, first clone this repository:
 
 ```
-%: git clone https://git.sr.ht/~danieljamespost/nyne --branch 0.1.1 --single-branch
+%: git clone https://github.com/dnjp/nyne --branch 0.1.1 --single-branch
 ```
 
 Then use [mk](https://9fans.github.io/plan9port/man/man1/mk.html) to build the

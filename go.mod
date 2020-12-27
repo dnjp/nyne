@@ -1,4 +1,4 @@
-module git.sr.ht/~danieljamespost/nyne
+module github.com/dnjp/nyne
 
 go 1.13
 

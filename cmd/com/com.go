@@ -1,8 +1,8 @@
 package main
 
 import (
-	"git.sr.ht/~danieljamespost/nyne/gen"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
+	"github.com/dnjp/nyne/gen"
+	"github.com/dnjp/nyne/util/io"
 	"os"
 	"strings"
 )

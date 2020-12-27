@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.sr.ht/~danieljamespost/nyne/util/config"
+	"github.com/dnjp/nyne/util/config"
 )
 
 // Cfg specifies the configuration for nyne and its bundled utilities

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"git.sr.ht/~danieljamespost/nyne/gen"
-	"git.sr.ht/~danieljamespost/nyne/pkg/event"
-	"git.sr.ht/~danieljamespost/nyne/pkg/formatter"
+	"github.com/dnjp/nyne/event"
+	"github.com/dnjp/nyne/formatter"
+	"github.com/dnjp/nyne/gen"
 )
 
 func main() {

@@ -6,7 +6,7 @@ import (
 	"go/format"
 	"text/template"
 
-	"git.sr.ht/~danieljamespost/nyne/util/config"
+	"github.com/dnjp/nyne/util/config"
 )
 
 // GenConf contains the specification for generating a static
