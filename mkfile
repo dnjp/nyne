@@ -7,10 +7,11 @@ all:V: $ALL
 
 bin:
 	mkdir bin
-	
+
 gen:
 	mkdir -p ./gen
-	go run cmd/gen/gen.go > ./gen/gen.go
+	cp config.go cmd/gen/config.go
+	go run cmd/gen/*.go > ./gen/gen.go
 
 nyne: gen bin
 	go build -o bin/nyne cmd/nyne/nyne.go
@@ -29,20 +30,20 @@ ui: gen bin
 
 install:
 	cp bin/* $installdir
-	
+
 uninstall:
 	rm $installdir/nyne
 	rm $installdir/nynetab
 	rm $installdir/com
 	rm $installdir/a+
 	rm $installdir/a-
-	
+
 check:
 	go test -count=1 ./...
 	go fmt ./...
 	go vet ./...
 	golint ./...
-	staticcheck ./...	
+	staticcheck ./...
 
 clean tidy nuke:V:
 	rm -rf ./bin ./gen

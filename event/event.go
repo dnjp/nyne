@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+// PostWriteHook executes a function on the event after it has been
+// written to the acme log
+type PostWriteHook func(Event) error
+
 // AcmeOp contains the acme events that are available
 type AcmeOp int
 
@@ -30,6 +34,7 @@ const (
 // is longer than that, the fourth number is 0 and the body must be read
 // through the data file
 type Event struct {
+	// Log
 	ID                       int
 	File                     string
 	Origin                   ActionOrigin
@@ -43,6 +48,8 @@ type Event struct {
 	NumRunes                 int
 	ChordArg                 []byte
 	ChordLoc                 []byte
+	// Hooks
+	PostHooks []PostWriteHook
 }
 
 // ActionOrigin is the entity that originated the action

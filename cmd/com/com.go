@@ -1,8 +1,8 @@
 package main
 
 import (
-	"git.sr.ht/~danieljamespost/nyne/gen"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
+	"github.com/dnjp/nyne/gen"
+	"github.com/dnjp/nyne/util/io"
 	"os"
 	"strings"
 )
@@ -10,7 +10,7 @@ import (
 func main() {
 	filename := gen.GetFileName(os.Getenv("samfile"))
 	ext := gen.GetExt(filename, ".txt")
-	comment := gen.Conf[ext].CommentStyle
+	comment := gen.Conf[ext].CmtStyle
 	if len(comment) == 0 {
 		comment = "# "
 	}
@@ -60,7 +60,8 @@ func main() {
 		}
 
 		// uncomment line if beginning charcters are the comment
-		if line[first:first+len(comment)] == comment {
+		comstart := first + len(comment)
+		if len(line) > comstart && line[first:comstart] == comment {
 			nline := strings.Replace(line, comment, "", 1)
 			return nline
 		}

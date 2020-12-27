@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"git.sr.ht/~danieljamespost/nyne/gen"
-	"git.sr.ht/~danieljamespost/nyne/util/io"
+	"github.com/dnjp/nyne/gen"
+	"github.com/dnjp/nyne/util/io"
 	"os"
 	"strconv"
 )

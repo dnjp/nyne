@@ -11,10 +11,10 @@ import (
 
 // Win represents the active Acme window
 type Win struct {
-	ID     int
-	File   string
+	ID        int
+	File      string
 	Lastpoint int
-	handle *acme.Win
+	handle    *acme.Win
 }
 
 // NewWin constructs a Win object from acme window
@@ -84,7 +84,8 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 	return w.ClearTagText()
 }
 
-// ExecGet is the equivalent to the Get interactive command with no arguments; accepts no arguments.
+// ExecGet is the equivalent to the Get interactive command with no
+// arguments; accepts no arguments.
 func (w *Win) ExecGet() error {
 	return w.write("ctl", []byte("get"))
 }
@@ -94,22 +95,26 @@ func (w *Win) ExecDelete() error {
 	return w.write("ctl", []byte("del"))
 }
 
-// ExecDumpToFile sets the command string to recreate the window from a dump file.
+// ExecDumpToFile sets the command string to recreate the window from a
+// dump file.
 func (w *Win) ExecDumpToFile(file string) error {
 	return w.write("ctl", []byte(fmt.Sprintf("dump %s", file)))
 }
 
-// ExecPut is the equivalent to the Put interactive command with no arguments; accepts no arguments.
+// ExecPut is the equivalent to the Put interactive command with no
+// arguments; accepts no arguments.
 func (w *Win) ExecPut() error {
 	return w.write("ctl", []byte("put"))
 }
 
-// ExecShow guarantees at least some of the selected text is visible on the display.
+// ExecShow guarantees at least some of the selected text is visible on
+// the display.
 func (w *Win) ExecShow() error {
 	return w.write("ctl", []byte("show"))
 }
 
-// SetAddrToSelText sets the addr address to that of the user’s selected text in the window.
+// SetAddrToSelText sets the addr address to that of the user’s selected
+// text in the window.
 func (w *Win) SetAddrToSelText() error {
 	return w.write("ctl", []byte("addr=dot"))
 }
@@ -153,27 +158,32 @@ func (w *Win) ReadAddr() ([]byte, error) {
 	return w.handle.ReadAll("addr")
 }
 
-// SetTextToAddr sets the user’s selected text in the window to the text addressed by the addr address.
+// SetTextToAddr sets the user’s selected text in the window to the text
+// addressed by the addr address.
 func (w *Win) SetTextToAddr() error {
 	return w.write("ctl", []byte("dot=addr"))
 }
 
-// SetDumpDir sets the directory in which to run the command to recreate the window from a dump file.
+// SetDumpDir sets the directory in which to run the command to recreate
+// the window from a dump file.
 func (w *Win) SetDumpDir(dir string) error {
 	return w.write("ctl", []byte(fmt.Sprintf("dumpdir %s", dir)))
 }
 
-// RestrictSearchToAddr restricts subsequent searches to the current addr address.
+// RestrictSearchToAddr restricts subsequent searches to the current addr
+// address.
 func (w *Win) RestrictSearchToAddr() error {
 	return w.write("ctl", []byte("limit=addr"))
 }
 
-// EnableNoMark turns off automatic ‘marking’ of changes, so a set of related changes may be undone in a single Undo interactive command.
+// EnableNoMark turns off automatic ‘marking’ of changes, so a set of
+// related changes may be undone in a single Undo interactive command.
 func (w *Win) EnableNoMark() error {
 	return w.write("ctl", []byte("nomark"))
 }
 
-// DisableNoMark cancels nomark, returning the window to the usual state wherein each modification to the body must be undone individually.
+// DisableNoMark cancels nomark, returning the window to the usual state
+// wherein each modification to the body must be undone individually.
 func (w *Win) DisableNoMark() error {
 	return w.write("ctl", []byte("mark"))
 }

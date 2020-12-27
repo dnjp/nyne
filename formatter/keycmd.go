@@ -5,7 +5,7 @@ import (
 	"log"
 	"unicode/utf8"
 
-	"git.sr.ht/~danieljamespost/nyne/pkg/event"
+	"github.com/dnjp/nyne/event"
 )
 
 // Keymap contains parameters for constructing a custom keymap
