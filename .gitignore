@@ -4,7 +4,6 @@ tags
 /com
 /ind
 /ui
-/gen
 /out.go
 /bin
 /cmd/gen/config.go
