@@ -62,12 +62,6 @@ your `$PATH`. On my system, I keep commands used for Acme in `$home/bin` and
 have that directory added to my path. Assuming your system is setup like mine,
 you can install nyne and the bundled utilities with:
 
-<<<<<<< HEAD Please do! Nyne uses an email based workflow for managing patches.
-If you've never used the `git-send-email` command before, checkout this
-[interactive guide](https://git-send-email.io/) for how to set it up and get
-comfortable with the workflow. Patches or questions about the submission process
-can be sent to =======
-
 ```
 %: installdir=$home/bin mk install
 ```
@@ -125,9 +119,9 @@ post it in the official
 
 ## Contributing
 
-Please do! Nyne uses an email based workflow for managing patches. If you've
-never used the `git-send-email` command before, checkout this
-[interactive guide](https://git-send-email.io/) for how to set it up and get
-comfortable with the workflow. Patches or questions about the submission process
-can be sent to
-[~danieljamespost/nyne@lists.sr.ht](mailto:~danieljamespost/nyne@lists.sr.ht).
+Please feel free to file an issue if you run into any bugs or problems during
+normal usage. Should you have any questions about how to use or setup nyne, you
+can start a new [discussion](https://github.com/dnjp/nyne/discussions) thread.
+Of course, if you have a fix for a bug or a new feature you'd like added to
+nyne, please fork this repository, commit your changes to a new branch, and
+submit a PR with your changes.

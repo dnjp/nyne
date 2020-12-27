@@ -5,6 +5,13 @@ import (
 )
 
 // Cfg specifies the configuration for nyne and its bundled utilities
+// If using this as the default, the following external applications
+// must be in your $PATH:
+//   - indent
+//   - gofmt
+//   - google-java-format
+//   - prettier
+//   - terraform
 var Cfg config.Config = config.Config{
 
 	// Tag configures options for the Acme tag
