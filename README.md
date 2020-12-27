@@ -22,7 +22,8 @@ Included in a full install of nyne are bundled utilities for acme:
 
 ## Configuration
 
-Nyne and the bundled utilities use a [configuration file](./config.go) during
+Nyne and the bundled utilities use a
+[configuration file](https://github.com/dnjp/nyne/blob/master/config.go) during
 the build to generate static code used for all formatting rules. Think of
 `config.go` as roughly the equavalent of a `config.h` file used to configure
 many C programs. Because this file is used to generate static configuration for
@@ -32,7 +33,7 @@ nyne and restart the `nyne` executable if already running. This has the added
 benefit that the bundled utilities can be executed without nyne running and
 without having to re-read a config file while maintaining all of your
 configuration options. The available configuration options are documented in
-[./config.go](./config.go).
+[./config.go](https://github.com/dnjp/nyne/blob/master/config.go).
 
 ## Install
 
@@ -46,7 +47,7 @@ guide for your system.
 To install nyne, first clone this repository:
 
 ```
-%: git clone https://github.com/dnjp/nyne --branch 0.1.1 --single-branch
+%: git clone https://github.com/dnjp/nyne
 ```
 
 Then use [mk](https://9fans.github.io/plan9port/man/man1/mk.html) to build the
@@ -70,7 +71,7 @@ If the commands above completed successfully, you should now be able to execute
 any of the nyne utilities.
 
 To cleanup the build files simply run `mk nuke`. To uninstall nyne and all
-utilities, run `installdir=$home/bin mk uninstall`.
+utilities, run `installdir=$HOME/bin mk uninstall`.
 
 ## Usage
 
