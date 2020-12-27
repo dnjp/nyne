@@ -114,12 +114,13 @@ want to un/comment, and then middle click on `|com` to execute the command.
 
 ## Bugs or Feature Requests
 
-Please feel free to file an issue if you run into any bugs or problems during
-normal usage. Should you have any questions about how to use or setup nyne, you
-can start a new [discussion](https://github.com/dnjp/nyne/discussions) thread.
+Please feel free to file an [issue](https://github.com/dnjp/nyne/issues) if you
+run into any bugs or problems during normal usage. Should you have any questions
+about how to use or setup nyne, you can start a new
+[discussion](https://github.com/dnjp/nyne/discussions) thread.
 
 ## Contributing
 
 Please do! If you have a fix for a bug or a new feature you'd like added to
 nyne, please fork this repository, commit your changes to a new branch, and
-submit a PR with your changes.
+submit a [PR](https://github.com/dnjp/nyne/pulls) with your changes.
