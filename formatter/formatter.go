@@ -42,7 +42,7 @@ func New() Formatter {
 	n.listener.RegisterWinHook(event.WinHook{
 		Handler: func(w *event.Win) {
 			spec, _ := n.getSpec(w.File)
-			if spec.Indent == 0 {
+			if spec.Indent != 0 {
 				n.SetupFormatting(w, spec)
 			}
 			err := n.WriteMenu(w)
