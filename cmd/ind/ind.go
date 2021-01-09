@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/dnjp/nyne/gen"
 	"github.com/dnjp/nyne/util/io"
 	"os"
-	"strconv"
 )
 
 func main() {
@@ -15,11 +13,8 @@ func main() {
 	ts := spec.Indent
 	te := spec.Tabexpand
 	if ts == 0 {
-		nts, err := strconv.Atoi(os.Getenv("tabstop"))
-		if err != nil {
-			panic(fmt.Errorf("invalid $tabstop: %v", err))
-		}
-		ts = nts
+		te = false
+		ts = 8
 	}
 
 	in, err := io.PipeIn()
