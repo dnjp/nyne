@@ -6,8 +6,8 @@ import (
 	"github.com/dnjp/nyne/gen"
 	"github.com/dnjp/nyne/util/io"
 	"os"
-	"strconv"
 	"strings"
+	"strconv"
 )
 
 func main() {
