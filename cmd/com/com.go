@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/dnjp/nyne/gen"
 	"github.com/dnjp/nyne/util/io"
 	"os"
@@ -8,7 +9,13 @@ import (
 )
 
 func main() {
-	filename := gen.GetFileName(os.Getenv("samfile"))
+	var fflag = flag.String("f", "", "file name to operate on")
+	flag.Parse()
+	samfile := os.Getenv("samfile")
+	if samfile == "" && fflag != nil {
+		samfile = *fflag
+	}
+	filename := gen.GetFileName(samfile)
 	ext := gen.GetExt(filename, ".txt")
 	comment := gen.Conf[ext].CmtStyle
 	if len(comment) == 0 {

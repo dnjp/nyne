@@ -79,14 +79,14 @@ var Conf = map[string]Spec{
 		Cmds:      []Cmd{},
 	},
 
-	".go": {
-		Indent:    8,
-		Tabexpand: false,
+	".java": {
+		Indent:    2,
+		Tabexpand: true,
 		CmtStyle:  "// ",
 		Cmds: []Cmd{
 
 			{
-				Exec: "gofmt",
+				Exec: "google-java-format",
 				Args: []string{
 
 					"$NAME",
@@ -96,31 +96,64 @@ var Conf = map[string]Spec{
 		},
 	},
 
-	".md": {
+	".js": {
 		Indent:    2,
 		Tabexpand: true,
-		CmtStyle:  "",
+		CmtStyle:  "// ",
 		Cmds: []Cmd{
 
 			{
 				Exec: "prettier",
 				Args: []string{
 
-					"--print-width",
-
-					"80",
-
-					"--prose-wrap",
-
-					"always",
+					"$NAME",
 
 					"--write",
 
-					"$NAME",
+					"--loglevel",
+
+					"error",
 				},
 				PrintsToStdout: false,
 			},
 		},
+	},
+
+	".ts": {
+		Indent:    2,
+		Tabexpand: true,
+		CmtStyle:  "// ",
+		Cmds: []Cmd{
+
+			{
+				Exec: "prettier",
+				Args: []string{
+
+					"$NAME",
+
+					"--write",
+
+					"--loglevel",
+
+					"error",
+				},
+				PrintsToStdout: false,
+			},
+		},
+	},
+
+	".json": {
+		Indent:    2,
+		Tabexpand: true,
+		CmtStyle:  "",
+		Cmds:      []Cmd{},
+	},
+
+	"Makefile": {
+		Indent:    8,
+		Tabexpand: false,
+		CmtStyle:  "# ",
+		Cmds:      []Cmd{},
 	},
 
 	".rc": {
@@ -131,32 +164,6 @@ var Conf = map[string]Spec{
 	},
 
 	".sh": {
-		Indent:    8,
-		Tabexpand: false,
-		CmtStyle:  "# ",
-		Cmds:      []Cmd{},
-	},
-
-	".tf": {
-		Indent:    2,
-		Tabexpand: true,
-		CmtStyle:  "# ",
-		Cmds: []Cmd{
-
-			{
-				Exec: "terraform",
-				Args: []string{
-
-					"fmt",
-
-					"$NAME",
-				},
-				PrintsToStdout: false,
-			},
-		},
-	},
-
-	".toml": {
 		Indent:    8,
 		Tabexpand: false,
 		CmtStyle:  "# ",
@@ -238,17 +245,6 @@ var Conf = map[string]Spec{
 					"-lp",
 
 					"-st",
-
-					"$NAME",
-				},
-				PrintsToStdout: true,
-			},
-
-			{
-				Exec: "sed",
-				Args: []string{
-
-					"s/) {/){/g",
 
 					"$NAME",
 				},
@@ -337,91 +333,63 @@ var Conf = map[string]Spec{
 				},
 				PrintsToStdout: true,
 			},
-
-			{
-				Exec: "sed",
-				Args: []string{
-
-					"s/) {/){/g",
-
-					"$NAME",
-				},
-				PrintsToStdout: true,
-			},
 		},
 	},
 
-	".java": {
+	".html": {
 		Indent:    2,
 		Tabexpand: true,
-		CmtStyle:  "// ",
-		Cmds: []Cmd{
-
-			{
-				Exec: "google-java-format",
-				Args: []string{
-
-					"$NAME",
-				},
-				PrintsToStdout: true,
-			},
-		},
-	},
-
-	".js": {
-		Indent:    2,
-		Tabexpand: true,
-		CmtStyle:  "// ",
-		Cmds: []Cmd{
-
-			{
-				Exec: "prettier",
-				Args: []string{
-
-					"$NAME",
-
-					"--write",
-
-					"--loglevel",
-
-					"error",
-				},
-				PrintsToStdout: false,
-			},
-		},
-	},
-
-	".ts": {
-		Indent:    2,
-		Tabexpand: true,
-		CmtStyle:  "// ",
-		Cmds: []Cmd{
-
-			{
-				Exec: "prettier",
-				Args: []string{
-
-					"$NAME",
-
-					"--write",
-
-					"--loglevel",
-
-					"error",
-				},
-				PrintsToStdout: false,
-			},
-		},
-	},
-
-	".json": {
-		Indent:    2,
-		Tabexpand: true,
-		CmtStyle:  "",
+		CmtStyle:  "<!-- -->",
 		Cmds:      []Cmd{},
 	},
 
-	"Makefile": {
+	".md": {
+		Indent:    2,
+		Tabexpand: true,
+		CmtStyle:  "",
+		Cmds: []Cmd{
+
+			{
+				Exec: "prettier",
+				Args: []string{
+
+					"--print-width",
+
+					"80",
+
+					"--prose-wrap",
+
+					"always",
+
+					"--write",
+
+					"$NAME",
+				},
+				PrintsToStdout: false,
+			},
+		},
+	},
+
+	".tf": {
+		Indent:    2,
+		Tabexpand: true,
+		CmtStyle:  "# ",
+		Cmds: []Cmd{
+
+			{
+				Exec: "terraform",
+				Args: []string{
+
+					"fmt",
+
+					"$NAME",
+				},
+				PrintsToStdout: false,
+			},
+		},
+	},
+
+	".toml": {
 		Indent:    8,
 		Tabexpand: false,
 		CmtStyle:  "# ",
@@ -442,11 +410,21 @@ var Conf = map[string]Spec{
 		Cmds:      []Cmd{},
 	},
 
-	".html": {
-		Indent:    2,
-		Tabexpand: true,
-		CmtStyle:  "<!-- -->",
-		Cmds:      []Cmd{},
+	".go": {
+		Indent:    8,
+		Tabexpand: false,
+		CmtStyle:  "// ",
+		Cmds: []Cmd{
+
+			{
+				Exec: "gofmt",
+				Args: []string{
+
+					"$NAME",
+				},
+				PrintsToStdout: true,
+			},
+		},
 	},
 }
 

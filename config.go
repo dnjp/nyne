@@ -122,14 +122,6 @@ var Cfg config.Config = config.Config{
 					// set this to false.
 					PrintsToStdout: true,
 				},
-				{
-					Exec: "sed",
-					Args: []string{
-						"s/) {/){/g",
-						"$NAME",
-					},
-					PrintsToStdout: true,
-				},
 			},
 		},
 		"cpp": config.Spec{
