@@ -299,6 +299,19 @@ func (w *Win) SetData(data []byte) error {
 	return w.write("data", data)
 }
 
+func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
+	n := q1 - q0
+	buf := make([]byte, n)
+	n2, err := w.handle.Read("data", buf)
+	if err != nil {
+		return buf, err
+	}
+	if n2 != n {
+		return buf, fmt.Errorf("read %d bytes, expected %d", n2, n)
+	}
+	return buf, nil
+}
+
 // WriteToTag writes to the windows tag
 func (w *Win) WriteToTag(text string) error {
 	if w == nil || w.handle == nil {

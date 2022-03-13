@@ -20,6 +20,7 @@ Included in a full install of nyne are bundled utilities for acme:
 - `a+`: Indent selected source code
 - `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
+- `xcom`: Wrapper arround `com` intended to be invoked from a tool like skhd.
 
 ## Configuration
 
@@ -49,6 +50,15 @@ with skhd:
 cmd - s [
   "acme" : save
   "edwood" : save
+]
+```
+
+Similarly, you can map `com` to `cmd+/` with the following skhd settings:
+
+```
+cmd - 0x2C  [
+  "acme" : xcom
+  "edwood" : xcom
 ]
 ```
 
