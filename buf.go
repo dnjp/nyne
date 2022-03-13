@@ -13,9 +13,9 @@ type Buf struct {
 	file       string
 	win        *Win
 	debug      bool
-	eventHooks map[AcmeOp][]Hook
-	winHooks   map[AcmeOp][]WinHook
-	keyHooks   map[rune]KeyHook
+	EventHooks map[AcmeOp][]Handler
+	WinHooks   map[AcmeOp][]WinHandler
+	KeyHooks   map[rune]Handler
 }
 
 // NewBuf constructs an event loop
@@ -23,9 +23,9 @@ func NewBuf(id int, file string) *Buf {
 	return &Buf{
 		id:         id,
 		file:       file,
-		eventHooks: make(map[AcmeOp][]Hook),
-		winHooks:   make(map[AcmeOp][]WinHook),
-		keyHooks:   make(map[rune]KeyHook),
+		EventHooks: make(map[AcmeOp][]Handler),
+		WinHooks:   make(map[AcmeOp][]WinHandler),
+		KeyHooks:   make(map[rune]Handler),
 	}
 }
 
@@ -107,49 +107,25 @@ func (b *Buf) Start() error {
 	return nil
 }
 
-// RegisterHook registers hook on acme 'Put' events
-func (b *Buf) RegisterHook(hook Hook) {
-	hooks := b.eventHooks[Put]
-	hooks = append(hooks, hook)
-	b.eventHooks[Put] = hooks
-}
-
-// RegisterWinHook registers the hook on acme 'New' events
-func (b *Buf) RegisterWinHook(hook WinHook) {
-	hooks := b.winHooks[New]
-	hooks = append(hooks, hook)
-	b.winHooks[New] = hooks
-}
-
-// RegisterKeyHook registers hook for key events
-func (b *Buf) RegisterKeyHook(hook KeyHook) {
-	b.keyHooks[hook.Key] = hook
-}
-
 func (b *Buf) winEvent(w *Win, event Event) {
-	for _, hook := range b.winHooks[event.Builtin] {
-		hook.Handler(w)
+	for _, hook := range b.WinHooks[event.Builtin] {
+		hook(w)
 	}
 }
 
 func (b *Buf) keyEvent(event Event) Event {
 	r, _ := utf8.DecodeRune(event.Text)
-	hook, ok := b.keyHooks[r]
+	hook, ok := b.KeyHooks[r]
 	if !ok {
 		return event
 	}
-
-	if hook.Condition(event) {
-		return hook.Handler(event)
-	}
-
-	return event
+	return hook(event)
 }
 
 func (b *Buf) execEvent(event Event) Event {
 	newEvent := event
-	for _, hook := range b.eventHooks[event.Builtin] {
-		newEvent = hook.Handler(newEvent)
+	for _, hook := range b.EventHooks[event.Builtin] {
+		newEvent = hook(newEvent)
 	}
 	return newEvent
 }

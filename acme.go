@@ -12,9 +12,9 @@ import (
 
 // Acme implements the Listener interface for acme events
 type Acme struct {
-	eventHooks map[AcmeOp][]Hook
-	winHooks   map[AcmeOp][]WinHook
-	keyHooks   map[rune]KeyHook
+	EventHooks map[AcmeOp][]Handler
+	WinHooks   map[AcmeOp][]WinHandler
+	KeyHooks   map[rune]Handler
 	wins       map[int]string
 	bufs       map[int]*Buf
 	debug      bool
@@ -24,9 +24,9 @@ type Acme struct {
 // NewAcme constructs an Acme event listener
 func NewAcme() *Acme {
 	return &Acme{
-		eventHooks: make(map[AcmeOp][]Hook),
-		winHooks:   make(map[AcmeOp][]WinHook),
-		keyHooks:   make(map[rune]KeyHook),
+		EventHooks: make(map[AcmeOp][]Handler),
+		WinHooks:   make(map[AcmeOp][]WinHandler),
+		KeyHooks:   make(map[rune]Handler),
 		wins:       make(map[int]string),
 		bufs:       make(map[int]*Buf),
 	}
@@ -85,9 +85,9 @@ func (a *Acme) startBuf(id int) {
 		id:         id,
 		file:       a.wins[id],
 		debug:      a.debug,
-		eventHooks: a.eventHooks,
-		winHooks:   a.winHooks,
-		keyHooks:   a.keyHooks,
+		EventHooks: a.EventHooks,
+		WinHooks:   a.WinHooks,
+		KeyHooks:   a.KeyHooks,
 	}
 	a.bufs[id] = f
 
@@ -127,19 +127,4 @@ func (a *Acme) mapWindows() error {
 // BufListener returns the running Buf by its ID
 func (a *Acme) BufListener(id int) *Buf {
 	return a.bufs[id]
-}
-
-// RegisterHook registers hook on acme 'Put' events
-func (a *Acme) RegisterHook(hook Hook) {
-	a.eventHooks[hook.Op] = append(a.eventHooks[hook.Op], hook)
-}
-
-// RegisterWinHook registers the hook on acme 'New' events
-func (a *Acme) RegisterWinHook(hook WinHook) {
-	a.winHooks[hook.Op] = append(a.winHooks[hook.Op], hook)
-}
-
-// RegisterKeyHook registers hook for key events
-func (a *Acme) RegisterKeyHook(hook KeyHook) {
-	a.keyHooks[hook.Key] = hook
 }

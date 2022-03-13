@@ -27,55 +27,48 @@ func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, e
 	if err != nil {
 		return nil, err
 	}
-	f.registerHooks(f.acme, menutag, toptag)
-	return f, nil
-}
 
-// Run tells the Formatter to begin listening for Acme events
-func (f *Formatter) Run() error {
-	return f.acme.Listen()
-}
-
-func (f *Formatter) registerHooks(a *Acme, menu, top []string) {
-	a.RegisterWinHook(WinHook{
-		Op: New,
-		Handler: func(w *Win) {
-			ft, _ := f.filetype(w.File)
-			if ft.Tabwidth != 0 {
-				f.fmt(w, ft)
-			}
-			err := w.WriteMenu(menu, top)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%+v", err)
-			}
-		},
-	})
-
-	a.RegisterHook(Hook{
-		Op: Put,
-		Handler: func(evt Event) Event {
-			evt.PostHooks = append(evt.PostHooks, func(e Event) error {
-				ft, ext := f.filetype(evt.File)
-				if ft.Tabwidth == 0 {
-					return nil
+	f.acme.WinHooks = map[AcmeOp][]WinHandler{
+		New: []WinHandler{
+			func(w *Win) {
+				ft, _ := f.filetype(w.File)
+				if ft.Tabwidth != 0 {
+					f.fmt(w, ft)
 				}
-				err := f.exec(evt, ft.Commands, ext)
+				err := w.WriteMenu(menutag, toptag)
 				if err != nil {
-					log.Println(err)
+					fmt.Fprintf(os.Stderr, "%+v", err)
 				}
-				return nil
-			})
-			return evt
+			},
 		},
-	})
+	}
 
-	a.RegisterKeyHook(Tabexpand(
+	f.acme.EventHooks = map[AcmeOp][]Handler{
+		Put: []Handler{
+			func(evt Event) Event {
+				evt.PostHooks = append(evt.PostHooks, func(e Event) error {
+					ft, ext := f.filetype(evt.File)
+					if ft.Tabwidth == 0 {
+						return nil
+					}
+					err := f.exec(evt, ft.Commands, ext)
+					if err != nil {
+						log.Println(err)
+					}
+					return nil
+				})
+				return evt
+			},
+		},
+	}
+
+	key, expand := Tabexpand(
 		func(evt Event) bool {
 			ft, _ := f.filetype(evt.File)
 			return ft.Tabexpand
 		},
 		func(id int) (*Win, error) {
-			l := a.BufListener(id)
+			l := f.acme.BufListener(id)
 			if l == nil {
 				return nil, fmt.Errorf("could not find event loop")
 			}
@@ -87,8 +80,17 @@ func (f *Formatter) registerHooks(a *Acme, menu, top []string) {
 				return 8 // default
 			}
 			return ft.Tabwidth
-		},
-	))
+		})
+	f.acme.KeyHooks = map[rune]Handler{
+		key: expand,
+	}
+
+	return f, nil
+}
+
+// Run tells the Formatter to begin listening for Acme events
+func (f *Formatter) Run() error {
+	return f.acme.Listen()
 }
 
 // exec executes commands that operate on stdin/stdout against the

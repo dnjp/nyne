@@ -26,44 +26,40 @@ func Tab(width int, expand bool) []byte {
 }
 
 // Tabexpand expands tabs to spaces
-func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) KeyHook {
-	return KeyHook{
-		Key:       '\t',
-		Condition: condition,
-		Handler: func(e Event) Event {
-			if !condition(e) {
-				return e
-			}
-
-			w, err := win(e.ID)
-			if err != nil {
-				log.Println(err)
-				return e
-			}
-
-			tab := Tab(tabwidth(e), true)
-
-			// select current character
-			err = w.SetAddr(fmt.Sprintf("#%d;+#1", e.SelBegin))
-			if err != nil {
-				log.Println(err)
-				w.WriteEvent(e)
-			}
-
-			// replace character with tab
-			w.SetData(tab)
-
-			// update the event to reflect the change
-			rc := utf8.RuneCount(tab)
-			selEnd := e.SelBegin + rc
-			e.Origin = WindowFiles
-			e.Type = BodyInsert
-			e.SelEnd = selEnd
-			e.OrigSelEnd = selEnd
-			e.NumRunes = rc
-			e.Text = tab
-
+func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) (rune, Handler) {
+	return '\t', func(e Event) Event {
+		if !condition(e) {
 			return e
-		},
+		}
+
+		w, err := win(e.ID)
+		if err != nil {
+			log.Println(err)
+			return e
+		}
+
+		tab := Tab(tabwidth(e), true)
+
+		// select current character
+		err = w.SetAddr(fmt.Sprintf("#%d;+#1", e.SelBegin))
+		if err != nil {
+			log.Println(err)
+			w.WriteEvent(e)
+		}
+
+		// replace character with tab
+		w.SetData(tab)
+
+		// update the event to reflect the change
+		rc := utf8.RuneCount(tab)
+		selEnd := e.SelBegin + rc
+		e.Origin = WindowFiles
+		e.Type = BodyInsert
+		e.SelEnd = selEnd
+		e.OrigSelEnd = selEnd
+		e.NumRunes = rc
+		e.Text = tab
+
+		return e
 	}
 }

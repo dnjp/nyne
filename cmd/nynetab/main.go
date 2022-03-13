@@ -36,7 +36,7 @@ func main() {
 	}
 
 	buf := nyne.NewBuf(wid, os.Getenv("$samfile"))
-	buf.RegisterKeyHook(nyne.Tabexpand(
+	key, expand := nyne.Tabexpand(
 		func(evt nyne.Event) bool {
 			return true
 		},
@@ -48,8 +48,12 @@ func main() {
 		},
 		func(_ nyne.Event) int {
 			return tabwidth
-		},
-	))
+		})
+
+	buf.KeyHooks = map[rune]nyne.Handler{
+		key: expand,
+	}
+
 	err = buf.Start()
 	if err != nil {
 		panic(err)
