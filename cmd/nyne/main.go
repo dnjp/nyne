@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	f, err := nyne.NewFormatter(nyne.Filetypes, nyne.Menu, nyne.Tag)
+	f, err := nyne.NewFormatter(nyne.Filetypes, nyne.Menu)
 	if err != nil {
 		log.Fatal(err)
 	}

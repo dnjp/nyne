@@ -124,7 +124,7 @@ func (a *Acme) mapWindows() error {
 	return nil
 }
 
-// BufListener returns the running Buf by its ID
-func (a *Acme) BufListener(id int) *Buf {
+// Buf returns the running Buf by its ID
+func (a *Acme) Buf(id int) *Buf {
 	return a.bufs[id]
 }

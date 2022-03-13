@@ -225,34 +225,15 @@ func (w *Win) WriteToTag(text string) error {
 }
 
 // WriteMenu writes the specified menu options to the Acme buffer
-func (w *Win) WriteMenu(topline []string, menu []string) error {
+func (w *Win) WriteMenu(menu []string) error {
 	if w == nil {
 		return fmt.Errorf("state has drifted: *Win is nil")
 	}
-
-	for _, opt := range topline {
-		cmd := fmt.Sprintf("  %s", opt)
-		if err := w.WriteToTag(cmd); err != nil {
-			return err
-		}
-	}
-
-	if len(topline) > 0 {
-		if err := w.WriteToTag("\n"); err != nil {
-			return err
-		}
-	}
-
 	for _, opt := range menu {
-		if strings.Contains(opt, " ") {
-			opt = fmt.Sprintf("(%s)", opt)
-		}
-		cmd := fmt.Sprintf("  %s", opt)
-		if err := w.WriteToTag(cmd); err != nil {
+		if err := w.WriteToTag(opt); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 

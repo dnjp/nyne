@@ -17,7 +17,7 @@ type Formatter struct {
 }
 
 // NewFormatter constructs a Formatter
-func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, error) {
+func NewFormatter(filetypes []Filetype, menutag []string) (*Formatter, error) {
 	f := &Formatter{
 		acme:   NewAcme(),
 		debug:  len(os.Getenv("DEBUG")) > 0,
@@ -35,7 +35,7 @@ func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, e
 				if ft.Tabwidth != 0 {
 					f.fmt(w, ft)
 				}
-				err := w.WriteMenu(menutag, toptag)
+				err := w.WriteMenu(menutag)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "%+v", err)
 				}
@@ -68,7 +68,7 @@ func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, e
 			return ft.Tabexpand
 		},
 		func(id int) (*Win, error) {
-			l := f.acme.BufListener(id)
+			l := f.acme.Buf(id)
 			if l == nil {
 				return nil, fmt.Errorf("could not find event loop")
 			}
@@ -133,7 +133,7 @@ func (f *Formatter) fmt(w *Win, ft Filetype) error {
 // refmt executes a command to the Acme buffer and refreshes the buffer
 // with updated contents
 func (f *Formatter) refmt(evt Event, cmd Command, xt string) ([]byte, error) {
-	l := f.acme.BufListener(evt.ID)
+	l := f.acme.Buf(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
 	}
@@ -185,7 +185,7 @@ func (f *Formatter) refmt(evt Event, cmd Command, xt string) ([]byte, error) {
 
 // update writes the updated contents to the file
 func (f *Formatter) update(evt Event, updates [][]byte) error {
-	l := f.acme.BufListener(evt.ID)
+	l := f.acme.Buf(evt.ID)
 	if l == nil {
 		return fmt.Errorf("no event loop found")
 	}
