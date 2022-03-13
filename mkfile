@@ -1,6 +1,3 @@
-
-installdir=${installdir}
-
 ALL=nyne nynetab com a+ a-
 
 all:V: $ALL
@@ -24,14 +21,19 @@ a-: bin
 	go build -o bin/a- cmd/a-/*.go
 
 install:
-	cp bin/* $installdir
+	go install ./...
 
-uninstall:
-	rm $installdir/nyne
-	rm $installdir/nynetab
-	rm $installdir/com
-	rm $installdir/a+
-	rm $installdir/a-
+MKSHELL=$PLAN9/bin/rc
+uninstall-rc:V:
+	for(cmd in $ALL) rm -f $GOPATH/bin/$cmd
+
+MKSHELL=sh
+uninstall-sh:V:
+	for cmd in $ALL; do
+		rm -f $GOPATH/bin/$cmd
+	done
+
+uninstall:V: uninstall-sh uninstall-rc
 
 check: $ALL
 	go test -count=1 ./...
