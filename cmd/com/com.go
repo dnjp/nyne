@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/dnjp/nyne/gen"
-	"github.com/dnjp/nyne/util/io"
 	"os"
 	"strings"
+
+	"github.com/dnjp/nyne"
+	"github.com/dnjp/nyne/format"
+	"github.com/dnjp/nyne/util/io"
 )
 
 func main() {
@@ -15,9 +17,8 @@ func main() {
 	if samfile == "" && fflag != nil {
 		samfile = *fflag
 	}
-	filename := gen.GetFileName(samfile)
-	ext := gen.GetExt(filename, ".txt")
-	comment := gen.Conf[ext].CmtStyle
+	ft, _ := nyne.Filetype(format.Filename(samfile))
+	comment := ft.Comment
 	if len(comment) == 0 {
 		comment = "# "
 	}

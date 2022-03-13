@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/dnjp/nyne"
 	"github.com/dnjp/nyne/format"
 	"github.com/dnjp/nyne/util/io"
 )
@@ -19,10 +20,9 @@ func main() {
 		samfile = *fflag
 	}
 	filename := format.Filename(samfile)
-	ext := format.Extension(filename, ".txt")
-	spec := format.Config[ext]
-	ts := spec.Tabwidth
-	te := spec.Tabexpand
+	ft, _ := nyne.Filetype(filename)
+	ts := ft.Tabwidth
+	te := ft.Tabexpand
 	if ts == 0 {
 		tab := os.Getenv("tabstop")
 		if tab == "" && iflag != nil {

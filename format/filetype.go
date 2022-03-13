@@ -1,6 +1,9 @@
 package format
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Command contains options for executing a given command against an
 // acme window
@@ -38,4 +41,17 @@ func Extension(in string, def string) string {
 func Filename(in string) string {
 	path := strings.Split(in, "/")
 	return path[len(path)-1]
+}
+
+// UpdateConfig updates the filetypes in the global map
+func FillFiletypes(dst map[string]Filetype, src []Filetype) error {
+	for _, ft := range src {
+		for _, ext := range ft.Extensions {
+			if ft2, ok := dst[ext]; ok {
+				return fmt.Errorf("duplicate extension for filetype: original=%+v new=%+v", ft2, ft)
+			}
+			dst[ext] = ft
+		}
+	}
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/dnjp/nyne"
 	"github.com/dnjp/nyne/event"
 	"github.com/dnjp/nyne/format"
 )
@@ -17,8 +18,8 @@ func main() {
 	}
 
 	filename := format.Filename(os.Getenv("samfile"))
-	ext := format.Extension(filename, ".txt")
-	tabwidth := format.Config[ext].Tabwidth
+	ft, _ := nyne.Filetype(filename)
+	tabwidth := ft.Tabwidth
 	if tabwidth == 0 && len(os.Args) > 1 {
 		width, err := strconv.Atoi(os.Args[1])
 		if err != nil {
@@ -28,7 +29,7 @@ func main() {
 		tabwidth = width
 	}
 
-	buf := event.NewBufListener(wid, os.Getenv("$samfile"))
+	buf := event.NewBuf(wid, os.Getenv("$samfile"))
 	buf.RegisterKeyCmdHook(format.Tabexpand(
 		func(evt event.Event) bool {
 			return true

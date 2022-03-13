@@ -1,17 +1,34 @@
-package format
+package nyne
 
 import (
-	"fmt"
+	"github.com/dnjp/nyne/format"
 )
 
-var DefaultFiletypes = []Filetype{
+// config maps file extensions to their formatting specification
+var config = func() map[string]format.Filetype {
+	c := make(map[string]format.Filetype)
+	err := format.FillFiletypes(c, Filetypes)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}()
+
+// Filetype returns the filetype in the nyne config if present
+func Filetype(ext string) (ft format.Filetype, ok bool) {
+	ft, ok = config[ext]
+	return
+}
+
+// Filetypes define file formatting rules that will be applied
+var Filetypes = []format.Filetype{
 	{
 		Name:       "cpp",
 		Extensions: []string{".cc", ".cpp", ".hpp", ".cxx", ".hxx"},
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "java",
@@ -19,7 +36,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands:   []Command{
+		Commands:   []format.Command{
 			// {
 			// 	Exec: "google-java-format",
 			// 	Args: []string{
@@ -35,7 +52,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands: []Command{
+		Commands: []format.Command{
 			{
 				Exec: "prettier",
 				Args: []string{
@@ -54,7 +71,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "makefile",
@@ -62,7 +79,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "shell",
@@ -70,7 +87,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "c",
@@ -78,7 +95,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "/* */",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "html",
@@ -86,7 +103,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "<!-- -->",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "markdown",
@@ -94,7 +111,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "",
-		Commands:   []Command{
+		Commands:   []format.Command{
 			// {
 			// 	Exec: "prettier",
 			// 	Args: []string{
@@ -115,7 +132,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "# ",
-		Commands: []Command{
+		Commands: []format.Command{
 			{
 				Exec: "terraform",
 				Args: []string{
@@ -132,7 +149,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "yaml",
@@ -140,7 +157,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "# ",
-		Commands:   []Command{},
+		Commands:   []format.Command{},
 	},
 	{
 		Name:       "go",
@@ -148,7 +165,7 @@ var DefaultFiletypes = []Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "// ",
-		Commands:   []Command{
+		Commands:   []format.Command{
 			// {
 			// 	Exec: "gofmt",
 			// 	Args: []string{
@@ -158,52 +175,4 @@ var DefaultFiletypes = []Filetype{
 			// },
 		},
 	},
-}
-
-// DefaultMenu contains the menu options that should be written to the scratch
-// buffer
-var DefaultMenu = []string{
-	"|fmt",
-	"|com",
-	"|a-",
-	"|a+",
-	"Ldef",
-	"Lrefs",
-	"Lcomp",
-	"win",
-}
-
-var UseDefaultFiletypes = true
-var UseDefaultMenu = true
-
-var Menu = func() []string {
-	if UseDefaultMenu {
-		return DefaultMenu
-	}
-	return make([]string, 0)
-}()
-
-// Config maps file extensions to their formatting specification
-var Config = func() map[string]Filetype {
-	config := make(map[string]Filetype)
-	if UseDefaultFiletypes {
-		err := UpdateConfig(DefaultFiletypes, config)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return config
-}()
-
-// UpdateConfig updates the filetypes in the global map
-func UpdateConfig(filetypes []Filetype, config map[string]Filetype) error {
-	for _, ft := range filetypes {
-		for _, ext := range ft.Extensions {
-			if ft2, ok := config[ext]; ok {
-				return fmt.Errorf("duplicate extension for filetype: original=%+v new=%+v", ft2, ft)
-			}
-			config[ext] = ft
-		}
-	}
-	return nil
 }

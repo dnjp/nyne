@@ -3,13 +3,17 @@ package main
 import (
 	"log"
 
+	"github.com/dnjp/nyne"
 	"github.com/dnjp/nyne/format"
 )
 
 func main() {
-	formatter, err := format.New([]format.Filetype{})
+	f, err := format.NewFormatter(nyne.Filetypes, nyne.Menu, nyne.Tag)
 	if err != nil {
 		log.Fatal(err)
 	}
-	formatter.Run()
+	err = f.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

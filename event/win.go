@@ -58,29 +58,32 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 	if w == nil || w.handle == nil {
 		return fmt.Errorf("window handle lost")
 	}
-	cmd := fmt.Sprintf("%s %s", exec, strings.Join(args, " "))
 
 	tag, err := w.ReadTag()
 	if err != nil {
 		return err
 	}
 	offset := utf8.RuneCount(tag)
-	cmdlen := utf8.RuneCountInString(cmd)
+
+	cmd := fmt.Sprintf("%s %s", exec, strings.Join(args, " "))
 	if err := w.WriteToTag(cmd); err != nil {
 		return err
 	}
+
 	evt := Event{
 		Origin:   Mouse,
 		Type:     B2Tag,
 		SelBegin: offset,
-		SelEnd:   offset + cmdlen,
+		SelEnd:   offset + utf8.RuneCountInString(cmd),
 	}
+
 	log := evt.Log()
 
 	err = w.handle.WriteEvent(&log)
 	if err != nil {
 		return err
 	}
+
 	return w.ClearTagText()
 }
 
@@ -219,6 +222,38 @@ func (w *Win) WriteToTag(text string) error {
 		return fmt.Errorf("window handle lost")
 	}
 	return w.handle.Fprintf("tag", "%s", text)
+}
+
+// WriteMenu writes the specified menu options to the Acme buffer
+func (w *Win) WriteMenu(topline []string, menu []string) error {
+	if w == nil {
+		return fmt.Errorf("state has drifted: *Win is nil")
+	}
+
+	for _, opt := range topline {
+		cmd := fmt.Sprintf("  %s", opt)
+		if err := w.WriteToTag(cmd); err != nil {
+			return err
+		}
+	}
+
+	if len(topline) > 0 {
+		if err := w.WriteToTag("\n"); err != nil {
+			return err
+		}
+	}
+
+	for _, opt := range menu {
+		if strings.Contains(opt, " ") {
+			opt = fmt.Sprintf("(%s)", opt)
+		}
+		cmd := fmt.Sprintf("  %s", opt)
+		if err := w.WriteToTag(cmd); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (w *Win) write(file string, data []byte) error {

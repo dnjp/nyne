@@ -15,18 +15,18 @@ type PostWriteHook func(Event) error
 type AcmeOp int
 
 const (
-	// NEW represents window creation
-	NEW AcmeOp = iota
-	// ZEROX reprents window creation via zerox
-	ZEROX
-	// GET loadr file into window
-	GET
-	// PUT writes window to the named file
-	PUT
-	// DEL deletes the window
-	DEL
-	// FOCUS is received when the window is in focus
-	FOCUS
+	// New represents window creation
+	New AcmeOp = iota
+	// Zerox reprents window creation via zerox
+	Zerox
+	// Get loadr file into window
+	Get
+	// Put writes window to the named file
+	Put
+	// Del deletes the window
+	Del
+	// Focus is received when the window is in focus
+	Focus
 )
 
 // Event contains metadata for each Acme event
@@ -262,15 +262,15 @@ func (e *Event) setBuiltin(event *acme.Event) error {
 	var op AcmeOp
 	switch action {
 	case "new":
-		op = NEW
+		op = New
 	case "zerox":
-		op = ZEROX
+		op = Zerox
 	case "get":
-		op = GET
+		op = Get
 	case "put":
-		op = PUT
+		op = Put
 	case "del":
-		op = DEL
+		op = Del
 	}
 	e.Builtin = op
 	return nil
