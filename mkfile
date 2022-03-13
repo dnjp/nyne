@@ -1,7 +1,7 @@
 
 installdir=${installdir}
 
-ALL=nyne nynetab com a+ ui
+ALL=nyne nynetab com a+ a-
 
 all:V: $ALL
 
@@ -20,8 +20,8 @@ com: bin
 a+: bin
 	go build -o bin/a+ cmd/a+/*.go
 
-ui: bin
-	go build -o bin/a- cmd/ui/ui.go
+a-: bin
+	go build -o bin/a- cmd/a-/*.go
 
 install:
 	cp bin/* $installdir
