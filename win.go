@@ -1,12 +1,20 @@
 package nyne
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	"strings"
 	"unicode/utf8"
 
 	"9fans.net/go/acme"
+	p9client "9fans.net/go/plan9/client"
 )
 
 // Win represents the active Acme window
@@ -22,6 +30,53 @@ func NewWin(w *acme.Win) *Win {
 	return &Win{
 		handle: w,
 	}
+}
+
+// Windows returns all open acme windows
+func Windows() (map[int]*Win, error) {
+	ws, err := acme.Windows()
+	if err != nil {
+		return nil, err
+	}
+	wins := make(map[int]*Win)
+	for _, wi := range ws {
+		w, err := acme.Open(wi.ID, nil)
+		if err != nil {
+			return nil, err
+		}
+		wins[wi.ID] = &Win{
+			ID:     wi.ID,
+			File:   wi.Name,
+			handle: w,
+		}
+	}
+	return wins, nil
+}
+
+// FocusedWinID returns the $winid if present, otherwise it connects
+// to the given addr to find the ID
+//
+// Derived from https://github.com/fhs/acme-lsp/blob/623cb39c2e31bddda0ad7c216c2f3c2fcfcf237f/cmd/L/main.go#L256
+func FocusedWinID(addr string) (int, error) {
+	winid := os.Getenv("winid")
+	if winid == "" {
+		conn, err := net.Dial("unix", addr)
+		if err != nil {
+			return 0, fmt.Errorf("$winid is empty and could not dial acmefocused: %v", err)
+		}
+		defer conn.Close()
+		b, err := ioutil.ReadAll(conn)
+		if err != nil {
+			return 0, fmt.Errorf("$winid is empty and could not read acmefocused: %v", err)
+		}
+		winid = string(bytes.TrimSpace(b))
+	}
+	return strconv.Atoi(winid)
+}
+
+// FindFocusedWinID finds the active window ID using acmefocused
+func FindFocusedWinID() (int, error) {
+	return FocusedWinID(filepath.Join(p9client.Namespace(), "acmefocused"))
 }
 
 // OpenWin opens an acme window
@@ -154,11 +209,39 @@ func (w *Win) ReadBody() ([]byte, error) {
 }
 
 // ReadAddr returns the current address of the window
-func (w *Win) ReadAddr() ([]byte, error) {
+//
+// Derived from https://github.com/fhs/acme-lsp/blob/623cb39c2e31bddda0ad7c216c2f3c2fcfcf237f/internal/acme/acme.go#L366
+func (w *Win) ReadAddr() (q0, q1 int, err error) {
 	if w == nil || w.handle == nil {
-		return []byte{}, fmt.Errorf("window handle lost")
+		return 0, 0, fmt.Errorf("window handle lost")
 	}
-	return w.handle.ReadAll("addr")
+	buf, err := w.handle.ReadAll("addr")
+	if err != nil {
+		return 0, 0, err
+	}
+	a := strings.Fields(string(buf))
+	if len(a) < 2 {
+		return 0, 0, errors.New("short read from acme addr")
+	}
+	q0, err0 := strconv.Atoi(a[0])
+	q1, err1 := strconv.Atoi(a[1])
+	if err0 != nil || err1 != nil {
+		return 0, 0, errors.New("invalid read from acme addr")
+	}
+	return q0, q1, nil
+}
+
+// CurrentAddr sets the addr to dot and reads the addr
+func (w *Win) CurrentAddr() (q0, q1 int, err error) {
+	_, _, err = w.ReadAddr() // open addr file
+	if err != nil {
+		return 0, 0, fmt.Errorf("read addr: %v", err)
+	}
+	err = w.SetAddrToSelText()
+	if err != nil {
+		return 0, 0, fmt.Errorf("setting addr=dot: %v", err)
+	}
+	return w.ReadAddr()
 }
 
 // SetTextToAddr sets the user’s selected text in the window to the text

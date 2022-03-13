@@ -27,6 +27,19 @@ file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
 how it reacts to different file types, what to write to the menu, etc.
 Alter this file to your liking before building and installing nyne.
 
+nynetab is intended to be called from a tool like
+[skhd](https://github.com/koekeishiya/skhd) which allows for
+overriding the application handlers for particular key bindings. To
+use nynetab with skhd, add something like the following to your
+[skhdrc](https://github.com/koekeishiya/skhd/blob/master/examples/skhdrc):
+
+```
+tab [
+  "acme" : nynetab
+  "edwood" : nynetab
+]
+```
+
 ## Install
 
 To install nyne, first make sure that you have properly installed
