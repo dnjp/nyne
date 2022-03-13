@@ -9,23 +9,23 @@ import (
 // Buf implements the BufListener interface and runs on opened
 // acme buffers
 type Buf struct {
-	id          int
-	file        string
-	win         *Win
-	debug       bool
-	eventHooks  map[AcmeOp][]PutHook
-	winHooks    map[AcmeOp][]WinHook
-	keyCmdHooks map[rune]*KeyCmdHook
+	id         int
+	file       string
+	win        *Win
+	debug      bool
+	eventHooks map[AcmeOp][]Hook
+	winHooks   map[AcmeOp][]WinHook
+	keyHooks   map[rune]KeyHook
 }
 
 // NewBuf constructs an event loop
 func NewBuf(id int, file string) *Buf {
 	return &Buf{
-		id:          id,
-		file:        file,
-		eventHooks:  make(map[AcmeOp][]PutHook),
-		winHooks:    make(map[AcmeOp][]WinHook),
-		keyCmdHooks: make(map[rune]*KeyCmdHook),
+		id:         id,
+		file:       file,
+		eventHooks: make(map[AcmeOp][]Hook),
+		winHooks:   make(map[AcmeOp][]WinHook),
+		keyHooks:   make(map[rune]KeyHook),
 	}
 }
 
@@ -48,11 +48,11 @@ func (b *Buf) Start() error {
 	b.win = w
 
 	// runs hooks for acme 'new' event
-	b.runWinHooks(b.win)
+	b.winEvent(b.win, Event{Builtin: New})
 
 	for e := range b.win.OpenEventChan() {
 		if b.debug {
-			log.Printf("RAW: %+v\n", *e)
+			log.Printf("EVENT(before): %+v\n", *e)
 		}
 
 		event, err := NewEvent(e, b.id, b.file)
@@ -62,18 +62,18 @@ func (b *Buf) Start() error {
 
 		if event.Origin == Keyboard {
 			w.Lastpoint = event.SelBegin
-			event = b.runKeyCmdHooks(event)
+			event = b.keyEvent(event)
 		} else {
 			if event.Origin == DelOrigin && event.Type == DelType {
 				b.win.WriteEvent(event)
 				b.win.Close()
 				return nil
 			}
-			event = b.runPutHooks(event)
+			event = b.execEvent(event)
 		}
 
 		if b.debug {
-			log.Printf("TOKEN: %+v\n", event)
+			log.Printf("EVENT(after): %+v\n", event)
 		}
 
 		b.win.WriteEvent(event)
@@ -107,8 +107,8 @@ func (b *Buf) Start() error {
 	return nil
 }
 
-// RegisterPutHook registers hook on acme 'Put' events
-func (b *Buf) RegisterPutHook(hook PutHook) {
+// RegisterHook registers hook on acme 'Put' events
+func (b *Buf) RegisterHook(hook Hook) {
 	hooks := b.eventHooks[Put]
 	hooks = append(hooks, hook)
 	b.eventHooks[Put] = hooks
@@ -121,43 +121,34 @@ func (b *Buf) RegisterWinHook(hook WinHook) {
 	b.winHooks[New] = hooks
 }
 
-// RegisterKeyCmdHook registers hook for key events
-func (b *Buf) RegisterKeyCmdHook(hook KeyCmdHook) {
-	b.keyCmdHooks[hook.Key] = &hook
+// RegisterKeyHook registers hook for key events
+func (b *Buf) RegisterKeyHook(hook KeyHook) {
+	b.keyHooks[hook.Key] = hook
 }
 
-func (b *Buf) runWinHooks(w *Win) {
-	hooks := b.winHooks[New]
-	if len(hooks) == 0 {
-		return
-	}
-	for _, hook := range hooks {
-		fn := hook.Handler
-		fn(w)
+func (b *Buf) winEvent(w *Win, event Event) {
+	for _, hook := range b.winHooks[event.Builtin] {
+		hook.Handler(w)
 	}
 }
 
-func (b *Buf) runKeyCmdHooks(event Event) Event {
+func (b *Buf) keyEvent(event Event) Event {
 	r, _ := utf8.DecodeRune(event.Text)
-	keyCmdHook := b.keyCmdHooks[r]
-	if keyCmdHook == nil {
+	hook, ok := b.keyHooks[r]
+	if !ok {
 		return event
 	}
-	if keyCmdHook.Condition(event) {
-		evt := keyCmdHook.Handler(event)
-		return evt
+
+	if hook.Condition(event) {
+		return hook.Handler(event)
 	}
+
 	return event
 }
 
-func (b *Buf) runPutHooks(event Event) Event {
-	hooks := b.eventHooks[event.Builtin]
-	if len(hooks) == 0 {
-		return event
-	}
-	// allow progressive mutation of event
+func (b *Buf) execEvent(event Event) Event {
 	newEvent := event
-	for _, hook := range hooks {
+	for _, hook := range b.eventHooks[event.Builtin] {
 		newEvent = hook.Handler(newEvent)
 	}
 	return newEvent

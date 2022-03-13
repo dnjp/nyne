@@ -14,19 +14,17 @@ import (
 
 // Formatter formats acme windows and buffers
 type Formatter struct {
-	acme          *event.Acme
-	debug         bool
-	config        map[string]Filetype
-	extWithoutDot []string
+	acme   *event.Acme
+	debug  bool
+	config map[string]Filetype
 }
 
 // NewFormatter constructs a Formatter
 func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, error) {
 	f := &Formatter{
-		acme:          event.NewAcme(),
-		debug:         len(os.Getenv("DEBUG")) > 0,
-		config:        make(map[string]Filetype),
-		extWithoutDot: []string{},
+		acme:   event.NewAcme(),
+		debug:  len(os.Getenv("DEBUG")) > 0,
+		config: make(map[string]Filetype),
 	}
 	err := FillFiletypes(f.config, filetypes)
 	if err != nil {
@@ -43,6 +41,7 @@ func (f *Formatter) Run() error {
 
 func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 	a.RegisterWinHook(event.WinHook{
+		Op: event.New,
 		Handler: func(w *event.Win) {
 			ft, _ := f.filetype(w.File)
 			if ft.Tabwidth != 0 {
@@ -55,9 +54,10 @@ func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 		},
 	})
 
-	a.RegisterPutHook(event.PutHook{
+	a.RegisterHook(event.Hook{
+		Op: event.Put,
 		Handler: func(evt event.Event) event.Event {
-			fn := func(e event.Event) error {
+			evt.PostHooks = append(evt.PostHooks, func(e event.Event) error {
 				ft, ext := f.filetype(evt.File)
 				if ft.Tabwidth == 0 {
 					return nil
@@ -67,14 +67,12 @@ func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 					log.Println(err)
 				}
 				return nil
-			}
-			evt.PostHooks = append(evt.PostHooks, fn)
+			})
 			return evt
 		},
 	})
 
-	// Tabexpand
-	a.RegisterKeyCmdHook(Tabexpand(
+	a.RegisterKeyHook(Tabexpand(
 		func(evt event.Event) bool {
 			ft, _ := f.filetype(evt.File)
 			return ft.Tabexpand
@@ -169,7 +167,7 @@ func (f *Formatter) refmt(evt event.Event, cmd Command, xt string) ([]byte, erro
 	// Execute the command
 	out, err := exec.Command(cmd.Exec, nargs...).CombinedOutput()
 	if err != nil {
-		return []byte{}, fmt.Errorf("Error: %+v\n%s", err, string(out))
+		return []byte{}, fmt.Errorf("error: %+v\n%s", err, string(out))
 	}
 
 	// handle formatting commands that both do and do not write to stdout

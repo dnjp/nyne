@@ -28,8 +28,8 @@ func Tab(width int, expand bool) []byte {
 }
 
 // Tabexpand expands tabs to spaces
-func Tabexpand(condition event.Condition, win WinFunc, tabwidth TabwidthFunc) event.KeyCmdHook {
-	return event.KeyCmdHook{
+func Tabexpand(condition event.Condition, win WinFunc, tabwidth TabwidthFunc) event.KeyHook {
+	return event.KeyHook{
 		Key:       '\t',
 		Condition: condition,
 		Handler: func(e event.Event) event.Event {

@@ -43,7 +43,7 @@ func Filename(in string) string {
 	return path[len(path)-1]
 }
 
-// UpdateConfig updates the filetypes in the global map
+// FillFiletypes updates the filetypes in the given map
 func FillFiletypes(dst map[string]Filetype, src []Filetype) error {
 	for _, ft := range src {
 		for _, ext := range ft.Extensions {

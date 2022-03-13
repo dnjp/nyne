@@ -30,7 +30,7 @@ func main() {
 	}
 
 	buf := event.NewBuf(wid, os.Getenv("$samfile"))
-	buf.RegisterKeyCmdHook(format.Tabexpand(
+	buf.RegisterKeyHook(format.Tabexpand(
 		func(evt event.Event) bool {
 			return true
 		},

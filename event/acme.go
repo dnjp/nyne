@@ -7,29 +7,28 @@ import (
 	"sync"
 
 	"9fans.net/go/acme"
-	// "github.com/dnjp/nyne/formatter"
 	"github.com/dnjp/nyne/util/io"
 )
 
 // Acme implements the Listener interface for acme events
 type Acme struct {
-	eventHooks  map[AcmeOp][]PutHook
-	winHooks    map[AcmeOp][]WinHook
-	keyCmdHooks map[rune]*KeyCmdHook
-	windows     map[int]string
-	bufs        map[int]*Buf
-	debug       bool
-	mux         sync.Mutex
+	eventHooks map[AcmeOp][]Hook
+	winHooks   map[AcmeOp][]WinHook
+	keyHooks   map[rune]KeyHook
+	wins       map[int]string
+	bufs       map[int]*Buf
+	debug      bool
+	mux        sync.Mutex
 }
 
-// NewListener constructs an Acme Listener
+// NewAcme constructs an Acme event listener
 func NewAcme() *Acme {
 	return &Acme{
-		eventHooks:  make(map[AcmeOp][]PutHook),
-		winHooks:    make(map[AcmeOp][]WinHook),
-		keyCmdHooks: make(map[rune]*KeyCmdHook),
-		windows:     make(map[int]string),
-		bufs:        make(map[int]*Buf),
+		eventHooks: make(map[AcmeOp][]Hook),
+		winHooks:   make(map[AcmeOp][]WinHook),
+		keyHooks:   make(map[rune]KeyHook),
+		wins:       make(map[int]string),
+		bufs:       make(map[int]*Buf),
 	}
 }
 
@@ -54,15 +53,12 @@ func (a *Acme) Listen() error {
 		if a.debug {
 			log.Println("reading acme event")
 		}
+
 		event, err := l.Read()
 		if err != nil {
 			return err
 		}
-		// TODO
-		// ext := formatter.Ext(event.Name, "NONE")
-		// if ext == "NONE" || formatter.Conf[ext].Indent == 0 {
-		// 	continue
-		// }
+
 		// skip directory windows
 		if strings.HasSuffix(event.Name, "/") {
 			continue
@@ -70,12 +66,12 @@ func (a *Acme) Listen() error {
 
 		// create listener on new window events
 		if event.Op == "new" {
-			go a.handleNewOp(event.ID)
+			go a.startBuf(event.ID)
 		}
 	}
 }
 
-func (a *Acme) handleNewOp(id int) {
+func (a *Acme) startBuf(id int) {
 	err := a.mapWindows()
 	if err != nil {
 		io.Error(err)
@@ -84,15 +80,17 @@ func (a *Acme) handleNewOp(id int) {
 	if a.isDisabled(id) {
 		return
 	}
+
 	f := &Buf{
-		id:          id,
-		file:        a.windows[id],
-		debug:       a.debug,
-		eventHooks:  a.eventHooks,
-		winHooks:    a.winHooks,
-		keyCmdHooks: a.keyCmdHooks,
+		id:         id,
+		file:       a.wins[id],
+		debug:      a.debug,
+		eventHooks: a.eventHooks,
+		winHooks:   a.winHooks,
+		keyHooks:   a.keyHooks,
 	}
 	a.bufs[id] = f
+
 	err = f.Start()
 	if err != nil {
 		io.Error(err)
@@ -100,9 +98,10 @@ func (a *Acme) handleNewOp(id int) {
 	}
 }
 
+var disabledNames = []string{"/-", "Del", "xplor", "+Errors"}
+
 func (a *Acme) isDisabled(id int) bool {
-	filename := a.windows[id]
-	disabledNames := []string{"/-", "Del", "xplor", "+Errors"}
+	filename := a.wins[id]
 	for _, name := range disabledNames {
 		if strings.Contains(filename, name) {
 			return true
@@ -118,9 +117,9 @@ func (a *Acme) mapWindows() error {
 	}
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	a.windows = make(map[int]string)
+	a.wins = make(map[int]string)
 	for _, w := range ws {
-		a.windows[w.ID] = w.Name
+		a.wins[w.ID] = w.Name
 	}
 	return nil
 }
@@ -130,21 +129,17 @@ func (a *Acme) BufListener(id int) *Buf {
 	return a.bufs[id]
 }
 
-// RegisterPutHook registers hook on acme 'Put' events
-func (a *Acme) RegisterPutHook(hook PutHook) {
-	hooks := a.eventHooks[Put]
-	hooks = append(hooks, hook)
-	a.eventHooks[Put] = hooks
+// RegisterHook registers hook on acme 'Put' events
+func (a *Acme) RegisterHook(hook Hook) {
+	a.eventHooks[hook.Op] = append(a.eventHooks[hook.Op], hook)
 }
 
 // RegisterWinHook registers the hook on acme 'New' events
 func (a *Acme) RegisterWinHook(hook WinHook) {
-	hooks := a.winHooks[New]
-	hooks = append(hooks, hook)
-	a.winHooks[New] = hooks
+	a.winHooks[hook.Op] = append(a.winHooks[hook.Op], hook)
 }
 
-// RegisterKeyCmdHook registers hook for key events
-func (a *Acme) RegisterKeyCmdHook(hook KeyCmdHook) {
-	a.keyCmdHooks[hook.Key] = &hook
+// RegisterKeyHook registers hook for key events
+func (a *Acme) RegisterKeyHook(hook KeyHook) {
+	a.keyHooks[hook.Key] = hook
 }
