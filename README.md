@@ -22,21 +22,18 @@ Included in a full install of nyne are bundled utilities for acme:
 
 ## Configuration
 
-Nyne and the bundled utilities use a
-[configuration file](https://github.com/dnjp/nyne/blob/master/config.go) to
-configure how it reacts to different file types, what to write to the menu, etc.
+Nyne and the bundled utilities use a [configuration
+file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
+how it reacts to different file types, what to write to the menu, etc.
 Alter this file to your liking before building and installing nyne.
 
 ## Install
 
-To install nyne, first make sure that you have properly installed [Go](https://go.dev/learn/)
-and then execute the following commands:
+To install nyne, first make sure that you have properly installed
+[Go](https://go.dev/learn/) and then execute the following commands:
 
 ```
 % git clone https://github.com/dnjp/nyne
-```
-
-```
 % cd nyne
 % go install ./...
 ```
