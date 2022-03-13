@@ -46,7 +46,7 @@ func (f *Formatter) registerHooks(a *Acme, menu, top []string) {
 			}
 			err := w.WriteMenu(menu, top)
 			if err != nil {
-				Error(err)
+				WriteError(err)
 			}
 		},
 	})

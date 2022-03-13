@@ -73,7 +73,7 @@ func (a *Acme) Listen() error {
 func (a *Acme) startBuf(id int) {
 	err := a.mapWindows()
 	if err != nil {
-		Error(err)
+		WriteError(err)
 		return
 	}
 	if a.isDisabled(id) {
@@ -92,7 +92,7 @@ func (a *Acme) startBuf(id int) {
 
 	err = f.Start()
 	if err != nil {
-		Error(err)
+		WriteError(err)
 		return
 	}
 }
