@@ -60,16 +60,20 @@ func (b *Buf) Start() error {
 			return err
 		}
 
+		var ok bool
 		if event.Origin == Keyboard {
 			w.Lastpoint = event.SelBegin
-			event = b.keyEvent(event)
+			event, ok = b.keyEvent(event)
 		} else {
 			if event.Origin == DelOrigin && event.Type == DelType {
 				b.win.WriteEvent(event)
 				b.win.Close()
 				return nil
 			}
-			event = b.execEvent(event)
+			event, ok = b.execEvent(event)
+		}
+		if !ok {
+			continue
 		}
 
 		if b.debug {
@@ -113,19 +117,24 @@ func (b *Buf) winEvent(w *Win, event Event) {
 	}
 }
 
-func (b *Buf) keyEvent(event Event) Event {
+func (b *Buf) keyEvent(event Event) (Event, bool) {
 	r, _ := utf8.DecodeRune(event.Text)
 	hook, ok := b.KeyHooks[r]
 	if !ok {
-		return event
+		return event, true
 	}
 	return hook(event)
 }
 
-func (b *Buf) execEvent(event Event) Event {
-	newEvent := event
+func (b *Buf) execEvent(event Event) (Event, bool) {
+	origEvent := event
+	newEvent := origEvent
+	ok := true
 	for _, hook := range b.EventHooks[event.Builtin] {
-		newEvent = hook(newEvent)
+		newEvent, ok = hook(newEvent)
+		if !ok {
+			return origEvent, true
+		}
 	}
-	return newEvent
+	return newEvent, ok
 }

@@ -4,7 +4,7 @@ package nyne
 type Condition func(Event) bool
 
 // Handler transforms an event
-type Handler func(Event) Event
+type Handler func(Event) (Event, bool)
 
 // WinHandler transforms the window
 type WinHandler func(*Win)

@@ -27,15 +27,16 @@ func Tab(width int, expand bool) []byte {
 
 // Tabexpand expands tabs to spaces
 func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) (rune, Handler) {
-	return '\t', func(e Event) Event {
+	return '\t', func(e Event) (Event, bool) {
+		ok := true
 		if !condition(e) {
-			return e
+			return e, ok
 		}
 
 		w, err := win(e.ID)
 		if err != nil {
 			log.Println(err)
-			return e
+			return e, ok
 		}
 
 		tab := Tab(tabwidth(e), true)
@@ -60,6 +61,6 @@ func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) (rune, H
 		e.NumRunes = rc
 		e.Text = tab
 
-		return e
+		return e, ok
 	}
 }
