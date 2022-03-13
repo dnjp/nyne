@@ -14,8 +14,7 @@ is a feature not included in Acme by default.
 Included in a full install of nyne are bundled utilities for acme:
 
 - `nyne`: The core autoformatting engine that is run from within acme
-- `nynetab`: Implements tab expansion for the given buffer if not configured for
-  nyne
+- `nynetab`: Implements tab expansion and indentation
 - `save`: Utility to execute Put via keyboard bindings
 - `a+`: Indent selected source code
 - `a-`: Unindent selected source code
@@ -40,11 +39,22 @@ tab [
   "acme" : nynetab
   "edwood" : nynetab
 ]
+
+shift - tab [
+  "acme" : nynetab -unindent=true
+  "edwood" : nynetab -unindent=true
+]
 ```
 
-`save` is also intended to be called from something like skhd. `save` simply
-executes `Put` on the focused window when invoked. This is how I use it
-with skhd:
+With these keybindings, entering `tab` without text selected will
+insert either a hard or soft tab depending on the file type
+configuration. If text is selected, entering `tab` will indent the
+selected text and entering `shift+tab` will unindent the selected
+text.
+
+`save` is also intended to be called from something like skhd. `save`
+simply executes `Put` on the focused window when invoked. This is how
+I use it with skhd:
 
 ```
 cmd - s [

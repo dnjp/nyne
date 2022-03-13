@@ -48,7 +48,7 @@ func main() {
 	com.Stdout = &out
 	com.Env = os.Environ()
 	com.Env = append(com.Env, fmt.Sprintf("winid=%d", winid))
-	com.Env = append(com.Env, fmt.Sprintf("%=%s", w.File))
+	com.Env = append(com.Env, fmt.Sprintf("%%=%s", w.File))
 	com.Env = append(com.Env, fmt.Sprintf("samfile=%s", w.File))
 
 	err = com.Run()

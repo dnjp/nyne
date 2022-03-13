@@ -299,6 +299,9 @@ func (w *Win) SetData(data []byte) error {
 	return w.write("data", data)
 }
 
+// ReadData reads the data in the body between q0 and q1. It is assumed
+// that CurrentAddr() or similar has been called to properly set the addr
+// and retrieve valid q0 and q1 points.
 func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
 	n := q1 - q0
 	buf := make([]byte, n)
