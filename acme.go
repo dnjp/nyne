@@ -1,6 +1,7 @@
 package nyne
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -73,7 +74,7 @@ func (a *Acme) Listen() error {
 func (a *Acme) startBuf(id int) {
 	err := a.mapWindows()
 	if err != nil {
-		WriteError(err)
+		fmt.Fprintf(os.Stderr, "%+v", err)
 		return
 	}
 	if a.isDisabled(id) {
@@ -92,7 +93,7 @@ func (a *Acme) startBuf(id int) {
 
 	err = f.Start()
 	if err != nil {
-		WriteError(err)
+		fmt.Fprintf(os.Stderr, "%+v", err)
 		return
 	}
 }
