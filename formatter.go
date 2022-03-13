@@ -8,13 +8,12 @@ import (
 	"os/exec"
 	"strconv"
 
-	"github.com/dnjp/nyne/event"
 	"github.com/dnjp/nyne/util/io"
 )
 
 // Formatter formats acme windows and buffers
 type Formatter struct {
-	acme   *event.Acme
+	acme   *Acme
 	debug  bool
 	config map[string]Filetype
 }
@@ -22,7 +21,7 @@ type Formatter struct {
 // NewFormatter constructs a Formatter
 func NewFormatter(filetypes []Filetype, menutag, toptag []string) (*Formatter, error) {
 	f := &Formatter{
-		acme:   event.NewAcme(),
+		acme:   NewAcme(),
 		debug:  len(os.Getenv("DEBUG")) > 0,
 		config: make(map[string]Filetype),
 	}
@@ -39,10 +38,10 @@ func (f *Formatter) Run() error {
 	return f.acme.Listen()
 }
 
-func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
-	a.RegisterWinHook(event.WinHook{
-		Op: event.New,
-		Handler: func(w *event.Win) {
+func (f *Formatter) registerHooks(a *Acme, menu, top []string) {
+	a.RegisterWinHook(WinHook{
+		Op: New,
+		Handler: func(w *Win) {
 			ft, _ := f.filetype(w.File)
 			if ft.Tabwidth != 0 {
 				f.fmt(w, ft)
@@ -54,10 +53,10 @@ func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 		},
 	})
 
-	a.RegisterHook(event.Hook{
-		Op: event.Put,
-		Handler: func(evt event.Event) event.Event {
-			evt.PostHooks = append(evt.PostHooks, func(e event.Event) error {
+	a.RegisterHook(Hook{
+		Op: Put,
+		Handler: func(evt Event) Event {
+			evt.PostHooks = append(evt.PostHooks, func(e Event) error {
 				ft, ext := f.filetype(evt.File)
 				if ft.Tabwidth == 0 {
 					return nil
@@ -73,18 +72,18 @@ func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 	})
 
 	a.RegisterKeyHook(Tabexpand(
-		func(evt event.Event) bool {
+		func(evt Event) bool {
 			ft, _ := f.filetype(evt.File)
 			return ft.Tabexpand
 		},
-		func(id int) (*event.Win, error) {
+		func(id int) (*Win, error) {
 			l := a.BufListener(id)
 			if l == nil {
 				return nil, fmt.Errorf("could not find event loop")
 			}
 			return l.Win(), nil
 		},
-		func(evt event.Event) int {
+		func(evt Event) int {
 			ft, _ := f.filetype(evt.File)
 			if ft.Tabwidth == 0 {
 				return 8 // default
@@ -96,7 +95,7 @@ func (f *Formatter) registerHooks(a *event.Acme, menu, top []string) {
 
 // exec executes commands that operate on stdin/stdout against the
 // Acme buffer
-func (f *Formatter) exec(evt event.Event, cmds []Command, ext string) error {
+func (f *Formatter) exec(evt Event, cmds []Command, ext string) error {
 	updates := [][]byte{}
 	for _, cmd := range cmds {
 		new, err := f.refmt(evt, cmd, ext)
@@ -110,9 +109,9 @@ func (f *Formatter) exec(evt event.Event, cmds []Command, ext string) error {
 
 // fmt opens the Acme buffer for writing and applies the
 // indentation and tab expansion options provided in $NYNERULES
-func (f *Formatter) fmt(w *event.Win, ft Filetype) error {
+func (f *Formatter) fmt(w *Win, ft Filetype) error {
 	if w == nil {
-		return fmt.Errorf("state has drifted: *event.Win is nil")
+		return fmt.Errorf("state has drifted: *Win is nil")
 	}
 	if ft.Tabwidth == 0 {
 		return nil
@@ -133,7 +132,7 @@ func (f *Formatter) fmt(w *event.Win, ft Filetype) error {
 
 // refmt executes a command to the Acme buffer and refreshes the buffer
 // with updated contents
-func (f *Formatter) refmt(evt event.Event, cmd Command, xt string) ([]byte, error) {
+func (f *Formatter) refmt(evt Event, cmd Command, xt string) ([]byte, error) {
 	l := f.acme.BufListener(evt.ID)
 	if l == nil {
 		return []byte{}, fmt.Errorf("no event loop found")
@@ -185,7 +184,7 @@ func (f *Formatter) refmt(evt event.Event, cmd Command, xt string) ([]byte, erro
 }
 
 // update writes the updated contents to the file
-func (f *Formatter) update(evt event.Event, updates [][]byte) error {
+func (f *Formatter) update(evt Event, updates [][]byte) error {
 	l := f.acme.BufListener(evt.ID)
 	if l == nil {
 		return fmt.Errorf("no event loop found")

@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"log"
 	"unicode/utf8"
-
-	"github.com/dnjp/nyne/event"
 )
 
 // WinFunc retrieves the Win by its ID
-type WinFunc func(int) (*event.Win, error)
+type WinFunc func(int) (*Win, error)
 
 // TabwidthFunc returns the tabwidth based on properties of the Event
-type TabwidthFunc func(event.Event) int
+type TabwidthFunc func(Event) int
 
 // Tab constructs a tab character or the equivalent width of spaces
 // depending on if expand is set
@@ -28,11 +26,11 @@ func Tab(width int, expand bool) []byte {
 }
 
 // Tabexpand expands tabs to spaces
-func Tabexpand(condition event.Condition, win WinFunc, tabwidth TabwidthFunc) event.KeyHook {
-	return event.KeyHook{
+func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) KeyHook {
+	return KeyHook{
 		Key:       '\t',
 		Condition: condition,
-		Handler: func(e event.Event) event.Event {
+		Handler: func(e Event) Event {
 			if !condition(e) {
 				return e
 			}
@@ -58,8 +56,8 @@ func Tabexpand(condition event.Condition, win WinFunc, tabwidth TabwidthFunc) ev
 			// update the event to reflect the change
 			rc := utf8.RuneCount(tab)
 			selEnd := e.SelBegin + rc
-			e.Origin = event.WindowFiles
-			e.Type = event.BodyInsert
+			e.Origin = WindowFiles
+			e.Type = BodyInsert
 			e.SelEnd = selEnd
 			e.OrigSelEnd = selEnd
 			e.NumRunes = rc

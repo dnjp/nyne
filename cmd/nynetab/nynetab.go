@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/dnjp/nyne"
-	"github.com/dnjp/nyne/event"
 )
 
 func main() {
@@ -27,18 +26,18 @@ func main() {
 		tabwidth = width
 	}
 
-	buf := event.NewBuf(wid, os.Getenv("$samfile"))
+	buf := nyne.NewBuf(wid, os.Getenv("$samfile"))
 	buf.RegisterKeyHook(nyne.Tabexpand(
-		func(evt event.Event) bool {
+		func(evt nyne.Event) bool {
 			return true
 		},
-		func(id int) (*event.Win, error) {
+		func(id int) (*nyne.Win, error) {
 			if id != wid {
 				return nil, fmt.Errorf("id did not match win")
 			}
 			return buf.Win(), nil
 		},
-		func(_ event.Event) int {
+		func(_ nyne.Event) int {
 			return tabwidth
 		},
 	))
