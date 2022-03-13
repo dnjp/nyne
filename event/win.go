@@ -49,7 +49,7 @@ func (w *Win) Close() {
 
 // WriteEvent writes the acme event to the log
 func (w *Win) WriteEvent(e Event) error {
-	raw := e.GetLog()
+	raw := e.Log()
 	return w.handle.WriteEvent(&raw)
 }
 
@@ -75,7 +75,7 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 		SelBegin: offset,
 		SelEnd:   offset + cmdlen,
 	}
-	log := evt.GetLog()
+	log := evt.Log()
 
 	err = w.handle.WriteEvent(&log)
 	if err != nil {

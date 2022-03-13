@@ -7,19 +7,18 @@ import (
 	"strconv"
 
 	"github.com/dnjp/nyne/event"
-	"github.com/dnjp/nyne/formatter"
-	"github.com/dnjp/nyne/gen"
+	"github.com/dnjp/nyne/format"
 )
 
 func main() {
-	wID, err := strconv.Atoi(os.Getenv("winid"))
+	wid, err := strconv.Atoi(os.Getenv("winid"))
 	if err != nil {
 		log.Print(err)
 	}
 
-	filename := gen.GetFileName(os.Getenv("samfile"))
-	ext := gen.GetExt(filename, ".txt")
-	tabwidth := gen.Conf[ext].Indent
+	filename := format.Filename(os.Getenv("samfile"))
+	ext := format.Extension(filename, ".txt")
+	tabwidth := format.Config[ext].Tabwidth
 	if tabwidth == 0 && len(os.Args) > 1 {
 		width, err := strconv.Atoi(os.Args[1])
 		if err != nil {
@@ -29,21 +28,21 @@ func main() {
 		tabwidth = width
 	}
 
-	buf := event.NewBufListener(wID, os.Getenv("$samfile"))
-	km := formatter.Keymap{
-		GetWinFn: func(id int) (*event.Win, error) {
-			if id != wID {
+	buf := event.NewBufListener(wid, os.Getenv("$samfile"))
+	buf.RegisterKeyCmdHook(format.Tabexpand(
+		func(evt event.Event) bool {
+			return true
+		},
+		func(id int) (*event.Win, error) {
+			if id != wid {
 				return nil, fmt.Errorf("id did not match win")
 			}
-			return buf.GetWin(), nil
+			return buf.Win(), nil
 		},
-		GetIndentFn: func(_ event.Event) int {
+		func(_ event.Event) int {
 			return tabwidth
 		},
-	}
-	buf.RegisterKeyCmdHook(km.Tabexpand(func(evt event.Event) bool {
-		return true
-	}))
+	))
 	err = buf.Start()
 	if err != nil {
 		panic(err)

@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/dnjp/nyne/gen"
-	"github.com/dnjp/nyne/util/io"
 	"os"
 	"strconv"
+
+	"github.com/dnjp/nyne/format"
+	"github.com/dnjp/nyne/util/io"
 )
 
 func main() {
@@ -17,10 +18,10 @@ func main() {
 	if samfile == "" && fflag != nil {
 		samfile = *fflag
 	}
-	filename := gen.GetFileName(samfile)
-	ext := gen.GetExt(filename, ".txt")
-	spec := gen.Conf[ext]
-	ts := spec.Indent
+	filename := format.Filename(samfile)
+	ext := format.Extension(filename, ".txt")
+	spec := format.Config[ext]
+	ts := spec.Tabwidth
 	te := spec.Tabexpand
 	if ts == 0 {
 		tab := os.Getenv("tabstop")

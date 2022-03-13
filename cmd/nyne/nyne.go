@@ -1,10 +1,15 @@
 package main
 
 import (
-	"github.com/dnjp/nyne/formatter"
+	"log"
+
+	"github.com/dnjp/nyne/format"
 )
 
 func main() {
-	f := formatter.New()
-	f.Run()
+	formatter, err := format.New([]format.Filetype{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	formatter.Run()
 }

@@ -1,0 +1,1 @@
+- Refactor format package. It should only be concerned with taking some text or an event as input and formatting it. 

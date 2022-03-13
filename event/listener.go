@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"9fans.net/go/acme"
-	"github.com/dnjp/nyne/gen"
+	// "github.com/dnjp/nyne/formatter"
 	"github.com/dnjp/nyne/util/io"
 )
 
@@ -18,7 +18,7 @@ type Listener interface {
 	RegisterPutHook(hook PutHook)
 	RegisterWinHook(hook WinHook)
 	RegisterKeyCmdHook(KeyCmdHook)
-	GetBufListener(id int) *Buf
+	BufListener(id int) *Buf
 }
 
 // Acme implements the Listener interface for acme events
@@ -34,7 +34,7 @@ type Acme struct {
 
 // BufListener processes hooks on acme events
 type BufListener interface {
-	GetWin() *Win
+	Win() *Win
 	Start() error
 	RegisterPutHook(hook PutHook)
 	RegisterWinHook(hook WinHook)
@@ -44,9 +44,9 @@ type BufListener interface {
 // Buf implements the BufListener interface and runs on opened
 // acme buffers
 type Buf struct {
-	ID          int
-	File        string
-	Win         *Win
+	id          int
+	file        string
+	win         *Win
 	debug       bool
 	eventHooks  map[AcmeOp][]PutHook
 	winHooks    map[AcmeOp][]WinHook
@@ -67,8 +67,8 @@ func NewListener() Listener {
 // NewBufListener constructs an event loop
 func NewBufListener(id int, file string) BufListener {
 	return &Buf{
-		ID:          id,
-		File:        file,
+		id:          id,
+		file:        file,
 		eventHooks:  make(map[AcmeOp][]PutHook),
 		winHooks:    make(map[AcmeOp][]WinHook),
 		keyCmdHooks: make(map[rune]*KeyCmdHook),
@@ -100,10 +100,11 @@ func (a *Acme) Listen() error {
 		if err != nil {
 			return err
 		}
-		ext := gen.GetExt(event.Name, "NONE")
-		if ext == "NONE" || gen.Conf[ext].Indent == 0 {
-			continue
-		}
+		// TODO
+		// ext := formatter.Ext(event.Name, "NONE")
+		// if ext == "NONE" || formatter.Conf[ext].Indent == 0 {
+		// 	continue
+		// }
 		// skip directory windows
 		if strings.HasSuffix(event.Name, "/") {
 			continue
@@ -126,8 +127,8 @@ func (a *Acme) handleNewOp(id int) {
 		return
 	}
 	f := &Buf{
-		ID:          id,
-		File:        a.windows[id],
+		id:          id,
+		file:        a.windows[id],
 		debug:       a.debug,
 		eventHooks:  a.eventHooks,
 		winHooks:    a.winHooks,
@@ -166,33 +167,38 @@ func (a *Acme) mapWindows() error {
 	return nil
 }
 
-// GetBufListener returns the running Buf by its ID
-func (a *Acme) GetBufListener(id int) *Buf {
+// BufListener returns the running Buf by its ID
+func (a *Acme) BufListener(id int) *Buf {
 	return a.eventBufListeners[id]
 }
 
-// GetWin returns the active acme Window
-func (b *Buf) GetWin() *Win {
-	return b.Win
+// File returns the buffers active file
+func (b *Buf) File() string {
+	return b.file
+}
+
+//Win returns the active acme Window
+func (b *Buf) Win() *Win {
+	return b.win
 }
 
 // Start begins the event listener for the window
 func (b *Buf) Start() error {
-	w, err := OpenWin(b.ID, b.File)
+	w, err := OpenWin(b.id, b.file)
 	if err != nil {
 		return err
 	}
-	b.Win = w
+	b.win = w
 
 	// runs hooks for acme 'new' event
-	b.runWinHooks(b.Win)
+	b.runWinHooks(b.win)
 
-	for e := range b.Win.OpenEventChan() {
+	for e := range b.win.OpenEventChan() {
 		if b.debug {
 			log.Printf("RAW: %+v\n", *e)
 		}
 
-		event, err := TokenizeEvent(e, b.ID, b.File)
+		event, err := NewEvent(e, b.id, b.file)
 		if err != nil {
 			return err
 		}
@@ -202,8 +208,8 @@ func (b *Buf) Start() error {
 			event = b.runKeyCmdHooks(event)
 		} else {
 			if event.Origin == DelOrigin && event.Type == DelType {
-				b.Win.WriteEvent(event)
-				b.Win.Close()
+				b.win.WriteEvent(event)
+				b.win.Close()
 				return nil
 			}
 			event = b.runPutHooks(event)
@@ -213,7 +219,7 @@ func (b *Buf) Start() error {
 			log.Printf("TOKEN: %+v\n", event)
 		}
 
-		b.Win.WriteEvent(event)
+		b.win.WriteEvent(event)
 
 		for _, h := range event.PostHooks {
 			if err := h(event); err != nil {
@@ -223,20 +229,20 @@ func (b *Buf) Start() error {
 
 		// maintain current address after formatting buffer
 		if event.Builtin == PUT {
-			body, err := b.Win.ReadBody()
+			body, err := b.win.ReadBody()
 			if err != nil {
 				return err
 			}
 			if len(body) < w.Lastpoint {
 				w.Lastpoint = len(body)
 			}
-			if err := b.Win.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
+			if err := b.win.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
 				return err
 			}
-			if err := b.Win.SetTextToAddr(); err != nil {
+			if err := b.win.SetTextToAddr(); err != nil {
 				return err
 			}
-			if err := b.Win.ExecShow(); err != nil {
+			if err := b.win.ExecShow(); err != nil {
 				return err
 			}
 		}
