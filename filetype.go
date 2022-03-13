@@ -1,4 +1,4 @@
-package format
+package nyne
 
 import (
 	"fmt"

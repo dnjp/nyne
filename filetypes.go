@@ -1,34 +1,30 @@
 package nyne
 
-import (
-	"github.com/dnjp/nyne/format"
-)
-
-// config maps file extensions to their formatting specification
-var config = func() map[string]format.Filetype {
-	c := make(map[string]format.Filetype)
-	err := format.FillFiletypes(c, Filetypes)
+// Config maps file extensions to their formatting specification
+var Config = func() map[string]Filetype {
+	c := make(map[string]Filetype)
+	err := FillFiletypes(c, Filetypes)
 	if err != nil {
 		panic(err)
 	}
 	return c
 }()
 
-// Filetype returns the filetype in the nyne config if present
-func Filetype(ext string) (ft format.Filetype, ok bool) {
-	ft, ok = config[ext]
+// FindFiletype returns the filetype in the nyne config if present
+func FindFiletype(filename string) (ft Filetype, ok bool) {
+	ft, ok = Config[Extension(filename, ".txt")]
 	return
 }
 
 // Filetypes define file formatting rules that will be applied
-var Filetypes = []format.Filetype{
+var Filetypes = []Filetype{
 	{
 		Name:       "cpp",
 		Extensions: []string{".cc", ".cpp", ".hpp", ".cxx", ".hxx"},
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "java",
@@ -36,7 +32,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands:   []format.Command{
+		Commands:   []Command{
 			// {
 			// 	Exec: "google-java-format",
 			// 	Args: []string{
@@ -52,7 +48,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "// ",
-		Commands: []format.Command{
+		Commands: []Command{
 			{
 				Exec: "prettier",
 				Args: []string{
@@ -71,7 +67,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "makefile",
@@ -79,7 +75,15 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
+	},
+	{
+		Name:       "text",
+		Extensions: []string{".txt"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "# ",
+		Commands:   []Command{},
 	},
 	{
 		Name:       "shell",
@@ -87,7 +91,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "c",
@@ -95,7 +99,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "/* */",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "html",
@@ -103,7 +107,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "<!-- -->",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "markdown",
@@ -111,7 +115,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "",
-		Commands:   []format.Command{
+		Commands:   []Command{
 			// {
 			// 	Exec: "prettier",
 			// 	Args: []string{
@@ -132,7 +136,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "# ",
-		Commands: []format.Command{
+		Commands: []Command{
 			{
 				Exec: "terraform",
 				Args: []string{
@@ -149,7 +153,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "# ",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "yaml",
@@ -157,7 +161,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   2,
 		Tabexpand:  true,
 		Comment:    "# ",
-		Commands:   []format.Command{},
+		Commands:   []Command{},
 	},
 	{
 		Name:       "go",
@@ -165,7 +169,7 @@ var Filetypes = []format.Filetype{
 		Tabwidth:   8,
 		Tabexpand:  false,
 		Comment:    "// ",
-		Commands:   []format.Command{
+		Commands:   []Command{
 			// {
 			// 	Exec: "gofmt",
 			// 	Args: []string{

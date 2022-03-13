@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/dnjp/nyne"
-	"github.com/dnjp/nyne/format"
 	"github.com/dnjp/nyne/util/io"
 )
 
@@ -19,8 +18,7 @@ func main() {
 	if samfile == "" && fflag != nil {
 		samfile = *fflag
 	}
-	filename := format.Filename(samfile)
-	ft, _ := nyne.Filetype(filename)
+	ft, _ := nyne.FindFiletype(nyne.Filename(samfile))
 	ts := ft.Tabwidth
 	te := ft.Tabexpand
 	if ts == 0 {

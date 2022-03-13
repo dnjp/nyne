@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/dnjp/nyne"
-	"github.com/dnjp/nyne/format"
 	"github.com/dnjp/nyne/util/io"
 )
 
@@ -17,7 +16,7 @@ func main() {
 	if samfile == "" && fflag != nil {
 		samfile = *fflag
 	}
-	ft, _ := nyne.Filetype(format.Filename(samfile))
+	ft, _ := nyne.FindFiletype(nyne.Filename(samfile))
 	comment := ft.Comment
 	if len(comment) == 0 {
 		comment = "# "

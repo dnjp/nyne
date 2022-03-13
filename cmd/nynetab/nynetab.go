@@ -8,7 +8,6 @@ import (
 
 	"github.com/dnjp/nyne"
 	"github.com/dnjp/nyne/event"
-	"github.com/dnjp/nyne/format"
 )
 
 func main() {
@@ -17,8 +16,7 @@ func main() {
 		log.Print(err)
 	}
 
-	filename := format.Filename(os.Getenv("samfile"))
-	ft, _ := nyne.Filetype(filename)
+	ft, _ := nyne.FindFiletype(nyne.Filename(os.Getenv("samfile")))
 	tabwidth := ft.Tabwidth
 	if tabwidth == 0 && len(os.Args) > 1 {
 		width, err := strconv.Atoi(os.Args[1])
@@ -30,7 +28,7 @@ func main() {
 	}
 
 	buf := event.NewBuf(wid, os.Getenv("$samfile"))
-	buf.RegisterKeyHook(format.Tabexpand(
+	buf.RegisterKeyHook(nyne.Tabexpand(
 		func(evt event.Event) bool {
 			return true
 		},
