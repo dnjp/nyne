@@ -16,6 +16,7 @@ Included in a full install of nyne are bundled utilities for acme:
 - `nyne`: The core autoformatting engine that is run from within acme
 - `nynetab`: Implements tab expansion for the given buffer if not configured for
   nyne
+- `save`: Utility to execute Put via keyboard bindings
 - `a+`: Indent selected source code
 - `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
@@ -27,7 +28,7 @@ file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
 how it reacts to different file types, what to write to the menu, etc.
 Alter this file to your liking before building and installing nyne.
 
-nynetab is intended to be called from a tool like
+`nynetab` is intended to be called from a tool like
 [skhd](https://github.com/koekeishiya/skhd) which allows for
 overriding the application handlers for particular key bindings. To
 use nynetab with skhd, add something like the following to your
@@ -37,6 +38,17 @@ use nynetab with skhd, add something like the following to your
 tab [
   "acme" : nynetab
   "edwood" : nynetab
+]
+```
+
+`save` is also intended to be called from something like skhd. `save` simply
+executes `Put` on the focused window when invoked. This is how I use it
+with skhd:
+
+```
+cmd - s [
+  "acme" : save
+  "edwood" : save
 ]
 ```
 

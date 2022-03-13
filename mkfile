@@ -1,4 +1,4 @@
-ALL=nyne nynetab com a+ a-
+ALL=nyne nynetab com a+ a- save
 
 all:V: $ALL
 
@@ -7,6 +7,9 @@ bin:
 
 nyne: bin
 	go build -o bin/nyne cmd/nyne/*.go
+
+save: bin
+	go build -o bin/save cmd/save/*.go
 
 nynetab: bin
 	go build -o bin/nynetab cmd/nynetab/*.go
