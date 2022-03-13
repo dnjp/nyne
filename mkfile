@@ -9,13 +9,13 @@ bin:
 	mkdir bin
 
 nyne: bin
-	go build -o bin/nyne cmd/nyne/nyne.go
+	go build -o bin/nyne cmd/nyne/*.go
 
 nynetab: bin
-	go build -o bin/nynetab cmd/nynetab/nynetab.go
+	go build -o bin/nynetab cmd/nynetab/*.go
 
 com: bin
-	go build -o bin/com cmd/com/com.go
+	go build -o bin/com cmd/com/*.go
 
 a+: bin
 	go build -o bin/a+ cmd/a+/*.go

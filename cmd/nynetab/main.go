@@ -15,7 +15,16 @@ func main() {
 		log.Print(err)
 	}
 
-	ft, _ := nyne.FindFiletype(nyne.Filename(os.Getenv("samfile")))
+	filename := os.Getenv("samfile")
+	if filename == "" {
+		filename = os.Getenv("%")
+	}
+	if filename == "" {
+		fmt.Fprintf(os.Stderr, "$samfile and $%% are empty. are you sure you're in acme?")
+		os.Exit(1)
+	}
+
+	ft, _ := nyne.FindFiletype(nyne.Filename(filename))
 	tabwidth := ft.Tabwidth
 	if tabwidth == 0 && len(os.Args) > 1 {
 		width, err := strconv.Atoi(os.Args[1])
