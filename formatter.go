@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-
-	"github.com/dnjp/nyne/util/io"
 )
 
 // Formatter formats acme windows and buffers
@@ -48,7 +46,7 @@ func (f *Formatter) registerHooks(a *Acme, menu, top []string) {
 			}
 			err := w.WriteMenu(menu, top)
 			if err != nil {
-				io.Error(err)
+				Error(err)
 			}
 		},
 	})

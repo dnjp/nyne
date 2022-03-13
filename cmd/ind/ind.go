@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/dnjp/nyne"
-	"github.com/dnjp/nyne/util/io"
 )
 
 func main() {
@@ -34,12 +33,12 @@ func main() {
 		}
 	}
 
-	in, err := io.PipeIn()
+	in, err := nyne.PipeIn()
 	if err != nil {
 		panic(err)
 	}
 
-	io.PipeOut(in, func(line string) string {
+	nyne.PipeOut(in, func(line string) string {
 		if len(line) == 0 {
 			return line
 		}

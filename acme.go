@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"9fans.net/go/acme"
-	"github.com/dnjp/nyne/util/io"
 )
 
 // Acme implements the Listener interface for acme events
@@ -74,7 +73,7 @@ func (a *Acme) Listen() error {
 func (a *Acme) startBuf(id int) {
 	err := a.mapWindows()
 	if err != nil {
-		io.Error(err)
+		Error(err)
 		return
 	}
 	if a.isDisabled(id) {
@@ -93,7 +92,7 @@ func (a *Acme) startBuf(id int) {
 
 	err = f.Start()
 	if err != nil {
-		io.Error(err)
+		Error(err)
 		return
 	}
 }
