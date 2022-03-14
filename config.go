@@ -1,261 +1,188 @@
-package main
+package nyne
 
-import (
-	"github.com/dnjp/nyne/util/config"
-)
+// Menu contains the menu options that should be written to the tag
+var Menu = []string{
+	" Put  ", "Undo  ", "Redo  ", "win", "\n",
+	"|com  ", "|a-  ", "|a+  ", "Ldef  ", "Lrefs  ", "Lcomp",
+}
 
-// Cfg specifies the configuration for nyne and its bundled utilities
-// If using this as the default, the following external applications
-// must be in your $PATH:
-//   - indent
-//   - gofmt
-//   - google-java-format
-//   - prettier
-//   - terraform
-var Cfg config.Config = config.Config{
+// Config maps file extensions to their formatting specification
+var Config = func() map[string]Filetype {
+	c := make(map[string]Filetype)
+	err := FillFiletypes(c, Filetypes)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}()
 
-	// Tag configures options for the Acme tag
-	Tag: config.Tag{
+// FindFiletype returns the filetype in the nyne config if present
+func FindFiletype(filename string) (ft Filetype, ok bool) {
+	ft, ok = Config[Extension(filename, ".txt")]
+	return
+}
 
-		// Menu contain commands to be written to the acme
-		// scratch area. Along with the default "Put", "Undo", and
-		// "Redo" commands, these menu options will be written
-		// to the acme scratch area when a new window is opened.
-		Menu: []string{
-			"|fmt",
-			"|com",
-			"|a-",
-			"|a+",
-			"Ldef",
-			"Lrefs",
-			"Lcomp",
-			"win",
+// Filetypes define file formatting rules that will be applied
+var Filetypes = []Filetype{
+	{
+		Name:       "cpp",
+		Extensions: []string{".cc", ".cpp", ".hpp", ".cxx", ".hxx"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "// ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "java",
+		Extensions: []string{".java"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "// ",
+		Commands:   []Command{
+			// {
+			// 	Exec: "google-java-format",
+			// 	Args: []string{
+			// 		"$NAME",
+			// 	},
+			// 	PrintsToStdout: true,
+			// },
 		},
 	},
-
-	// Format maps an identifier ("c", "go", etc.) to its formatting
-	// specification. The identifier is an arbitrary name that useful
-	// mostly to logically group formatting directives.
-	Format: map[string]config.Spec{
-
-		"c": config.Spec{
-
-			// A string that contains the comment style for
-			// the given language.  If the comment style has a
-			// defined start and end comment structure (/* */
-			// in C), then set commentstyle to the complete
-			// comment structure like this: `commentstyle =
-			// "/* */"`. com will infer that this means /*
-			// should be placed at the beginning and */ should
-			// be placed at the end.
-			CommentStyle: "/* */",
-
-			// The tab width used for indentation
-			Indent: 8,
-
-			// Determines whether to use hard tabs or spaces
-			// for indentation
-			Tabexpand: false,
-
-			// A list of file extensions that nyne should apply
-			// the given formatting rules to
-			Extensions: []string{".c", ".h"},
-
-			// The "commands" blocks is used to define the
-			// external program to be run against against your
-			// buffer on file save. Any number of these blocks
-			// may be defined.
-			Commands: []config.Command{
-				{
-					// A string representing the
-					// executable used to format
-					// the buffer
-					Exec: "indent",
-
-					// An array of strings containing the
-					// arguments to the executable. $NAME
-					// is a macro that will be replaced
-					// with the absolute path to the
-					// file you are working on. This
-					// is a required argument.
-					Args: []string{
-						"-ncdb",
-						"-cp33",
-						"-c33",
-						"-cd33",
-						"-sc",
-						"-nsaf",
-						"-nsai",
-						"-nsaw",
-						"-npcs",
-						"-nprs",
-						"-psl",
-						"-br",
-						"-bls",
-						"-ce",
-						"-nsob",
-						"-nss",
-						"-nbad",
-						"-nbap",
-						"-bbo",
-						"-bc",
-						"-hnl",
-						"-ts8",
-						"-ci4",
-						"-cli0",
-						"-cbi0",
-						"-sbi0",
-						"-bli0",
-						"-di16",
-						"-i8",
-						"-ip8",
-						"-l75",
-						"-lp",
-						"-st",
-						"$NAME",
-					},
-
-					// A boolean representing whether
-					// the executable will print to
-					// stdout. If the command writes
-					// the file in place, be sure to
-					// set this to false.
-					PrintsToStdout: true,
+	{
+		Name:       "javascript",
+		Extensions: []string{".js", ".ts"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "// ",
+		Commands: []Command{
+			{
+				Exec: "prettier",
+				Args: []string{
+					"$NAME",
+					"--write",
+					"--loglevel",
+					"error",
 				},
+				PrintsToStdout: false,
 			},
 		},
-		"cpp": config.Spec{
-			CommentStyle: "// ",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions: []string{
-				".cc",
-				".cpp",
-				".hpp",
-				".cxx",
-				".hxx",
-			},
-			Commands: []config.Command{},
+	},
+	{
+		Name:       "json",
+		Extensions: []string{".json"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "makefile",
+		Extensions: []string{"Makefile"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "# ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "text",
+		Extensions: []string{".txt"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "# ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "shell",
+		Extensions: []string{".rc", ".sh"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "# ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "c",
+		Extensions: []string{".c", ".h"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "/* */",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "html",
+		Extensions: []string{".html"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "<!-- -->",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "markdown",
+		Extensions: []string{".md"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "",
+		Commands:   []Command{
+			// {
+			// 	Exec: "prettier",
+			// 	Args: []string{
+			// 		"--print-width",
+			// 		"80",
+			// 		"--prose-wrap",
+			// 		"always",
+			// 		"--write",
+			// 		"$NAME",
+			// 	},
+			// 	PrintsToStdout: false,
+			// },
 		},
-		"go": config.Spec{
-			CommentStyle: "// ",
-			Indent:       8,
-			Tabexpand:    false,
-			Extensions:   []string{".go"},
-			Commands: []config.Command{
-				{
-					Exec:           "gofmt",
-					Args:           []string{"$NAME"},
-					PrintsToStdout: true,
+	},
+	{
+		Name:       "terraform",
+		Extensions: []string{".tf"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "# ",
+		Commands: []Command{
+			{
+				Exec: "terraform",
+				Args: []string{
+					"fmt",
+					"$NAME",
 				},
+				PrintsToStdout: false,
 			},
 		},
-		"html": config.Spec{
-			CommentStyle: "<!-- -->",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".html"},
-			Commands:     []config.Command{},
-		},
-		"java": config.Spec{
-			CommentStyle: "// ",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".java"},
-			Commands: []config.Command{
-				{
-					Exec:           "google-java-format",
-					Args:           []string{"$NAME"},
-					PrintsToStdout: true,
-				},
-			},
-		},
-		"js": config.Spec{
-			CommentStyle: "// ",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".js", ".ts"},
-			Commands: []config.Command{
-				{
-					Exec: "prettier",
-					Args: []string{
-						"$NAME",
-						"--write",
-						"--loglevel",
-						"error",
-					},
-					PrintsToStdout: false,
-				},
-			},
-		},
-		"json": config.Spec{
-			CommentStyle: "",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".json"},
-			Commands:     []config.Command{},
-		},
-		"makefile": config.Spec{
-			CommentStyle: "# ",
-			Indent:       8,
-			Tabexpand:    false,
-			Extensions:   []string{"Makefile"},
-			Commands:     []config.Command{},
-		},
-		"markdown": config.Spec{
-			CommentStyle: "",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".md"},
-			Commands: []config.Command{
-				{
-					Exec: "prettier",
-					Args: []string{
-						"--print-width", "80",
-						"--prose-wrap", "always",
-						"--write",
-						"$NAME",
-					},
-					PrintsToStdout: false,
-				},
-			},
-		},
-		"shell": config.Spec{
-			CommentStyle: "# ",
-			Indent:       8,
-			Tabexpand:    false,
-			Extensions:   []string{".rc", ".sh"},
-			Commands:     []config.Command{},
-		},
-		"tf": config.Spec{
-			CommentStyle: "# ",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".tf"},
-			Commands: []config.Command{
-				{
-					Exec: "terraform",
-					Args: []string{
-						"fmt",
-						"$NAME",
-					},
-					PrintsToStdout: false,
-				},
-			},
-		},
-		"toml": config.Spec{
-			CommentStyle: "# ",
-			Indent:       8,
-			Tabexpand:    false,
-			Extensions:   []string{".toml"},
-			Commands:     []config.Command{},
-		},
-		"yaml": config.Spec{
-			CommentStyle: "# ",
-			Indent:       2,
-			Tabexpand:    true,
-			Extensions:   []string{".yml", ".yaml"},
-			Commands:     []config.Command{},
+	},
+	{
+		Name:       "toml",
+		Extensions: []string{".toml"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "# ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "yaml",
+		Extensions: []string{".yml", ".yaml"},
+		Tabwidth:   2,
+		Tabexpand:  true,
+		Comment:    "# ",
+		Commands:   []Command{},
+	},
+	{
+		Name:       "go",
+		Extensions: []string{".go", "go.mod", "go.sum"},
+		Tabwidth:   8,
+		Tabexpand:  false,
+		Comment:    "// ",
+		Commands:   []Command{
+			// {
+			// 	Exec: "gofmt",
+			// 	Args: []string{
+			// 		"$NAME",
+			// 	},
+			// 	PrintsToStdout: true,
+			// },
 		},
 	},
 }

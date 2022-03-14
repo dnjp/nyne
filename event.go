@@ -1,9 +1,10 @@
-package event
+package nyne
 
 import (
-	"9fans.net/go/acme"
 	"fmt"
 	"strings"
+
+	"9fans.net/go/acme"
 )
 
 // PostWriteHook executes a function on the event after it has been
@@ -14,18 +15,18 @@ type PostWriteHook func(Event) error
 type AcmeOp int
 
 const (
-	// NEW represents window creation
-	NEW AcmeOp = iota
-	// ZEROX reprents window creation via zerox
-	ZEROX
-	// GET loadr file into window
-	GET
-	// PUT writes window to the named file
-	PUT
-	// DEL deletes the window
-	DEL
-	// FOCUS is received when the window is in focus
-	FOCUS
+	// New represents window creation
+	New AcmeOp = iota
+	// Zerox reprents window creation via zerox
+	Zerox
+	// Get loadr file into window
+	Get
+	// Put writes window to the named file
+	Put
+	// Del deletes the window
+	Del
+	// Focus is received when the window is in focus
+	Focus
 )
 
 // Event contains metadata for each Acme event
@@ -89,7 +90,7 @@ func (e *Event) setActionOrigin(event *acme.Event) error {
 	return nil
 }
 
-func (e *Event) getActionOriginCode() rune {
+func (e *Event) actionOriginCode() rune {
 	var origin rune
 	switch e.Origin {
 	case BodyOrTag:
@@ -159,7 +160,7 @@ func (e *Event) setActionType(event *acme.Event) error {
 	return nil
 }
 
-func (e *Event) getActionTypeCode() rune {
+func (e *Event) actionTypeCode() rune {
 	var action rune
 	switch e.Type {
 	case BodyDelete:
@@ -261,15 +262,15 @@ func (e *Event) setBuiltin(event *acme.Event) error {
 	var op AcmeOp
 	switch action {
 	case "new":
-		op = NEW
+		op = New
 	case "zerox":
-		op = ZEROX
+		op = Zerox
 	case "get":
-		op = GET
+		op = Get
 	case "put":
-		op = PUT
+		op = Put
 	case "del":
-		op = DEL
+		op = Del
 	}
 	e.Builtin = op
 	return nil
@@ -287,8 +288,8 @@ func (e *Event) setMeta(event *acme.Event) {
 	e.ChordLoc = event.Loc
 }
 
-// TokenizeEvent parses a raw acme event into the Event type
-func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
+// NewEvent constructs an Event from a raw acme event
+func NewEvent(event *acme.Event, id int, file string) (Event, error) {
 	e := Event{
 		ID:   id,
 		File: file,
@@ -307,11 +308,11 @@ func TokenizeEvent(event *acme.Event, id int, file string) (Event, error) {
 	return e, nil
 }
 
-// GetLog returns a raw acme log event for the Event type
-func (e *Event) GetLog() acme.Event {
+// Log returns a raw acme log event for the Event type
+func (e *Event) Log() acme.Event {
 	return acme.Event{
-		C1:     e.getActionOriginCode(),
-		C2:     e.getActionTypeCode(),
+		C1:     e.actionOriginCode(),
+		C2:     e.actionTypeCode(),
 		Q0:     e.SelBegin,
 		Q1:     e.SelEnd,
 		OrigQ0: e.OrigSelBegin,

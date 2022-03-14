@@ -14,64 +14,77 @@ is a feature not included in Acme by default.
 Included in a full install of nyne are bundled utilities for acme:
 
 - `nyne`: The core autoformatting engine that is run from within acme
-- `nynetab`: Implements tab expansion for the given buffer if not configured for
-  nyne
+- `nynetab`: Implements tab expansion and indentation
+- `save`: Utility to execute Put via keyboard bindings
 - `a+`: Indent selected source code
 - `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
+- `xcom`: Wrapper arround `com` intended to be invoked from a tool like skhd.
 
 ## Configuration
 
-Nyne and the bundled utilities use a
-[configuration file](https://github.com/dnjp/nyne/blob/master/config.go) during
-the build to generate static code used for all formatting rules. Think of
-`config.go` as roughly the equavalent of a `config.h` file used to configure
-many C programs. Because this file is used to generate static configuration for
-Nyne that is baked into the binary, any changes made to this file after build
-will not be noticed. In order for the changes to be picked up, you must rebuild
-nyne and restart the `nyne` executable if already running. This has the added
-benefit that the bundled utilities can be executed without nyne running and
-without having to re-read a config file while maintaining all of your
-configuration options. The available configuration options are documented in
-[./config.go](https://github.com/dnjp/nyne/blob/master/config.go).
+Nyne and the bundled utilities use a [configuration
+file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
+how it reacts to different file types, what to write to the menu, etc.
+Alter this file to your liking before building and installing nyne.
+
+`nynetab` is intended to be called from a tool like
+[skhd](https://github.com/koekeishiya/skhd) which allows for
+overriding the application handlers for particular key bindings. To
+use nynetab with skhd, add something like the following to your
+[skhdrc](https://github.com/koekeishiya/skhd/blob/master/examples/skhdrc):
+
+```
+tab [
+  "acme" : nynetab
+  "edwood" : nynetab
+]
+
+shift - tab [
+  "acme" : nynetab -unindent=true
+  "edwood" : nynetab -unindent=true
+]
+```
+
+With these keybindings, entering `tab` without text selected will
+insert either a hard or soft tab depending on the file type
+configuration. If text is selected, entering `tab` will indent the
+selected text and entering `shift+tab` will unindent the selected
+text.
+
+`save` is also intended to be called from something like skhd. `save`
+simply executes `Put` on the focused window when invoked. This is how
+I use it with skhd:
+
+```
+cmd - s [
+  "acme" : save
+  "edwood" : save
+]
+```
+
+Similarly, you can map `com` to `cmd+/` with the following skhd settings:
+
+```
+cmd - 0x2C  [
+  "acme" : xcom
+  "edwood" : xcom
+]
+```
 
 ## Install
 
-The build for nyne assumes that you have followed the configuration instructions
-above and have [plan9port](https://github.com/9fans/plan9port) utilities
-installed and available in your `$PATH`. If you cannot execute `mk` in
-particular, head over to the main
-[plan9port](https://9fans.github.io/plan9port/) page and follow the installation
-guide for your system.
-
-To install nyne, first clone this repository:
+To install nyne, first make sure that you have properly installed
+[Go](https://go.dev/learn/) and then execute the following commands:
 
 ```
-%: git clone https://github.com/dnjp/nyne
-```
-
-Then use [mk](https://9fans.github.io/plan9port/man/man1/mk.html) to build the
-nyne binaries:
-
-```
-%: mk
+% git clone https://github.com/dnjp/nyne
+% cd nyne
+% go install ./...
 ```
 
 This will build `nyne`, `nynetab`, `a+`, `a-`, and `com` and place them in
-`./bin`. Once they are built, you are ready to install them to a directory in
-your `$PATH`. On my system, I keep commands used for Acme in `$home/bin` and
-have that directory added to my path. Assuming your system is setup like mine,
-you can install nyne and the bundled utilities with:
-
-```
-%: installdir=$home/bin mk install
-```
-
-If the commands above completed successfully, you should now be able to execute
-any of the nyne utilities.
-
-To cleanup the build files simply run `mk nuke`. To uninstall nyne and all
-utilities, run `installdir=$HOME/bin mk uninstall`.
+`$GOPATH/bin`.
 
 ## Usage
 

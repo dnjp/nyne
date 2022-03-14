@@ -1,44 +1,47 @@
-
-installdir=${installdir}
-
-ALL=nyne nynetab com ind ui
+ALL=nyne nynetab com xcom a+ a- save
 
 all:V: $ALL
 
 bin:
 	mkdir bin
 
-gen:
-	mkdir -p ./gen
-	cp config.go cmd/gen/config.go
-	go run cmd/gen/*.go > ./gen/gen.go
+nyne: bin
+	go build -o bin/nyne cmd/nyne/*.go
 
-nyne: gen bin
-	go build -o bin/nyne cmd/nyne/nyne.go
+save: bin
+	go build -o bin/save cmd/save/*.go
 
-nynetab: gen bin
-	go build -o bin/nynetab cmd/nynetab/nynetab.go
+nynetab: bin
+	go build -o bin/nynetab cmd/nynetab/*.go
 
-com: gen bin
-	go build -o bin/com cmd/com/com.go
+com: bin
+	go build -o bin/com cmd/com/*.go
 
-ind: gen bin
-	go build -o bin/a+ cmd/ind/ind.go
+xcom: bin
+	go build -o bin/xcom cmd/xcom/*.go
 
-ui: gen bin
-	go build -o bin/a- cmd/ui/ui.go
+a+: bin
+	go build -o bin/a+ cmd/a+/*.go
+
+a-: bin
+	go build -o bin/a- cmd/a-/*.go
 
 install:
-	cp bin/* $installdir
+	go install ./...
 
-uninstall:
-	rm $installdir/nyne
-	rm $installdir/nynetab
-	rm $installdir/com
-	rm $installdir/a+
-	rm $installdir/a-
+MKSHELL=$PLAN9/bin/rc
+uninstall-rc:V:
+	for(cmd in $ALL) rm -f $GOPATH/bin/$cmd
 
-check:
+MKSHELL=sh
+uninstall-sh:V:
+	for cmd in $ALL; do
+		rm -f $GOPATH/bin/$cmd
+	done
+
+uninstall:V: uninstall-sh uninstall-rc
+
+check: $ALL
 	go test -count=1 ./...
 	go fmt ./...
 	go vet ./...
@@ -46,4 +49,4 @@ check:
 	staticcheck ./...
 
 clean tidy nuke:V:
-	rm -rf ./bin ./gen
+	rm -rf ./bin

@@ -1,37 +1,35 @@
 package main
 
 import (
-	"flag"
-	"github.com/dnjp/nyne/gen"
-	"github.com/dnjp/nyne/util/io"
+	"bufio"
+	"fmt"
+	"io"
 	"os"
 	"strings"
+
+	"github.com/dnjp/nyne"
 )
 
 func main() {
-	var fflag = flag.String("f", "", "file name to operate on")
-	flag.Parse()
-	samfile := os.Getenv("samfile")
-	if samfile == "" && fflag != nil {
-		samfile = *fflag
+	filename := os.Getenv("samfile")
+	if filename == "" {
+		filename = os.Getenv("%")
 	}
-	filename := gen.GetFileName(samfile)
-	ext := gen.GetExt(filename, ".txt")
-	comment := gen.Conf[ext].CmtStyle
+	if filename == "" {
+		fmt.Fprintf(os.Stderr, "$samfile and $%% are empty. are you sure you're in acme?")
+		os.Exit(1)
+	}
+
+	ft, _ := nyne.FindFiletype(nyne.Filename(filename))
+	comment := ft.Comment
 	if len(comment) == 0 {
 		comment = "# "
 	}
-	in, err := io.PipeIn()
-	if err != nil {
-		panic(err)
-	}
 
-	// parse starting/ending comment parts if present
-	parts := strings.Split(strings.TrimSuffix(comment, " "), " ")
-	multipart := len(parts) > 1
-	var startcom string
+	var startcom string = comment
 	var endcom string
-	if multipart {
+	parts := strings.Split(strings.TrimSuffix(comment, " "), " ")
+	if len(parts) > 1 {
 		if len(parts[0]) > 0 {
 			startcom = parts[0] + " "
 		}
@@ -39,44 +37,129 @@ func main() {
 			endcom = " " + parts[1]
 		}
 	}
+	startcomlen := len(startcom)
+	endcomlen := len(endcom)
 
-	io.PipeOut(in, func(line string) string {
-		if len(line) == 0 {
-			return line
+	var commentedLines, uncommentedLines int
+	var commentIdx int
+	var hasCommented bool
+
+	in := []byte{}
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		b, err := reader.ReadByte()
+		if err != nil && err == io.EOF {
+			break
 		}
-
-		if multipart {
-			// uncomment multipart commented line
-			hasbegin := strings.Contains(line, startcom)
-			hasend := strings.Contains(line, endcom)
-			if hasbegin && hasend {
-				nline := strings.Replace(line, startcom, "", 1)
-				nline = strings.Replace(nline, endcom, "", 1)
-				return nline
+		if commentIdx < len(startcom) && b == startcom[commentIdx] {
+			commentIdx++
+			if commentIdx == len(startcom) {
+				hasCommented = true
+				commentIdx = 0
+			}
+		} else {
+			commentIdx = 0
+		}
+		if b == '\n' {
+			if hasCommented {
+				commentedLines++
+				hasCommented = false
+			} else {
+				uncommentedLines++
 			}
 		}
+		in = append(in, b)
+	}
 
-		// find first non-indentation character
-		first := 0
-		for _, ch := range line {
-			if ch == ' ' || ch == '\t' {
-				first++
-				continue
-			}
+	shouldComment := uncommentedLines > commentedLines
+	var i, comidx int
+	var hasstart bool
+	fromstart := 0
+	prevstartcom := -1
+	bufa := -1
+
+	for {
+		if i >= len(in) {
 			break
 		}
 
-		// uncomment line if beginning charcters are the comment
-		comstart := first + len(comment)
-		if len(line) > comstart && line[first:comstart] == comment {
-			nline := strings.Replace(line, comment, "", 1)
-			return nline
+		shouldStart := startcomlen > 0 && !hasstart && shouldComment
+		inlineWithPrevStart := prevstartcom >= 0 && fromstart >= prevstartcom && !hasstart
+		isNotWhitespace := in[i] != '\t' && in[i] != ' '
+		inComment := comidx > 0
+
+		if !shouldComment {
+			if comidx < len(endcom) && in[i] == endcom[comidx] {
+				if bufa < 0 {
+					bufa = i
+				}
+				comidx++
+				if comidx == len(endcom) {
+					bufa = -1
+				}
+				i++
+				continue
+			} else if comidx < len(startcom) && in[i] == startcom[comidx] {
+				if bufa < 0 {
+					bufa = i
+				}
+				comidx++
+				if comidx == len(startcom) {
+					for j := bufa + len(startcom); j < i; j++ {
+						fmt.Fprintf(os.Stdout, "%c", in[j])
+					}
+					bufa = -1
+				}
+				i++
+				continue
+			} else {
+				if bufa >= 0 {
+					for j := bufa; j < i; j++ {
+						fmt.Fprintf(os.Stdout, "%c", in[j])
+					}
+					comidx = 0
+					bufa = -1
+				} else {
+					comidx = 0
+					goto Out
+				}
+			}
+		} else if in[i] == '\n' {
+			if !hasstart {
+				fromstart = -1
+				prevstartcom = -1
+				goto Out
+			}
+			if endcomlen > 0 {
+				if comidx >= endcomlen {
+					comidx = 0
+				} else {
+					fmt.Fprintf(os.Stdout, "%c", endcom[comidx])
+					comidx++
+					fromstart++
+					continue
+				}
+			}
+			hasstart = false
+			fromstart = -1
+		} else if inlineWithPrevStart || (shouldStart && (isNotWhitespace || inComment)) {
+			if comidx >= startcomlen {
+				comidx = 0
+				hasstart = true
+			} else {
+				if prevstartcom < 0 {
+					prevstartcom = fromstart
+				}
+				fmt.Fprintf(os.Stdout, "%c", startcom[comidx])
+				comidx++
+				fromstart++
+				continue
+			}
 		}
 
-		// comment line using appropriate comment structure
-		if multipart {
-			return line[:first] + startcom + line[first:] + endcom
-		}
-		return line[:first] + comment + line[first:]
-	})
+	Out:
+		fmt.Fprintf(os.Stdout, "%c", in[i])
+		i++
+		fromstart++
+	}
 }
