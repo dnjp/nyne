@@ -83,7 +83,7 @@ func bold(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 		out = []byte("**")
 		curs = q0 + 1
 		nq0 = q0
-		nq1 = q0 + len(out)
+		nq1 = q1
 		return
 	}
 	dat, err := w.ReadData(q0, q1)
@@ -97,6 +97,31 @@ func bold(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 	out = []byte("*")
 	out = append(out, dat...)
 	out = append(out, "*"...)
+	curs = q0 + len(out)
+	nq0 = q0
+	nq1 = q1
+	return
+}
+
+func italic(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
+	if q0 == q1 {
+		out = []byte("__")
+		curs = q0 + 1
+		nq0 = q0
+		nq1 = q1
+		return
+	}
+	dat, err := w.ReadData(q0, q1)
+	if err != nil {
+		panic(err)
+	}
+	if dat[len(dat)-1] == '\n' {
+		dat = dat[:len(dat)-1]
+		q1--
+	}
+	out = []byte("_")
+	out = append(out, dat...)
+	out = append(out, "_"...)
 	curs = q0 + len(out)
 	nq0 = q0
 	nq1 = q1
@@ -129,10 +154,10 @@ func main() {
 	switch strings.ToLower(*op) {
 	case "link":
 		update(w, link)
-		return
 	case "bold":
 		update(w, bold)
-		return
+	case "italic":
+		update(w, italic)
 	default:
 		return
 	}
