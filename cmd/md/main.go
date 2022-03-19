@@ -21,47 +21,21 @@ func islink(dat []byte) bool {
 	return false
 }
 
-func link(w *nyne.Win) {
+func update(w *nyne.Win, cb func(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte)) {
 	q0, q1, err := w.CurrentAddr()
 	if err != nil {
 		panic(err)
 	}
 
-	var nq0 int
-	var out []byte
-	if q0 == q1 {
-		out = []byte("[]()")
-		nq0 = q0 + 1
-	} else {
-		dat, err := w.ReadData(q0, q1)
-		if err != nil {
-			panic(err)
-		}
-		if dat[len(dat)-1] == '\n' {
-			dat = dat[:len(dat)-1]
-			q1--
-		}
-		if islink(dat) {
-			out = []byte("[](")
-			out = append(out, dat...)
-			out = append(out, ")"...)
-			nq0 = q0 + 1
-		} else {
-			out = []byte("[")
-			out = append(out, dat...)
-			out = append(out, "]()"...)
-			nq0 = q0 + len(out) - 1
-		}
-	}
-
-	err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+	nq0, nq1, curs, out := cb(w, q0, q1)
+	err = w.SetAddr(fmt.Sprintf("#%d;#%d", nq0, nq1))
 	if err != nil {
 		panic(err)
 	}
 
 	w.SetData(out)
 
-	err = w.SetAddr(fmt.Sprintf("#%d", nq0))
+	err = w.SetAddr(fmt.Sprintf("#%d", curs))
 	if err != nil {
 		panic(err)
 	}
@@ -70,6 +44,63 @@ func link(w *nyne.Win) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func link(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
+	if q0 == q1 {
+		out = []byte("[]()")
+		curs = q0 + 1
+		nq0 = q0
+		nq1 = q1
+		return
+	}
+	dat, err := w.ReadData(q0, q1)
+	if err != nil {
+		panic(err)
+	}
+	if dat[len(dat)-1] == '\n' {
+		dat = dat[:len(dat)-1]
+		q1--
+	}
+	if islink(dat) {
+		out = []byte("[](")
+		out = append(out, dat...)
+		out = append(out, ")"...)
+		curs = q0 + 1
+	} else {
+		out = []byte("[")
+		out = append(out, dat...)
+		out = append(out, "]()"...)
+		curs = q0 + len(out) - 1
+	}
+	nq0 = q0
+	nq1 = q1
+	return
+}
+
+func bold(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
+	if q0 == q1 {
+		out = []byte("**")
+		curs = q0 + 1
+		nq0 = q0
+		nq1 = q0 + len(out)
+		return
+	}
+	dat, err := w.ReadData(q0, q1)
+	if err != nil {
+		panic(err)
+	}
+	if dat[len(dat)-1] == '\n' {
+		dat = dat[:len(dat)-1]
+		q1--
+	}
+	out = []byte("*")
+	out = append(out, dat...)
+	out = append(out, "*"...)
+	curs = q0 + len(out)
+	nq0 = q0
+	nq1 = q1
+	return
 }
 
 func main() {
@@ -97,7 +128,10 @@ func main() {
 
 	switch strings.ToLower(*op) {
 	case "link":
-		link(w)
+		update(w, link)
+		return
+	case "bold":
+		update(w, bold)
 		return
 	default:
 		return
