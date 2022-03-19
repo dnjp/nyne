@@ -2,8 +2,8 @@ package nyne
 
 // Menu contains the menu options that should be written to the tag
 var Menu = []string{
-	" Put  ", "Undo  ", "Redo  ", "win", "\n",
-	"|com  ", "|a-  ", "|a+  ", "Ldef  ", "Lrefs  ", "Lcomp",
+	" Put  ", "Undo  ", "Redo  ", "win ", "vdifftool", "\n",
+	"|fmt ", " (Edit /)",
 }
 
 // Config maps file extensions to their formatting specification
