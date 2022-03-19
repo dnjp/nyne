@@ -11,6 +11,16 @@ import (
 
 var op = flag.String("op", "", "the operation to perform")
 
+func islink(dat []byte) bool {
+	if bytes.HasPrefix(dat, []byte("http")) {
+		return true
+	}
+	if bytes.Contains(dat, []byte("/")) {
+		return true
+	}
+	return false
+}
+
 func link(w *nyne.Win) {
 	q0, q1, err := w.CurrentAddr()
 	if err != nil {
@@ -27,7 +37,11 @@ func link(w *nyne.Win) {
 		if err != nil {
 			panic(err)
 		}
-		if bytes.HasPrefix(dat, []byte("http")) {
+		if dat[len(dat)-1] == '\n' {
+			dat = dat[:len(dat)-1]
+			q1--
+		}
+		if islink(dat) {
 			out = []byte("[](")
 			out = append(out, dat...)
 			out = append(out, ")"...)
