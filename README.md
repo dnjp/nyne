@@ -20,6 +20,14 @@ Included in a full install of nyne are bundled utilities for acme:
 - `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
 - `xcom`: Wrapper arround `com` intended to be invoked from a tool like skhd.
+- `md`: Shortcuts for working with markdown
+
+```
+% md -h
+Usage of md:
+  -op string
+    	the operation to perform: link, bold, italic
+```
 
 ## Configuration
 
@@ -69,6 +77,26 @@ Similarly, you can map `com` to `cmd+/` with the following skhd settings:
 cmd - 0x2C  [
   "acme" : xcom
   "edwood" : xcom
+]
+```
+
+These are shortcuts for the `md` tool that are similar to that of
+other text editors:
+
+```
+cmd - k [
+  "acme" : md -op link
+  "edwood" : md -op link
+]
+
+cmd - b [
+  "acme" : md -op bold
+  "edwood" : md -op bold
+]
+
+cmd - i [
+  "acme" : md -op italic
+  "edwood" : md -op italic
 ]
 ```
 

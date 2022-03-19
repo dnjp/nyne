@@ -9,7 +9,7 @@ import (
 	"github.com/dnjp/nyne"
 )
 
-var op = flag.String("op", "", "the operation to perform")
+var op = flag.String("op", "", "the operation to perform: link, bold, italic")
 
 func islink(dat []byte) bool {
 	if bytes.HasPrefix(dat, []byte("http")) {
