@@ -11,6 +11,7 @@ import (
 
 var direction = flag.String("d", "", "the direction to move: up, down, left, right")
 var word = flag.Bool("w", false, "move by word (only valid for left and right)")
+var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
 
 func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	q0, _, err := w.CurrentAddr()
@@ -27,6 +28,12 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	err = w.SetTextToAddr()
 	if err != nil {
 		panic(err)
+	}
+
+	if *paragraph {
+		if err := w.ExecShow(); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -76,6 +83,22 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 			}
 		}
 	}
+	if *paragraph {
+		nq0 = q0
+		_, ca := readp(w, nq0)
+		_, cb := readn(w, nq0)
+		if ca == '\n' && cb == '\n' {
+			nq0--
+		}
+		for {
+			nq0a, ca := readp(w, nq0)
+			_, cb := readn(w, nq0)
+			if ca == '\n' && cb == '\n' {
+				return nq0
+			}
+			nq0 = nq0a
+		}
+	}
 	if nq0 = q0 - 1; nq0 <= 0 {
 		return 0
 	}
@@ -91,6 +114,22 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 			if skip(c) {
 				return nq0
 			}
+		}
+	}
+	if *paragraph {
+		nq0 = q0
+		_, ca := readp(w, nq0)
+		_, cb := readn(w, nq0)
+		if ca == '\n' && cb == '\n' {
+			nq0++
+		}
+		for {
+			_, ca := readp(w, nq0)
+			nq0b, cb := readn(w, nq0)
+			if ca == '\n' && cb == '\n' {
+				return nq0
+			}
+			nq0 = nq0b
 		}
 	}
 	return q0 + 1
@@ -132,8 +171,8 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 	}
 
 	// find next line with offset
-	nq0 = q0
 	fromstart := q0 - nq0
+	nq0 = q0
 	var nl int
 	var atnl bool
 	if fromstart == 0 {
