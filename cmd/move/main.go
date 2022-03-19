@@ -4,11 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/dnjp/nyne"
 )
 
 var direction = flag.String("d", "", "the direction to move: up, down, left, right")
+var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 
 func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	q0, _, err := w.CurrentAddr()
@@ -59,7 +61,21 @@ func readn(w *nyne.Win, q0 int) (nq0 int, c byte) {
 	return q0 + 1, dat[0]
 }
 
+func skip(c byte) bool {
+	return c == '\n' || c == ' ' || (!unicode.IsLetter(rune(c)) && !unicode.IsNumber(rune(c)))
+}
+
 func left(w *nyne.Win, q0 int) (nq0 int) {
+	if *word {
+		nq0 = q0
+		var c byte
+		for {
+			nq0, c = readp(w, nq0)
+			if skip(c) {
+				return nq0
+			}
+		}
+	}
 	if nq0 = q0 - 1; nq0 <= 0 {
 		return 0
 	}
@@ -67,11 +83,20 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 }
 
 func right(w *nyne.Win, q0 int) (nq0 int) {
+	if *word {
+		nq0 = q0
+		var c byte
+		for {
+			nq0, c = readn(w, nq0)
+			if skip(c) {
+				return nq0
+			}
+		}
+	}
 	return q0 + 1
 }
 
 func up(w *nyne.Win, q0 int) (nq0 int) {
-
 	nq0, c := readp(w, q0)
 	var nl, cc, fromstart int
 	for nq0 > 0 {
@@ -88,7 +113,6 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 		}
 		nq0, c = readp(w, nq0)
 	}
-
 	if cc < fromstart {
 		return nq0 + cc
 	}
@@ -108,8 +132,8 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 	}
 
 	// find next line with offset
-	fromstart := q0 - nq0
 	nq0 = q0
+	fromstart := q0 - nq0
 	var nl int
 	var atnl bool
 	if fromstart == 0 {
@@ -136,7 +160,6 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 			fromstart--
 		}
 	}
-
 	return nq0
 }
 
