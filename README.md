@@ -26,7 +26,7 @@ Included in a full install of nyne are bundled utilities for acme:
 % md -h
 Usage of md:
   -op string
-    	the operation to perform: link, bold, italic
+    	the operation to perform: link, bold, italic, preview
 ```
 
 - 'move': Shortcuts for moving the cursor
@@ -108,6 +108,11 @@ cmd - b [
 cmd - i [
   "acme" : md -op italic
   "edwood" : md -op italic
+]
+
+shift + cmd - r [
+  "acme" : md -op preview
+  "edwood" : md -op preview
 ]
 ```
 

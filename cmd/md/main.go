@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/dnjp/nyne"
 )
 
-var op = flag.String("op", "", "the operation to perform: link, bold, italic")
+var op = flag.String("op", "", "the operation to perform: link, bold, italic, preview")
 
 func islink(dat []byte) bool {
 	if bytes.HasPrefix(dat, []byte("http")) {
@@ -128,6 +131,46 @@ func italic(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 	return
 }
 
+func preview(w *nyne.Win) {
+	outfile := strings.TrimSuffix(path.Base(w.File), ".md")
+	dir := path.Dir(w.File)
+	outpath := path.Join("/tmp/", outfile+".html")
+
+	var out bytes.Buffer
+	tomd := exec.Command(
+		"pandoc",
+		"--metadata",
+		"title="+outfile,
+		"-s",
+		w.File,
+	)
+	tomd.Stdout = &out
+
+	err := tomd.Run()
+	if err != nil {
+		panic(err)
+	}
+
+	output := out.Bytes()
+	if len(output) == 0 {
+		panic("pandoc could not process output")
+	}
+
+	// fix relative paths
+	output = bytes.ReplaceAll(output, []byte("href=\".."), []byte("href=\""+dir+"/.."))
+	output = bytes.ReplaceAll(output, []byte("href=\"./"), []byte("href=\""+dir+"/"))
+	err = os.WriteFile(outpath, output, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	plumb := exec.Command("web", outpath)
+	err = plumb.Run()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -158,6 +201,8 @@ func main() {
 		update(w, bold)
 	case "italic":
 		update(w, italic)
+	case "preview":
+		preview(w)
 	default:
 		return
 	}
