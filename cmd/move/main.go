@@ -155,7 +155,7 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 
 func up(w *nyne.Win, q0 int) (nq0 int) {
 	var (
-		nl int  // newline counter, index
+		nl         int  // newline counter, index
 		ch, tabs   int  // current line
 		chp, tabsp int  // previous line
 		c          byte // current character
@@ -250,7 +250,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 				// so we just need to move down by 1 line
 				return nq0
 			}
-			if (fromstart <= 0 || tabs - tabsn == 0) && !atnl {
+			if (fromstart <= 0 || tabs-tabsn == 0) && !atnl {
 				flush = true
 				flushstart = nq0
 				flushc = c
@@ -260,8 +260,17 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 		default: // over next line
 			if flush {
 				var off int
-				if tabs -tabsn > 0 {
-					off = ((tabs-tabsn) * ft.Tabwidth) - fromstart
+				if tabs-tabsn > 0 {
+					off = ((tabs - tabsn) * ft.Tabwidth)
+					if fromstart > 0 {
+						off -= fromstart
+					} else {
+						off -= 1 // newline
+					}
+				} else if tabsn-tabs > 0 {
+					if fromstart < ft.Tabwidth {
+						fromstart = 0
+					}
 				}
 				if flushc == '\t' && fromstart >= ft.Tabwidth && tabsn > tabs {
 					fromstart -= ft.Tabwidth
@@ -269,7 +278,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 				}
 				rt := flushstart + off + fromstart
 				if rt >= nq0 {
-					rt = nq0-1
+					rt = nq0 - 1
 				}
 				return rt
 			}
