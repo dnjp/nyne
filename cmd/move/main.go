@@ -37,7 +37,11 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 }
 
 func readp(w *nyne.Win, q0 int) (nq0 int, c byte) {
-	addr := fmt.Sprintf("#%d;#%d", q0-1, q0)
+	off := 1
+	if q0 == 0 {
+		off = 0
+	}
+	addr := fmt.Sprintf("#%d;#%d", q0-off, q0)
 	err := w.SetAddr(addr)
 	if err != nil {
 		panic(fmt.Errorf("could not set address to '%s': %w", addr, err))
@@ -151,7 +155,7 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 
 func up(w *nyne.Win, q0 int) (nq0 int) {
 	var (
-		nl /* , lastnl */ int  // newline counter, index
+		nl int  // newline counter, index
 		ch, tabs   int  // current line
 		chp, tabsp int  // previous line
 		c          byte // current character
@@ -161,7 +165,9 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 	for nq0, c = readp(w, q0); nq0 >= 0; nq0, c = readp(w, nq0) {
 		if c == '\n' {
 			nl++
-			// lastnl = nq0
+		}
+		if nq0 == 0 {
+			nl++
 		}
 		switch nl {
 		case 0: // current line
@@ -177,24 +183,23 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 				chp++
 			}
 		case 2: // start of previous line
-			nc := chl
-			fmt.Printf("nc=%d nq0=%d\n", nc, nq0)
+			nq0++
+			nc := ch
 			if tabs > tabsp {
 				nc += (tabs - tabsp) * ft.Tabwidth
-				fmt.Printf("tabs > tabsp: nt=%d nc=%d\n", (tabs - tabsp), nc)
+				tabs = tabsp
+			} else if tabs > 0 && tabsp > tabs {
+				nc -= (tabsp - tabs) * ft.Tabwidth
+				if nc < 0 {
+					nc = 0
+				} else {
+					tabs = tabsp
+				}
 			}
 			if nc > chp {
 				nc = chp
-				fmt.Printf("nc > chp: nc=%d\n", nc)
 			}
-
-			fmt.Printf("tabsp=%d\n", tabsp)
-			off := tabs + nc
-			fmt.Printf("off=%d\n", off)
-
-			rt := nq0 + off
-			fmt.Printf("rt=%d\n", rt)
-			return rt
+			return nq0 + tabs + nc
 		default:
 			break
 		}
