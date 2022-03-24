@@ -29,7 +29,6 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	if err != nil {
 		panic(err)
 	}
-
 	if *paragraph {
 		if err := w.ExecShow(); err != nil {
 			panic(err)
@@ -66,6 +65,21 @@ func readn(w *nyne.Win, q0 int) (nq0 int, c byte) {
 		panic("no data")
 	}
 	return q0 + 1, dat[0]
+}
+
+func start(w *nyne.Win, q0 int) (nq0, tabs int) {
+	var c byte
+	nq0 = q0
+	for nq0 >= 0 {
+		nq0, c = readp(w, nq0)
+		if c == '\t' {
+			tabs++
+		} else if c == '\n' {
+			nq0++
+			break
+		}
+	}
+	return nq0, tabs
 }
 
 func skip(c byte) bool {
@@ -136,67 +150,126 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 }
 
 func up(w *nyne.Win, q0 int) (nq0 int) {
-	nq0, c := readp(w, q0)
-	var nl, cc, fromstart int
-	for nq0 > 0 {
-		if nl == 1 && c != '\n' {
-			cc++
-		}
+	var (
+		nl /* , lastnl */ int  // newline counter, index
+		ch, tabs   int  // current line
+		chp, tabsp int  // previous line
+		c          byte // current character
+	)
+
+	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
+	for nq0, c = readp(w, q0); nq0 >= 0; nq0, c = readp(w, nq0) {
 		if c == '\n' {
 			nl++
-			if nl == 1 {
-				fromstart = q0 - nq0
-			} else {
-				break
-			}
+			// lastnl = nq0
 		}
-		nq0, c = readp(w, nq0)
-	}
-	if cc < fromstart {
-		return nq0 + cc
-	}
-	return nq0 + fromstart
-}
+		switch nl {
+		case 0: // current line
+			if c == '\t' {
+				tabs++
+			} else if c != '\n' {
+				ch++
+			}
+		case 1: // previous line
+			if c == '\t' {
+				tabsp++
+			} else if c != '\n' {
+				chp++
+			}
+		case 2: // start of previous line
+			nc := chl
+			fmt.Printf("nc=%d nq0=%d\n", nc, nq0)
+			if tabs > tabsp {
+				nc += (tabs - tabsp) * ft.Tabwidth
+				fmt.Printf("tabs > tabsp: nt=%d nc=%d\n", (tabs - tabsp), nc)
+			}
+			if nc > chp {
+				nc = chp
+				fmt.Printf("nc > chp: nc=%d\n", nc)
+			}
 
-func down(w *nyne.Win, q0 int) (nq0 int) {
-	// find beginning of line
-	nq0 = q0
-	var c byte
-	for {
-		nq0, c = readp(w, nq0)
-		if c == '\n' {
-			nq0++
+			fmt.Printf("tabsp=%d\n", tabsp)
+			off := tabs + nc
+			fmt.Printf("off=%d\n", off)
+
+			rt := nq0 + off
+			fmt.Printf("rt=%d\n", rt)
+			return rt
+		default:
 			break
 		}
 	}
 
-	// find next line with offset
-	fromstart := q0 - nq0
-	nq0 = q0
-	var nl int
-	var atnl bool
+	// something bad happened, don't move
+	return q0
+}
+
+func down(w *nyne.Win, q0 int) (nq0 int) {
+	var (
+		nl, fromstart, tabs int
+		atnl                bool
+		c                   byte
+	)
+
+	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
+	nq0, tabs = start(w, q0) // find beginning of line
+	fromstart = q0 - nq0     // find next line with offset
+	nq0 = q0                 // move back to starting position
+
 	if fromstart == 0 {
 		atnl = true
 	}
+
+	tabsn := 0
+	flush := false
+	flushstart := 0
+	var flushc byte
 	for {
 		nq0, c = readn(w, nq0)
 		if c == '\n' {
 			nl++
 		}
-		if nl > 1 {
-			// we went over the next newline - backtrack
-			nq0--
-			break
-		} else if fromstart <= 0 && !atnl {
-			// reached offset
-			break
-		} else if nl > 0 {
+
+		switch nl {
+		case 0: // current line
+			continue
+		case 1: // next line
+			if c == '\t' {
+				tabsn++
+			}
+			if flush {
+				continue
+			}
 			if atnl {
 				// starting point was already at a newline
 				// so we just need to move down by 1 line
-				break
+				return nq0
+			}
+			if (fromstart <= 0 || tabs - tabsn == 0) && !atnl {
+				flush = true
+				flushstart = nq0
+				flushc = c
+				continue
 			}
 			fromstart--
+		default: // over next line
+			if flush {
+				var off int
+				if tabs -tabsn > 0 {
+					off = ((tabs-tabsn) * ft.Tabwidth) - fromstart
+				}
+				if flushc == '\t' && fromstart >= ft.Tabwidth && tabsn > tabs {
+					fromstart -= ft.Tabwidth
+					off++
+				}
+				rt := flushstart + off + fromstart
+				if rt >= nq0 {
+					rt = nq0-1
+				}
+				return rt
+			}
+			// backtrack
+			return nq0 - 1
 		}
 	}
 	return nq0
