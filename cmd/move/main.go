@@ -9,7 +9,7 @@ import (
 	"github.com/dnjp/nyne"
 )
 
-var direction = flag.String("d", "", "the direction to move: up, down, left, right")
+var direction = flag.String("d", "", "the direction to move: up, down, left, right, start, end")
 var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
 var sel = flag.Bool("s", false, "select text while moving")
@@ -23,7 +23,7 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	if *sel {
 		var a,b, nq0 int
 		switch *direction {
-		case "left", "up":
+		case "left", "up", "start":
 			nq0 = cb(w, q0)
 			a = q0
 			if nq0 < a {
@@ -36,12 +36,11 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 			if q0 != q1 {
 				b = q1
 			}
-		case "right", "down":
+		case "right", "down", "end":
 			nq0 = cb(w, q1)
 			a = q0
 			b = nq0
 		}
-		fmt.Printf("q0=%d q1=%d nq0=%d a=%d b=%d\n", q0, q1, nq0, a, b)
 		err = w.SetAddr(fmt.Sprintf("#%d;#%d", a, b))
 		if err != nil {
 			panic(err)
@@ -119,9 +118,34 @@ func start(w *nyne.Win, q0 int) (nq0, tabs int) {
 	return nq0, tabs
 }
 
+func end(w *nyne.Win, q0 int) (nq0, tabs int) {
+	var c byte
+	nq0 = q0
+	for nq0 >= 0 {
+		nq0, c, _ = readn(w, nq0)
+		if c == '\t' {
+			tabs++
+		} else if c == '\n' {
+			nq0--
+			break
+		}
+	}
+	return nq0, tabs
+}
+
 func isword(c byte) bool {
 	r := rune(c)
 	return c == '\n' || unicode.IsSpace(r) || unicode.IsPunct(r)
+}
+
+func startline(w *nyne.Win, q0 int) (nq0 int) {
+	nq0, _ = start(w, q0)
+	return nq0
+}
+
+func endline(w *nyne.Win, q0 int) (nq0 int) {
+	nq0, _ = end(w, q0)
+	return nq0
 }
 
 func left(w *nyne.Win, q0 int) (nq0 int) {
@@ -350,5 +374,9 @@ func main() {
 		update(w, left)
 	case "right":
 		update(w, right)
+	case "start":
+		update(w, startline)
+	case "end":
+		update(w, endline)
 	}
 }

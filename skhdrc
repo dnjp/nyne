@@ -93,6 +93,18 @@ shift + ctrl + cmd - left [
   "edwood" : move -d left -p -s
 ]
 
+# select text while moving to the beginning of the line
+shift + cmd - left [
+  "acme" : move -d start -s
+  "edwood" : move -d start -s
+]
+
+# move to beginning of line
+cmd - left [
+  "acme" : move -d start
+  "edwood" : move -d start
+]
+
 #
 #               Right
 #
@@ -131,6 +143,18 @@ ctrl + cmd - right [
 shift + ctrl + cmd - right [
   "acme" : move -d right -p -s
   "edwood" : move -d right -p -s
+]
+
+# select text while moving to the end of the line
+shift + cmd - right [
+  "acme" : move -d end -s
+  "edwood" : move -d end -s
+]
+
+# move to end of line
+cmd - right [
+  "acme" : move -d end
+  "edwood" : move -d end
 ]
 
 #
