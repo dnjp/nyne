@@ -12,17 +12,46 @@ import (
 var direction = flag.String("d", "", "the direction to move: up, down, left, right")
 var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
+var sel = flag.Bool("s", false, "select text while moving")
 
 func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
-	q0, _, err := w.CurrentAddr()
+	q0, q1, err := w.CurrentAddr()
 	if err != nil {
 		panic(err)
 	}
 
-	nq0 := cb(w, q0)
-	err = w.SetAddr(fmt.Sprintf("#%d", nq0))
-	if err != nil {
-		panic(err)
+	if *sel {
+		var a,b, nq0 int
+		switch *direction {
+		case "left", "up":
+			nq0 = cb(w, q0)
+			a = q0
+			if nq0 < a {
+				a = nq0
+			}
+			b = nq0
+			if q0 > b {
+				b = q0
+			}
+			if q0 != q1 {
+				b = q1
+			}
+		case "right", "down":
+			nq0 = cb(w, q1)
+			a = q0
+			b = nq0
+		}
+		fmt.Printf("q0=%d q1=%d nq0=%d a=%d b=%d\n", q0, q1, nq0, a, b)
+		err = w.SetAddr(fmt.Sprintf("#%d;#%d", a, b))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		nq0 := cb(w, q0)
+		err = w.SetAddr(fmt.Sprintf("#%d", nq0))
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	err = w.SetTextToAddr()
