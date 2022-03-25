@@ -1,0 +1,195 @@
+####################################
+#              LSP
+####################################
+
+# text completion
+ctrl - space [
+  "acme" : L comp -e | writefocus
+  "edwood" : L comp -e | writefocus
+]
+
+# find references
+cmd - r [
+  "acme" : L refs | writefocus
+  "edwood" : L refs | writefocus
+]
+
+# go to definition
+cmd - d [
+  "acme" : L def | writefocus
+  "edwood" : L def | writefocus
+]
+
+####################################
+#              Utility
+####################################
+
+# comment line or selection
+# cmd + /
+cmd - 0x2C  [
+  "acme" : xcom
+  "edwood" : xcom
+]
+
+# execute "Put"
+cmd - s [
+  "acme" : save
+  "edwood" : save
+]
+
+# insert tab or indent selection
+tab [
+  "acme" : nynetab
+  "edwood" : nynetab
+]
+
+# unindent selection
+shift - tab [
+  "acme" : nynetab -unindent=true
+  "edwood" : nynetab -unindent=true
+]
+
+####################################
+#              Movement
+####################################
+
+#
+#               Left
+#
+
+# move to the left by one character
+left [
+  "acme" : move -d left
+  "edwood" : move -d left
+]
+
+# select text while moving to the left
+shift - left [
+  "acme" : move -d left -s
+  "edwood" : move -d left -s
+]
+
+# move to the left by one word
+ctrl - left [
+  "acme" : move -d left -w
+  "edwood" : move -d left -w
+]
+
+# select text while moving to the left by one word
+shift + ctrl - left [
+  "acme" : move -d left -w -s
+  "edwood" : move -d left -w -s
+]
+
+# move to the left by one paragraph
+ctrl + cmd - left [
+  "acme" : move -d left -p
+  "edwood" : move -d left -p
+]
+
+# move to the left by one paragraph
+shift + ctrl + cmd - left [
+  "acme" : move -d left -p -s
+  "edwood" : move -d left -p -s
+]
+
+#
+#               Right
+#
+
+# move to the right by one character
+right [
+  "acme" : move -d right
+  "edwood" : move -d right
+]
+
+# select text while moving to the right
+shift - right [
+  "acme" : move -d right -s
+  "edwood" : move -d right -s
+]
+
+# move to the right by one word
+ctrl - right [
+  "acme" : move -d right -w
+  "edwood" : move -d right -w
+]
+
+# select text while moving to the right by one word
+shift + ctrl - right [
+  "acme" : move -d right -w -s
+  "edwood" : move -d right -w -s
+]
+
+# move to the right by one paragraph
+ctrl + cmd - right [
+  "acme" : move -d right -p
+  "edwood" : move -d right -p
+]
+
+# select text while moving to the right by one paragraph
+shift + ctrl + cmd - right [
+  "acme" : move -d right -p -s
+  "edwood" : move -d right -p -s
+]
+
+#
+#               Up
+#
+
+# move cursor up a line
+up [
+  "acme" : move -d up
+  "edwood" : move -d up
+]
+
+# select text while moving cursor up a line
+shift - up [
+  "acme" : move -d up -s
+  "edwood" : move -d up -s
+]
+
+#
+#               Down
+#
+
+# move cursor down a line
+down [
+  "acme" : move -d down
+  "edwood" : move -d down
+]
+
+# select text while moving cursor down a line
+shift - down [
+  "acme" : move -d down -s
+  "edwood" : move -d down -s
+]
+
+####################################
+#              Markdown
+####################################
+
+# insert link / wrap text with link syntax
+cmd - k [
+  "acme" : md -op link
+  "edwood" : md -op link
+]
+
+# insert or wrap text with bold syntax
+cmd - b [
+  "acme" : md -op bold
+  "edwood" : md -op bold
+]
+
+# insert or wrap text with italic syntax
+cmd - i [
+  "acme" : md -op italic
+  "edwood" : md -op italic
+]
+
+# open markdown document with web browser
+shift + cmd - r [
+  "acme" : md -op preview
+  "edwood" : md -op preview
+]
+
