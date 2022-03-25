@@ -159,6 +159,8 @@ func preview(w *nyne.Win) {
 	// fix relative paths
 	output = bytes.ReplaceAll(output, []byte("href=\".."), []byte("href=\""+dir+"/.."))
 	output = bytes.ReplaceAll(output, []byte("href=\"./"), []byte("href=\""+dir+"/"))
+	output = bytes.ReplaceAll(output, []byte("src=\".."), []byte("src=\""+dir+"/.."))
+	output = bytes.ReplaceAll(output, []byte("src=\"./"), []byte("src=\""+dir+"/"))
 	err = os.WriteFile(outpath, output, 0644)
 	if err != nil {
 		panic(err)
