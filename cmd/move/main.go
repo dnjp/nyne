@@ -56,9 +56,13 @@ func readp(w *nyne.Win, q0 int) (nq0 int, c byte) {
 	return q0 - 1, dat[0]
 }
 
-func readn(w *nyne.Win, q0 int) (nq0 int, c byte) {
+func readn(w *nyne.Win, q0 int) (nq0 int, c byte, eof bool) {
 	err := w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q0+1))
 	if err != nil {
+		if err.Error() == "address out of range" {
+			eof = true
+			return
+		}
 		panic(err)
 	}
 	dat, err := w.ReadData(q0, q0+1)
@@ -68,7 +72,7 @@ func readn(w *nyne.Win, q0 int) (nq0 int, c byte) {
 	if len(dat) == 0 {
 		panic("no data")
 	}
-	return q0 + 1, dat[0]
+	return q0 + 1, dat[0], false
 }
 
 func start(w *nyne.Win, q0 int) (nq0, tabs int) {
@@ -86,8 +90,9 @@ func start(w *nyne.Win, q0 int) (nq0, tabs int) {
 	return nq0, tabs
 }
 
-func skip(c byte) bool {
-	return c == '\n' || c == ' ' || (!unicode.IsLetter(rune(c)) && !unicode.IsNumber(rune(c)))
+func isword(c byte) bool {
+	r := rune(c)
+	return c == '\n' || unicode.IsSpace(r) || unicode.IsPunct(r)
 }
 
 func left(w *nyne.Win, q0 int) (nq0 int) {
@@ -96,7 +101,7 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 		var c byte
 		for {
 			nq0, c = readp(w, nq0)
-			if skip(c) {
+			if isword(c) {
 				return nq0
 			}
 		}
@@ -104,14 +109,14 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 	if *paragraph {
 		nq0 = q0
 		_, ca := readp(w, nq0)
-		_, cb := readn(w, nq0)
-		if ca == '\n' && cb == '\n' {
+		_, cb, eof := readn(w, nq0)
+		if ca == '\n' && (cb == '\n' || eof) {
 			nq0--
 		}
 		for {
 			nq0a, ca := readp(w, nq0)
-			_, cb := readn(w, nq0)
-			if ca == '\n' && cb == '\n' {
+			_, cb, eof := readn(w, nq0)
+			if ca == '\n' && cb == '\n' || eof {
 				return nq0
 			}
 			nq0 = nq0a
@@ -128,8 +133,8 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 		nq0 = q0
 		var c byte
 		for {
-			nq0, c = readn(w, nq0)
-			if skip(c) {
+			nq0, c, _ = readn(w, nq0)
+			if isword(c) {
 				return nq0
 			}
 		}
@@ -137,14 +142,14 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 	if *paragraph {
 		nq0 = q0
 		_, ca := readp(w, nq0)
-		_, cb := readn(w, nq0)
+		_, cb, _ := readn(w, nq0)
 		if ca == '\n' && cb == '\n' {
 			nq0++
 		}
 		for {
 			_, ca := readp(w, nq0)
-			nq0b, cb := readn(w, nq0)
-			if ca == '\n' && cb == '\n' {
+			nq0b, cb, eof := readn(w, nq0)
+			if ca == '\n' && cb == '\n' || eof {
 				return nq0
 			}
 			nq0 = nq0b
@@ -230,7 +235,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 	flushstart := 0
 	var flushc byte
 	for {
-		nq0, c = readn(w, nq0)
+		nq0, c, _ = readn(w, nq0)
 		if c == '\n' {
 			nl++
 		}
