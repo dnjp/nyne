@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
+	"strings"
 
 	"github.com/dnjp/nyne"
 )
@@ -23,6 +25,18 @@ func main() {
 	w, ok := wins[winid]
 	if !ok {
 		panic(fmt.Errorf("could not find window with id %d", winid))
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+
+	// ignore save for terminal
+	_, file := path.Split(w.File)
+	file = strings.TrimPrefix(file, "-")
+	if strings.Contains(hostname, file) {
+		return
 	}
 
 	_, _, err = w.CurrentAddr()
