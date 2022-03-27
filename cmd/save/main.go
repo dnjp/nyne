@@ -9,6 +9,16 @@ import (
 	"github.com/dnjp/nyne"
 )
 
+func isterm(w *nyne.Win) bool {
+	hostname, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+	_, file := path.Split(w.File)
+	file = strings.TrimPrefix(file, "-")
+	return strings.Contains(hostname, file)
+}
+
 func main() {
 	os.Unsetenv("winid") // do not trust the execution environment
 
@@ -27,14 +37,8 @@ func main() {
 		panic(fmt.Errorf("could not find window with id %d", winid))
 	}
 
-	// ignore save for terminal
-	hostname, err := os.Hostname()
-	if err != nil {
-		panic(err)
-	}
-	_, file := path.Split(w.File)
-	file = strings.TrimPrefix(file, "-")
-	if strings.Contains(hostname, file) {
+	// ignore terminal window
+	if isterm(w) {
 		return
 	}
 
