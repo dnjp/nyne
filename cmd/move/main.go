@@ -21,7 +21,7 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	}
 
 	if *sel {
-		var a,b, nq0 int
+		var a, b, nq0 int
 		switch *direction {
 		case "left", "up", "start":
 			nq0 = cb(w, q0)
@@ -57,10 +57,8 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	if err != nil {
 		panic(err)
 	}
-	if *paragraph {
-		if err := w.ExecShow(); err != nil {
-			panic(err)
-		}
+	if err := w.ExecShow(); err != nil {
+		panic(err)
 	}
 }
 
@@ -133,11 +131,6 @@ func end(w *nyne.Win, q0 int) (nq0, tabs int) {
 	return nq0, tabs
 }
 
-func isword(c byte) bool {
-	r := rune(c)
-	return c == '\n' || unicode.IsSpace(r) || unicode.IsPunct(r)
-}
-
 func startline(w *nyne.Win, q0 int) (nq0 int) {
 	nq0, _ = start(w, q0)
 	return nq0
@@ -148,14 +141,32 @@ func endline(w *nyne.Win, q0 int) (nq0 int) {
 	return nq0
 }
 
+func isword(c byte) bool {
+	r := rune(c)
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
 func left(w *nyne.Win, q0 int) (nq0 int) {
 	if *word {
-		nq0 = q0
-		var c byte
+		nq0 = q0 - 1
+		var tnq0 int
+		var pc, c, nc byte
 		for {
-			nq0, c = readp(w, nq0)
-			if isword(c) {
+			_, pc, _ = readn(w, nq0)
+			tnq0, c = readp(w, nq0)
+			_, nc = readp(w, nq0-1)
+			nq0 = tnq0
+			if nq0 == 0 {
 				return nq0
+			}
+			if !isword(pc) && isword(c) && isword(nc) {
+				return nq0 + 1
+			}
+			if !isword(pc) && isword(c) && !isword(nc) {
+				return nq0 + 1
+			}
+			if isword(pc) && !isword(c) {
+				return nq0 + 1
 			}
 		}
 	}
@@ -183,12 +194,22 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 
 func right(w *nyne.Win, q0 int) (nq0 int) {
 	if *word {
-		nq0 = q0
-		var c byte
+		nq0 = q0 + 1
+		var tnq0 int
+		var pc, c, nc byte
 		for {
-			nq0, c, _ = readn(w, nq0)
-			if isword(c) {
-				return nq0
+			_, pc = readp(w, nq0)
+			tnq0, c, _ = readn(w, nq0)
+			_, nc, _ = readn(w, nq0+1)
+			nq0 = tnq0
+			if !isword(pc) && isword(c) && isword(nc) {
+				return nq0 - 1
+			}
+			if !isword(pc) && isword(c) && !isword(nc) {
+				return nq0 - 1
+			}
+			if isword(pc) && !isword(c) {
+				return nq0 - 1
 			}
 		}
 	}
