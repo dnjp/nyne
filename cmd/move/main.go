@@ -262,6 +262,14 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 				chp++
 			}
 		case 2: // start of previous line
+			if ch == 0 && tabs == 0 && tabsp == 0 {
+				// line only contains newline character,
+				// so return the current line
+				if nq0 > 0 {
+					return nq0 + 1
+				}
+				return nq0
+			}
 			nq0++
 			nc := ch
 			if tabs > tabsp {
@@ -279,6 +287,10 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 				nc = chp
 			}
 			return nq0 + tabs + nc
+		case 3:
+			// line only contained newline, move down a
+			// line to previous point
+			return nq0 + 1
 		default:
 			break
 		}
