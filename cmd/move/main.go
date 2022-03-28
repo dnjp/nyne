@@ -340,8 +340,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 				// starting point was already at a newline
 				// so we just need to move down by 1 line
 				return nq0
-			}
-			if (fromstart <= 0 || tabs-tabsn == 0) && !atnl {
+			} else if fromstart <= 0 || tabs-tabsn == 0 {
 				flush = true
 				flushstart = nq0
 				flushc = c
@@ -370,6 +369,9 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 				rt := flushstart + off + fromstart
 				if rt >= nq0 {
 					rt = nq0 - 1
+				}
+				if q0 == 0 {
+					rt--
 				}
 				return rt
 			}
