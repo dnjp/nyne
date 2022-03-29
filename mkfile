@@ -1,36 +1,12 @@
-ALL=nyne nynetab com xcom a+ a- save md move
+ALL=nyne nynetab com xcom a+ a- save md move f+ f- font
 
-all:V: $ALL
+all:V: ${ALL:%=bin/%}
 
 bin:
 	mkdir bin
 
-nyne: bin
-	go build -o bin/nyne cmd/nyne/*.go
-
-save: bin
-	go build -o bin/save cmd/save/*.go
-
-nynetab: bin
-	go build -o bin/nynetab cmd/nynetab/*.go
-
-md: bin
-	go build -o bin/md cmd/md/*.go
-
-move: bin
-	go build -o bin/move cmd/move/*.go
-
-com: bin
-	go build -o bin/com cmd/com/*.go
-
-xcom: bin
-	go build -o bin/xcom cmd/xcom/*.go
-
-a+: bin
-	go build -o bin/a+ cmd/a+/*.go
-
-a-: bin
-	go build -o bin/a- cmd/a-/*.go
+bin/%:V: ./cmd/% bin
+	go build -o bin/$stem cmd/$stem/*.go
 
 install:
 	go install ./...
