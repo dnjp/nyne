@@ -29,6 +29,17 @@ Usage of md:
     	the operation to perform: link, bold, italic, preview
 ```
 
+- 'move': Shortcuts for moving the cursor
+
+```
+% move -h
+Usage of move:
+  -d string
+    	the direction to move: up, down, left, right
+  -p	move by paragraph (only valid for left and right)
+  -w	move by word (only valid for left and right)
+```
+
 ## Configuration
 
 Nyne and the bundled utilities use a [configuration
@@ -80,7 +91,7 @@ cmd - 0x2C  [
 ]
 ```
 
-These are shortcuts for the `md` tool that are similar to that of
+These are key bindings for the `md` tool that are similar to that of
 other text editors:
 
 ```
@@ -102,6 +113,58 @@ cmd - i [
 shift + cmd - r [
   "acme" : md -op preview
   "edwood" : md -op preview
+]
+```
+
+The following are keybindings for moving the cursor:
+
+```
+# move to the left by one character
+alt - h [
+  "acme" : move -d left
+  "edwood" : move -d left
+]
+
+# move to the right by one character
+alt - l [
+  "acme" : move -d right
+  "edwood" : move -d right
+]
+
+# move to the left by one word
+alt + shift - h [
+  "acme" : move -d left -w
+  "edwood" : move -d left -w
+]
+
+# move to the right by one word
+alt + shift - l [
+  "acme" : move -d right -w
+  "edwood" : move -d right -w
+]
+
+# move to the left by one paragraph
+ctrl + alt - h [
+  "acme" : move -d left -p
+  "edwood" : move -d left -p
+]
+
+# move to the right by one paragraph
+ctrl + alt - l [
+  "acme" : move -d right -p
+  "edwood" : move -d right -p
+]
+
+# move cursor up a line
+alt - k [
+  "acme" : move -d up
+  "edwood" : move -d up
+]
+
+# move cursor down a line
+alt - j [
+  "acme" : move -d down
+  "edwood" : move -d down
 ]
 ```
 

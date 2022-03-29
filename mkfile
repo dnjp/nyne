@@ -1,4 +1,4 @@
-ALL=nyne nynetab com xcom a+ a- save md
+ALL=nyne nynetab com xcom a+ a- save md move
 
 all:V: $ALL
 
@@ -16,6 +16,9 @@ nynetab: bin
 
 md: bin
 	go build -o bin/md cmd/md/*.go
+
+move: bin
+	go build -o bin/move cmd/move/*.go
 
 com: bin
 	go build -o bin/com cmd/com/*.go

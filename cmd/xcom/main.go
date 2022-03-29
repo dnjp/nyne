@@ -32,6 +32,28 @@ func main() {
 		panic(err)
 	}
 
+	if q0 == q1 {
+		q1++
+		for {
+			err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+			if err != nil {
+				panic(err)
+			}
+			dat, err := w.ReadData(q0, q1)
+			if err != nil {
+				panic(err)
+			}
+			if dat[len(dat)-1] == '\n' {
+				err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+				if err != nil {
+					panic(err)
+				}
+				break
+			}
+			q1++
+		}
+	}
+
 	dat, err := w.ReadData(q0, q1)
 	if err != nil {
 		panic(err)
