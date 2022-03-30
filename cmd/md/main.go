@@ -31,14 +31,14 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, o
 	}
 
 	nq0, nq1, curs, out := cb(w, q0, q1)
-	err = w.SetAddr(fmt.Sprintf("#%d;#%d", nq0, nq1))
+	err = w.SetAddr("#%d;#%d", nq0, nq1)
 	if err != nil {
 		panic(err)
 	}
 
 	w.SetData(out)
 
-	err = w.SetAddr(fmt.Sprintf("#%d", curs))
+	err = w.SetAddr("#%d", curs)
 	if err != nil {
 		panic(err)
 	}

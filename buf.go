@@ -1,7 +1,6 @@
 package nyne
 
 import (
-	"fmt"
 	"log"
 	"unicode/utf8"
 )
@@ -97,7 +96,7 @@ func (b *Buf) Start() error {
 			if len(body) < w.Lastpoint {
 				w.Lastpoint = len(body)
 			}
-			if err := b.win.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
+			if err := b.win.SetAddr("#%d", w.Lastpoint); err != nil {
 				return err
 			}
 			if err := b.win.SetTextToAddr(); err != nil {

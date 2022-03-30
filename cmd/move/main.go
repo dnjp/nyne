@@ -41,13 +41,13 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 			a = q0
 			b = nq0
 		}
-		err = w.SetAddr(fmt.Sprintf("#%d;#%d", a, b))
+		err = w.SetAddr("#%d;#%d", a, b)
 		if err != nil {
 			panic(err)
 		}
 	} else {
 		nq0 := cb(w, q0)
-		err = w.SetAddr(fmt.Sprintf("#%d", nq0))
+		err = w.SetAddr("#%d", nq0)
 		if err != nil {
 			panic(err)
 		}
@@ -83,7 +83,7 @@ func readp(w *nyne.Win, q0 int) (nq0 int, c byte) {
 }
 
 func readn(w *nyne.Win, q0 int) (nq0 int, c byte, eof bool) {
-	err := w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q0+1))
+	err := w.SetAddr("#%d;#%d", q0, q0+1)
 	if err != nil {
 		if err.Error() == "address out of range" {
 			eof = true
