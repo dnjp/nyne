@@ -201,7 +201,7 @@ func (f *Formatter) update(evt Event, updates [][]byte) error {
 		if w.Lastpoint > len(update) {
 			w.Lastpoint = len(update)
 		}
-		if err := w.SetAddr(fmt.Sprintf("#%d", w.Lastpoint)); err != nil {
+		if err := w.SetAddr("#%d", w.Lastpoint); err != nil {
 			return err
 		}
 		if err := w.SetTextToAddr(); err != nil {

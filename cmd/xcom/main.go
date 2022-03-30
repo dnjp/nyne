@@ -35,7 +35,7 @@ func main() {
 	if q0 == q1 {
 		q1++
 		for {
-			err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+			err = w.SetAddr("#%d;#%d", q0, q1)
 			if err != nil {
 				panic(err)
 			}
@@ -44,7 +44,7 @@ func main() {
 				panic(err)
 			}
 			if dat[len(dat)-1] == '\n' {
-				err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+				err = w.SetAddr("#%d;#%d", q0, q1)
 				if err != nil {
 					panic(err)
 				}
@@ -78,7 +78,7 @@ func main() {
 		panic(err)
 	}
 
-	err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q1))
+	err = w.SetAddr("#%d;#%d", q0, q1)
 	if err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func main() {
 	b := out.Bytes()
 	w.SetData(b)
 
-	err = w.SetAddr(fmt.Sprintf("#%d;#%d", q0, q0+len(b)))
+	err = w.SetAddr("#%d;#%d", q0, q0+len(b))
 	if err != nil {
 		panic(err)
 	}

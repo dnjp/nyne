@@ -1,7 +1,6 @@
 package nyne
 
 import (
-	"fmt"
 	"log"
 	"unicode/utf8"
 )
@@ -42,7 +41,7 @@ func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) (rune, H
 		tab := Tab(tabwidth(e), true)
 
 		// select current character
-		err = w.SetAddr(fmt.Sprintf("#%d;+#1", e.SelBegin))
+		err = w.SetAddr("#%d;+#1", e.SelBegin)
 		if err != nil {
 			log.Println(err)
 			w.WriteEvent(e)
