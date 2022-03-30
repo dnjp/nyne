@@ -284,7 +284,6 @@ func (w *Win) SetWinName(name string) error {
 func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
 	addr := fmt.Sprintf(fmtstr, args...)
 	return w.handle.Addr(addr)
-	// return w.write("addr", []byte(addr))
 }
 
 // SetData is used in conjunction with addr for random access to the
