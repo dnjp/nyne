@@ -282,7 +282,10 @@ func (w *Win) SetWinName(name string) error {
 // SetAddr takes an addr which may be written with any textual address
 // in the format understood by button 3 but without the initial colon
 func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
-	addr := fmt.Sprintf(fmtstr, args...)
+	addr := fmtstr
+	if len(args) > 0 {
+		addr = fmt.Sprintf(fmtstr, args...)
+	}
 	return w.handle.Addr(addr)
 }
 
