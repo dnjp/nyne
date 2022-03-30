@@ -94,13 +94,15 @@ shift + alt - left [
 ]
 
 # move to the left by one paragraph
-ctrl + cmd - left [
+# ctrl + cmd + [
+ctrl + cmd - 0x21 [
   "acme" : move -d left -p
   "edwood" : move -d left -p
 ]
 
 # move to the left by one paragraph
-shift + ctrl + cmd - left [
+# shift + ctrl + cmd + [
+shift + ctrl + cmd - 0x21 [
   "acme" : move -d left -p -s
   "edwood" : move -d left -p -s
 ]
@@ -146,13 +148,15 @@ shift + alt - right [
 ]
 
 # move to the right by one paragraph
-ctrl + cmd - right [
+# ctrl + cmd + ]
+ctrl + cmd - 0x1E [
   "acme" : move -d right -p
   "edwood" : move -d right -p
 ]
 
 # select text while moving to the right by one paragraph
-shift + ctrl + cmd - right [
+# shift + ctrl + cmd + ]
+shift + ctrl + cmd - 0x1E [
   "acme" : move -d right -p -s
   "edwood" : move -d right -p -s
 ]

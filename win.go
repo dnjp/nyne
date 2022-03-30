@@ -281,8 +281,10 @@ func (w *Win) SetWinName(name string) error {
 
 // SetAddr takes an addr which may be written with any textual address
 // in the format understood by button 3 but without the initial colon
-func (w *Win) SetAddr(addr string) error {
-	return w.write("addr", []byte(addr))
+func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
+	addr := fmt.Sprintf(fmtstr, args...)
+	return w.handle.Addr(addr)
+	// return w.write("addr", []byte(addr))
 }
 
 // SetData is used in conjunction with addr for random access to the
