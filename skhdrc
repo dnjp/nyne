@@ -31,6 +31,18 @@ cmd - 0x2C  [
   "edwood" : xcom
 ]
 
+# shift + cmd + +
+shift + cmd - 0x18  [
+  "acme" : font -op inc
+  "edwood" : font -op inc
+]
+
+# shift + cmd + -
+cmd - 0x1B  [
+  "acme" : font -op dec
+  "edwood" : font -op dec
+]
+
 # execute "Put"
 cmd - s [
   "acme" : save
@@ -70,13 +82,13 @@ shift - left [
 ]
 
 # move to the left by one word
-ctrl - left [
+alt - left [
   "acme" : move -d left -w
   "edwood" : move -d left -w
 ]
 
 # select text while moving to the left by one word
-shift + ctrl - left [
+shift + alt - left [
   "acme" : move -d left -w -s
   "edwood" : move -d left -w -s
 ]
@@ -122,13 +134,13 @@ shift - right [
 ]
 
 # move to the right by one word
-ctrl - right [
+alt - right [
   "acme" : move -d right -w
   "edwood" : move -d right -w
 ]
 
 # select text while moving to the right by one word
-shift + ctrl - right [
+shift + alt - right [
   "acme" : move -d right -w -s
   "edwood" : move -d right -w -s
 ]

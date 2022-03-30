@@ -19,7 +19,7 @@ Included in a full install of nyne are bundled utilities for acme:
 - `a+`: Indent selected source code
 - `a-`: Unindent selected source code
 - `com`: Comment/uncomment selected source code
-- `xcom`: Wrapper arround `com` intended to be invoked from a tool like skhd.
+- `xcom`: Wrapper around `com` intended to be invoked from a tool like skhd.
 - `md`: Shortcuts for working with markdown
 
 ```
@@ -40,6 +40,17 @@ Usage of move:
   -w	move by word (only valid for left and right)
 ```
 
+- 'f+': Increase font size
+- 'f-': Decrease font size
+- 'font': Wrapper around f+ or f- intended to be invoked from a tool like skhd.
+
+```
+% font -h
+Usage of font:
+  -op string
+    	font operation to execute: inc, dec (default "inc")
+```
+
 ## Configuration
 
 Nyne and the bundled utilities use a [configuration
@@ -47,126 +58,11 @@ file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
 how it reacts to different file types, what to write to the menu, etc.
 Alter this file to your liking before building and installing nyne.
 
-`nynetab` is intended to be called from a tool like
-[skhd](https://github.com/koekeishiya/skhd) which allows for
-overriding the application handlers for particular key bindings. To
-use nynetab with skhd, add something like the following to your
-[skhdrc](https://github.com/koekeishiya/skhd/blob/master/examples/skhdrc):
-
-```
-tab [
-  "acme" : nynetab
-  "edwood" : nynetab
-]
-
-shift - tab [
-  "acme" : nynetab -unindent=true
-  "edwood" : nynetab -unindent=true
-]
-```
-
-With these keybindings, entering `tab` without text selected will
-insert either a hard or soft tab depending on the file type
-configuration. If text is selected, entering `tab` will indent the
-selected text and entering `shift+tab` will unindent the selected
-text.
-
-`save` is also intended to be called from something like skhd. `save`
-simply executes `Put` on the focused window when invoked. This is how
-I use it with skhd:
-
-```
-cmd - s [
-  "acme" : save
-  "edwood" : save
-]
-```
-
-Similarly, you can map `com` to `cmd+/` with the following skhd settings:
-
-```
-cmd - 0x2C  [
-  "acme" : xcom
-  "edwood" : xcom
-]
-```
-
-These are key bindings for the `md` tool that are similar to that of
-other text editors:
-
-```
-cmd - k [
-  "acme" : md -op link
-  "edwood" : md -op link
-]
-
-cmd - b [
-  "acme" : md -op bold
-  "edwood" : md -op bold
-]
-
-cmd - i [
-  "acme" : md -op italic
-  "edwood" : md -op italic
-]
-
-shift + cmd - r [
-  "acme" : md -op preview
-  "edwood" : md -op preview
-]
-```
-
-The following are keybindings for moving the cursor:
-
-```
-# move to the left by one character
-alt - h [
-  "acme" : move -d left
-  "edwood" : move -d left
-]
-
-# move to the right by one character
-alt - l [
-  "acme" : move -d right
-  "edwood" : move -d right
-]
-
-# move to the left by one word
-alt + shift - h [
-  "acme" : move -d left -w
-  "edwood" : move -d left -w
-]
-
-# move to the right by one word
-alt + shift - l [
-  "acme" : move -d right -w
-  "edwood" : move -d right -w
-]
-
-# move to the left by one paragraph
-ctrl + alt - h [
-  "acme" : move -d left -p
-  "edwood" : move -d left -p
-]
-
-# move to the right by one paragraph
-ctrl + alt - l [
-  "acme" : move -d right -p
-  "edwood" : move -d right -p
-]
-
-# move cursor up a line
-alt - k [
-  "acme" : move -d up
-  "edwood" : move -d up
-]
-
-# move cursor down a line
-alt - j [
-  "acme" : move -d down
-  "edwood" : move -d down
-]
-```
+Several of the included tools are intended to be called from a tool
+like [skhd](https://github.com/koekeishiya/skhd) which allows for
+overriding the application handlers for particular key bindings.
+See [skhdrc](./skhdrc) for an example of how to use nyne tooling
+with skhd.
 
 ## Install
 
