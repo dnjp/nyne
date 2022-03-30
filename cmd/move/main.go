@@ -171,20 +171,19 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 		}
 	}
 	if *paragraph {
-		nq0 = q0
-		_, ca := readp(w, nq0)
-		_, cb, eof := readn(w, nq0)
-		if ca == '\n' && (cb == '\n' || eof) {
-			nq0--
+		err := w.SetAddr("#%d", q0-1)
+		if err != nil {
+			panic(err)
 		}
-		for {
-			nq0a, ca := readp(w, nq0)
-			_, cb, eof := readn(w, nq0)
-			if ca == '\n' && cb == '\n' || eof {
-				return nq0
-			}
-			nq0 = nq0a
+		err = w.SetAddr("-/^$/")
+		if err != nil {
+			panic(err)
 		}
+		nq0, _, err = w.ReadAddr()
+		if err != nil {
+			panic(err)
+		}
+		return nq0
 	}
 	if nq0 = q0 - 1; nq0 <= 0 {
 		return 0
@@ -214,20 +213,19 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 		}
 	}
 	if *paragraph {
-		nq0 = q0
-		_, ca := readp(w, nq0)
-		_, cb, _ := readn(w, nq0)
-		if ca == '\n' && cb == '\n' {
-			nq0++
+		err := w.SetAddr("#%d", q0+1)
+		if err != nil {
+			panic(err)
 		}
-		for {
-			_, ca := readp(w, nq0)
-			nq0b, cb, eof := readn(w, nq0)
-			if ca == '\n' && cb == '\n' || eof {
-				return nq0
-			}
-			nq0 = nq0b
+		err = w.SetAddr("+/^$/")
+		if err != nil {
+			panic(err)
 		}
+		nq0, _, err = w.ReadAddr()
+		if err != nil {
+			panic(err)
+		}
+		return nq0
 	}
 	return q0 + 1
 }
