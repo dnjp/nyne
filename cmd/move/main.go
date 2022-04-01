@@ -300,9 +300,10 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 
 func down(w *nyne.Win, q0 int) (nq0 int) {
 	var (
-		nl, fromstart, tabs int
-		atnl                bool
-		c                   byte
+		tnq0 int
+		nl, fromstart, flushstart, tabs, tabsn int
+		atnl, flush                bool
+		c, flushc                   byte
 	)
 
 	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
@@ -314,15 +315,15 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 		atnl = true
 	}
 
-	tabsn := 0
-	flush := false
-	flushstart := 0
-	var flushc byte
 	for {
 		nq0, c, _ = readn(w, nq0)
 		if c == '\n' {
 			nl++
 		}
+		if tnq0 > nq0 {
+			return tnq0
+		}
+		tnq0 = nq0
 
 		switch nl {
 		case 0: // current line
