@@ -1,5 +1,15 @@
 package nyne
 
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+
+	"9fans.net/go/draw"
+)
+
+var numre = regexp.MustCompile("[0-9]+")
+
 // Menu contains the menu options that should be written to the tag
 var Menu = []string{
 	" Put  ", "Undo  ", "Redo  ", "win", "\n",
@@ -15,6 +25,27 @@ var Config = func() map[string]Filetype {
 	}
 	return c
 }()
+
+// FontSize returns the size of the font
+func FontSize(font *draw.Font) (int, error) {
+	sizes := numre.FindAllString(font.Name, -1)
+	if l := len(sizes); l > 1 || l == 0 {
+		return 0, fmt.Errorf("could not parse font size")
+	}
+	fs, err := strconv.Atoi(sizes[0])
+	if err != nil {
+		return 0, fmt.Errorf("could not parse font size: %+v", err)
+	}
+	return fs, nil
+}
+
+// IsHiDPI returns whether the font is being displayed in a HiDPI
+// context. This is absolutely a hack and should not be trusted.
+func IsHiDPI(font *draw.Font) bool {
+	// I said this was a hack
+	size, _ := FontSize(font)
+	return size >= 24
+}
 
 // FindFiletype returns the filetype in the nyne config if present
 func FindFiletype(filename string) (ft Filetype, ok bool) {
