@@ -13,6 +13,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"9fans.net/go/draw"
 	"9fans.net/go/acme"
 	p9client "9fans.net/go/plan9/client"
 )
@@ -301,6 +302,16 @@ func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
 // address to the null string at the end of the returned characters.
 func (w *Win) SetData(data []byte) error {
 	return w.write("data", data)
+}
+
+// Font returns the font for the current win
+func (w *Win) Font() (tab int, font *draw.Font, err error) {
+	return w.handle.Font()
+}
+
+// SetFont sets the font for the win
+func (w *Win) SetFont(font string) error {
+	return w.handle.Ctl("font %s", font)
 }
 
 // ReadData reads the data in the body between q0 and q1. It is assumed
