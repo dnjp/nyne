@@ -300,10 +300,10 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 
 func down(w *nyne.Win, q0 int) (nq0 int) {
 	var (
-		tnq0 int
+		tnq0                                   int
 		nl, fromstart, flushstart, tabs, tabsn int
-		atnl, flush                bool
-		c, flushc                   byte
+		atnl, flush                            bool
+		c, flushc                              byte
 	)
 
 	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))

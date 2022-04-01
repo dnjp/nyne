@@ -13,8 +13,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"9fans.net/go/draw"
 	"9fans.net/go/acme"
+	"9fans.net/go/draw"
 	p9client "9fans.net/go/plan9/client"
 )
 
