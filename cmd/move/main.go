@@ -64,50 +64,11 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	}
 }
 
-func readp(w *nyne.Win, q0 int) (nq0 int, c byte) {
-	off := 1
-	if q0 == 0 {
-		off = 0
-	}
-	addr := fmt.Sprintf("#%d;#%d", q0-off, q0)
-	err := w.SetAddr(addr)
-	if err != nil {
-		panic(fmt.Errorf("could not set address to '%s': %w", addr, err))
-	}
-	dat, err := w.ReadData(q0-1, q0)
-	if err != nil {
-		panic(err)
-	}
-	if len(dat) == 0 {
-		panic("no data")
-	}
-	return q0 - 1, dat[0]
-}
-
-func readn(w *nyne.Win, q0 int) (nq0 int, c byte, eof bool) {
-	err := w.SetAddr("#%d;#%d", q0, q0+1)
-	if err != nil {
-		if err.Error() == "address out of range" {
-			eof = true
-			return
-		}
-		panic(err)
-	}
-	dat, err := w.ReadData(q0, q0+1)
-	if err != nil {
-		panic(err)
-	}
-	if len(dat) == 0 {
-		panic("no data")
-	}
-	return q0 + 1, dat[0], false
-}
-
 func start(w *nyne.Win, q0 int) (nq0, tabs int) {
 	var c byte
 	nq0 = q0
 	for nq0 >= 0 {
-		nq0, c = readp(w, nq0)
+		nq0, c = w.Readp(nq0)
 		if c == '\t' {
 			tabs++
 		} else if c == '\n' {
@@ -122,7 +83,7 @@ func end(w *nyne.Win, q0 int) (nq0, tabs int) {
 	var c byte
 	nq0 = q0
 	for nq0 >= 0 {
-		nq0, c, _ = readn(w, nq0)
+		nq0, c, _ = w.Readn(nq0)
 		if c == '\t' {
 			tabs++
 		} else if c == '\n' {
@@ -154,9 +115,9 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 		var tnq0 int
 		var pc, c, nc byte
 		for {
-			_, pc, _ = readn(w, nq0)
-			tnq0, c = readp(w, nq0)
-			_, nc = readp(w, nq0-1)
+			_, pc, _ = w.Readn(nq0)
+			tnq0, c = w.Readp(nq0)
+			_, nc = w.Readp(nq0 - 1)
 			nq0 = tnq0
 			if nq0 == 0 {
 				return nq0
@@ -199,9 +160,9 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 		var tnq0 int
 		var pc, c, nc byte
 		for {
-			_, pc = readp(w, nq0)
-			tnq0, c, _ = readn(w, nq0)
-			_, nc, _ = readn(w, nq0+1)
+			_, pc = w.Readp(nq0)
+			tnq0, c, _ = w.Readn(nq0)
+			_, nc, _ = w.Readn(nq0 + 1)
 			nq0 = tnq0
 			if !isword(pc) && isword(c) && isword(nc) {
 				return nq0 - 1
@@ -241,7 +202,7 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 	)
 
 	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
-	for nq0, c = readp(w, q0); nq0 >= 0; nq0, c = readp(w, nq0) {
+	for nq0, c = w.Readp(q0); nq0 >= 0; nq0, c = w.Readp(nq0) {
 		if c == '\n' {
 			nl++
 		}
@@ -318,7 +279,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 	}
 
 	for {
-		nq0, c, _ = readn(w, nq0)
+		nq0, c, _ = w.Readn(nq0)
 		if c == '\n' {
 			nl++
 		}

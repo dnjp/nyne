@@ -13,6 +13,7 @@ is a feature not included in Acme by default.
 
 Included in a full install of nyne are bundled utilities for acme:
 
+- `aspell`: A spell checker for acme
 - `nyne`: The core autoformatting engine that is run from within acme
 - `nynetab`: Implements tab expansion and indentation
 - `save`: Utility to execute Put via keyboard bindings
