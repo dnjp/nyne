@@ -60,9 +60,23 @@ func main() {
 		}
 	}
 
-	body, err := w.ReadBody()
+	q0, q1, err := w.CurrentAddr()
 	if err != nil {
 		panic(err)
+	}
+
+	var body []byte
+	if q1 > q0 {
+		body, err = w.ReadData(q0, q1)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		q0 = 0
+		body, err = w.ReadBody()
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	env := envvars(winid, name)
@@ -73,6 +87,8 @@ func main() {
 
 	var lastnl int
 	var start int
+
+	start = q0
 	for i, c := range body {
 		if c != '\n' {
 			continue
@@ -99,7 +115,7 @@ func main() {
 			}
 		}
 		lastnl = i + 1
-		start = lastnl
+		start += len(line)
 	}
 
 	err = w2.MarkWinClean()
