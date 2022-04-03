@@ -13,46 +13,20 @@ is a feature not included in Acme by default.
 
 Included in a full install of nyne are bundled utilities for acme:
 
-- `aspell`: A spell checker for acme
-- `nyne`: The core autoformatting engine that is run from within acme
-- `nynetab`: Implements tab expansion and indentation
-- `save`: Utility to execute Put via keyboard bindings
-- `a+`: Indent selected source code
-- `a-`: Unindent selected source code
-- `com`: Comment/uncomment selected source code
-- `xcom`: Wrapper around `com` intended to be invoked from a tool like skhd.
-- `md`: Shortcuts for working with markdown
-
-```
-% md -h
-Usage of md:
-  -op string
-    	the operation to perform: link, bold, italic, preview
-```
-
-- `move`: Shortcuts for moving the cursor
-
-```
-% move -h
-Usage of move:
-  -d string
-    	the direction to move: up, down, left, right
-  -p	move by paragraph (only valid for left and right)
-  -w	move by word (only valid for left and right)
-```
-
-- `f+`: Increase font size
-- `f-`: Decrease font size
-- `font`: Wrapper around f+ or f- intended to be invoked from a tool like skhd.
-
-```
-% font -h
-Usage of font:
-  -op string
-    	font operation to execute: inc, dec (default "inc")
-```
-
-- `xec`: Execute a command in the focused window as if it had been clicked with B2.
+* [cmd/a+](./cmd/a+): Indent selected source code
+* [cmd/a-](./cmd/a-): Unindent selected source code
+* [cmd/aspell](./cmd/aspell): A spell checker for acme
+* [cmd/com](./cmd/com): Comments/uncomments piped text
+* [cmd/f+](./cmd/f+): Increase font size
+* [cmd/f-](./cmd/f-): Decrease font size
+* [cmd/font](./cmd/font): Wrapper around f+ or f- intended to be invoked from a tool like skhd
+* [cmd/md](./cmd/md): Shortcuts for working with markdown
+* [cmd/move](./cmd/move): Shortcuts for moving the cursor
+* [cmd/nyne](./cmd/nyne): The core autoformatting engine that is run from within acme
+* [cmd/nynetab](./cmd/nynetab): Implements tab expansion and indentation
+* [cmd/save](./cmd/save): Utility to execute Put via keyboard bindings
+* [cmd/xcom](./cmd/xcom): Wrapper around `com` intended to be invoked from a tool like skhd
+* [cmd/xec](./cmd/xec): Execute a command in the focused window as if it had been clicked with B2
 
 ## Configuration
 
