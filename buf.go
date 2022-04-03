@@ -48,66 +48,63 @@ func (b *Buf) Start() error {
 
 	// runs hooks for acme 'new' event
 	b.winEvent(b.win, Event{Builtin: New})
+	events, errs := b.win.EventChan(b.id, b.file)
+	for {
+		select {
+		case event := <-events:
 
-	for e := range b.win.OpenEventChan() {
-		if b.debug {
-			log.Printf("EVENT(before): %+v\n", *e)
-		}
+			var ok bool
+			if event.Origin == Keyboard {
+				w.Lastpoint = event.SelBegin
+				event, ok = b.keyEvent(event)
+			} else {
+				if event.Origin == DelOrigin && event.Type == DelType {
+					b.win.WriteEvent(event)
+					b.win.Close()
+					return nil
+				}
+				event, ok = b.execEvent(event)
+			}
+			if !ok {
+				continue
+			}
 
-		event, err := NewEvent(e, b.id, b.file)
-		if err != nil {
+			if b.debug {
+				log.Printf("EVENT(after): %+v\n", event)
+			}
+
+			b.win.WriteEvent(event)
+
+			for _, h := range event.PostHooks {
+				if err := h(event); err != nil {
+					return err
+				}
+			}
+
+			// maintain current address after formatting buffer
+			if event.Builtin == Put {
+				body, err := b.win.ReadBody()
+				if err != nil {
+					return err
+				}
+				if len(body) < w.Lastpoint {
+					w.Lastpoint = len(body)
+				}
+				if err := b.win.SetAddr("#%d", w.Lastpoint); err != nil {
+					return err
+				}
+				if err := b.win.SetTextToAddr(); err != nil {
+					return err
+				}
+				if err := b.win.ExecShow(); err != nil {
+					return err
+				}
+			}
+
+		case err := <-errs:
 			return err
 		}
-
-		var ok bool
-		if event.Origin == Keyboard {
-			w.Lastpoint = event.SelBegin
-			event, ok = b.keyEvent(event)
-		} else {
-			if event.Origin == DelOrigin && event.Type == DelType {
-				b.win.WriteEvent(event)
-				b.win.Close()
-				return nil
-			}
-			event, ok = b.execEvent(event)
-		}
-		if !ok {
-			continue
-		}
-
-		if b.debug {
-			log.Printf("EVENT(after): %+v\n", event)
-		}
-
-		b.win.WriteEvent(event)
-
-		for _, h := range event.PostHooks {
-			if err := h(event); err != nil {
-				return err
-			}
-		}
-
-		// maintain current address after formatting buffer
-		if event.Builtin == Put {
-			body, err := b.win.ReadBody()
-			if err != nil {
-				return err
-			}
-			if len(body) < w.Lastpoint {
-				w.Lastpoint = len(body)
-			}
-			if err := b.win.SetAddr("#%d", w.Lastpoint); err != nil {
-				return err
-			}
-			if err := b.win.SetTextToAddr(); err != nil {
-				return err
-			}
-			if err := b.win.ExecShow(); err != nil {
-				return err
-			}
-		}
 	}
-	return nil
 }
 
 func (b *Buf) winEvent(w *Win, event Event) {

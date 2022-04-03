@@ -24,7 +24,7 @@ func main() {
 	}
 	cmd := os.Args[1]
 	args := os.Args[2:]
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}

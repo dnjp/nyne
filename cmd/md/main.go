@@ -183,7 +183,7 @@ func preview(w *nyne.Win) {
 func main() {
 	flag.Parse()
 
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}

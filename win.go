@@ -77,9 +77,9 @@ func FocusedWinID(addr string) (int, error) {
 	return strconv.Atoi(winid)
 }
 
-// FindFocusedWinID finds the active window ID using acmefocused
-func FindFocusedWinID() (int, error) {
-	return FocusedWinID(filepath.Join(p9client.Namespace(), "acmefocused"))
+// FocusedWinAddr returns the address of the active window using acmefocused
+func FocusedWinAddr() string {
+	return filepath.Join(p9client.Namespace(), "acmefocused")
 }
 
 // OpenWin opens an acme window
@@ -100,9 +100,21 @@ func (w *Win) Name(format string, args ...interface{}) error {
 	return w.w.Name(format, args...)
 }
 
-// OpenEventChan opens a channel to raw acme events
-func (w *Win) OpenEventChan() <-chan *acme.Event {
-	return w.w.EventChan()
+// EventChan opens a channel to acme events
+func (w *Win) EventChan(bufID int, filename string) (<-chan Event, <-chan error) {
+	errs := make(chan error)
+	events := make(chan Event)
+	go func() {
+		for e := range w.w.EventChan() {
+			event, err := NewEvent(e, bufID, filename)
+			if err != nil {
+				errs <- err
+				continue
+			}
+			events <- event
+		}
+	}()
+	return events, errs
 }
 
 // Close closes down the window with associated files
@@ -179,9 +191,9 @@ func (w *Win) ExecDelete() error {
 	return w.write("ctl", []byte("del"))
 }
 
-// ExecDumpToFile sets the command string to recreate the window from a
+// ExecDump sets the command string to recreate the window from a
 // dump file.
-func (w *Win) ExecDumpToFile(file string) error {
+func (w *Win) ExecDump(file string) error {
 	return w.write("ctl", []byte(fmt.Sprintf("dump %s", file)))
 }
 

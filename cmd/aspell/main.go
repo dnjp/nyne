@@ -69,7 +69,7 @@ func winid() (winid int, err error) {
 	if wid := os.Getenv("winid"); wid != "" {
 		winid, err = strconv.Atoi(wid)
 	} else {
-		winid, err = nyne.FindFocusedWinID()
+		winid, err = nyne.FocusedWinID(nyne.FocusedWinAddr())
 	}
 	return
 }

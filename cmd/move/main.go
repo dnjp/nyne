@@ -356,7 +356,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 func main() {
 	flag.Parse()
 
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}
