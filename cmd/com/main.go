@@ -1,3 +1,9 @@
+/*
+Comments/uncomments piped text
+
+	Usage of com:
+		|com
+*/
 package main
 
 import (
