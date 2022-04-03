@@ -116,13 +116,13 @@ func inout() (inw, outw *nyne.Win, wid int, name string, err error) {
 
 func main() {
 	var (
-		lastnl, start, q0 int
-		err               error
-		out               string
-		corrections       map[int]string
-		body, line        []byte
-		addrs             []int
-		env, spellflags   []string
+		lastnl, q0      int
+		err             error
+		out             string
+		corrections     map[int]string
+		body, line      []byte
+		addrs           []int
+		env, spellflags []string
 	)
 
 	corrections = make(map[int]string)
@@ -139,7 +139,6 @@ func main() {
 		spellflags = os.Args[1:]
 	}
 
-	start = q0
 	for i, c := range body {
 		if c != '\n' {
 			continue
@@ -158,13 +157,13 @@ func main() {
 			if len(word) == 0 {
 				continue
 			}
-			idx := bytes.Index(line, word) + start
+			idx := bytes.Index(line, word) + q0
 			addr := inw.File + fmt.Sprintf(":#%d:%s", idx, string(word))
 			corrections[idx] = addr
 			addrs = append(addrs, idx)
 		}
 		lastnl = i + 1
-		start += len(line)
+		q0 += len(line)
 	}
 
 	sort.Ints(addrs)
