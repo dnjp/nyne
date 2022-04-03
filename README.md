@@ -3,63 +3,42 @@
   <p style="font-style: italic;">By Renée French</p>
 </div>
 
-# Nyne
+# nyne
 
-Nyne automates what are typically manual tasks when using Acme. Think of nyne as
-the `.vimrc` of Acme. Instead of needing to set custom indentation settings and
-manually run external commands like clang-format against your file, nyne does
-all of that for you. It can also optionally expand hard tabs to soft tabs, which
-is a feature not included in Acme by default.
+nyne is a library and a collection of tools that enables interacting
+with acme in ways that are more intuitive when coming from more
+traditional text editors. As a library, nyne provides many abstractions
+on top of the [9fans acme library](https://pkg.go.dev/9fans.net/go/acme)
+to make event handling, finding focused windows, and other actions
+significantly easier (see
+[Event](https://pkg.go.dev/github.com/dnjp/nyne#Event) and the
+provided [variables](https://pkg.go.dev/github.com/dnjp/nyne#pkg-variables)
+for example). The included commands make working in acme faster and more user friendly, especially when combined with a keyboard mapping tool like [skhd](https://github.com/koekeishiya/skhd).
 
-Included in a full install of nyne are bundled utilities for acme:
+These are the commands that are included:
 
-- `aspell`: A spell checker for acme
-- `nyne`: The core autoformatting engine that is run from within acme
-- `nynetab`: Implements tab expansion and indentation
-- `save`: Utility to execute Put via keyboard bindings
-- `a+`: Indent selected source code
-- `a-`: Unindent selected source code
-- `com`: Comment/uncomment selected source code
-- `xcom`: Wrapper around `com` intended to be invoked from a tool like skhd.
-- `md`: Shortcuts for working with markdown
-
-```
-% md -h
-Usage of md:
-  -op string
-    	the operation to perform: link, bold, italic, preview
-```
-
-- `move`: Shortcuts for moving the cursor
-
-```
-% move -h
-Usage of move:
-  -d string
-    	the direction to move: up, down, left, right
-  -p	move by paragraph (only valid for left and right)
-  -w	move by word (only valid for left and right)
-```
-
-- `f+`: Increase font size
-- `f-`: Decrease font size
-- `font`: Wrapper around f+ or f- intended to be invoked from a tool like skhd.
-
-```
-% font -h
-Usage of font:
-  -op string
-    	font operation to execute: inc, dec (default "inc")
-```
-
-- `xec`: Execute a command in the focused window as if it had been clicked with B2.
+* [cmd/a+](./cmd/a+): Indent selected source code
+* [cmd/a-](./cmd/a-): Unindent selected source code
+* [cmd/aspell](./cmd/aspell): A spell checker for acme
+* [cmd/com](./cmd/com): Comments/uncomments piped text
+* [cmd/f+](./cmd/f+): Increase font size
+* [cmd/f-](./cmd/f-): Decrease font size
+* [cmd/font](./cmd/font): Wrapper around f+ or f- intended to be invoked from a tool like skhd
+* [cmd/md](./cmd/md): Shortcuts for working with markdown
+* [cmd/move](./cmd/move): Shortcuts for moving the cursor
+* [cmd/nyne](./cmd/nyne): The core autoformatting engine that is run from within acme
+* [cmd/nynetab](./cmd/nynetab): Implements tab expansion and indentation
+* [cmd/save](./cmd/save): Utility to execute Put via keyboard bindings
+* [cmd/xcom](./cmd/xcom): Wrapper around `com` intended to be invoked from a tool like skhd
+* [cmd/xec](./cmd/xec): Execute a command in the focused window as if it had been clicked with B2
 
 ## Configuration
 
-Nyne and the bundled utilities use a [configuration
-file](https://github.com/dnjp/nyne/blob/master/config.go) to configure
-how it reacts to different file types, what to write to the menu, etc.
-Alter this file to your liking before building and installing nyne.
+Nyne and the bundled utilities are configured in
+[config.go](https://github.com/dnjp/nyne/blob/master/config.go)
+which defineshow nyne handles different file types, what to write
+to the menu, etc.  Alter this file to your liking before building
+and installing nyne.
 
 Several of the included tools are intended to be called from a tool
 like [skhd](https://github.com/koekeishiya/skhd) which allows for
@@ -78,47 +57,7 @@ To install nyne, first make sure that you have properly installed
 % go install ./...
 ```
 
-This will build `nyne`, `nynetab`, `a+`, `a-`, and `com` and place them in
-`$GOPATH/bin`.
-
-## Usage
-
-### nyne
-
-Once you have built and installed nyne, simply execute `nyne` in acme by middle
-clicking on the text "nyne" typed in the upper most window tag. Nyne will watch
-for windows to be opened that match any of the extensions you have configured.
-If it finds a match, it will write the menu options you've configured to the
-scratch area and begin listening for file save events received when you middle
-click `Put`. When this event is received, it will format the buffer using your
-configured external formatting programs. If the program does not print to
-stdout, a new file will be written to `/tmp`, formatted using youc configured
-commands, and the output applied to your active buffer in acme.
-
-If `tabexpand` is enabled for a given file extension, `nynetab` will be used to
-convert tabs to spaces when you enter `tab` with your keyboard.
-
-### nynetab
-
-Nynetab is what is used under the hood for tab expansion in nyne. If you are
-editing a buffer that has an extension not configured for nyne, simply execute
-`nynetab <tab size>` in an Acme buffer to begin tab expansion. Otherwise, simply
-executing `nynetab` will start tab expansion using your configured settings.
-
-### a+/a-
-
-`a+` and `a-` use your indentation settings to indent or unindent your selection
-in acme using either tabs or spaces depending on what is configured. To use
-these commands, write `|a+` or `|a-` to the scratch area in your acme window,
-select the text you want to indent, and then middle click on `|a+` to indent or
-`|a-` to unindent your selection.
-
-### com
-
-`com` uses the `commentstyle` you've configured a given file extension to
-comment or uncomment a given selection in acme. Just as with `a+` or `a-`, you
-can use `com` by writing `|com` to your scratch area, selecting the text you
-want to un/comment, and then middle click on `|com` to execute the command.
+This will build and install the included commands and the nyne library itself.
 
 ## Bugs or Feature Requests
 

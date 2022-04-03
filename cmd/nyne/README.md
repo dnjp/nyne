@@ -1,8 +1,11 @@
-/*
+# nyne
+
 The core autoformatting engine that is run from within acme.
 
-	Usage of nyne:
-		nyne
+```
+Usage of nyne:
+	nyne
+```
 
 Once you have built and installed nyne, simply execute `nyne` in
 acme by middle clicking on the text "nyne" typed in the upper most
@@ -17,23 +20,3 @@ formatted using youc configured commands, and the output applied
 to your active buffer in acme. If `tabexpand` is enabled for a given
 file extension, `nynetab` will be used to convert tabs to spaces
 when you enter `tab` with your keyboard.
-
-*/
-package main
-
-import (
-	"log"
-
-	"github.com/dnjp/nyne"
-)
-
-func main() {
-	f, err := nyne.NewFormatter(nyne.Filetypes, nyne.Menu)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = f.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-}

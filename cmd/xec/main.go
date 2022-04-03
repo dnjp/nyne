@@ -1,3 +1,9 @@
+/*
+Execute a command in the focused window as if it had been clicked with B2
+
+	Usage of xec:
+		xec [command]
+*/
 package main
 
 import (
@@ -8,7 +14,7 @@ import (
 )
 
 func usage(base string) {
-	fmt.Fprintf(os.Stderr, "%s [command]", base)
+	fmt.Fprintf(os.Stderr, "%s [command]\n", base)
 }
 
 func main() {

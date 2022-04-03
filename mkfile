@@ -30,5 +30,15 @@ check:
 	golint ./...
 	staticcheck ./...
 
+MKSHELL=$PLAN9/bin/rc
+readmes:
+	for(f in `{ls cmd}){
+		cd $f && \
+			goreadme -credit=false -title=`{echo $f | sed 's/cmd\///'} \
+			| sed 's/```go/```/g' \
+			>README.md && \
+			cd ../..
+	}
+
 clean tidy nuke:V:
 	rm -rf ./bin
