@@ -57,8 +57,10 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 	if err != nil {
 		panic(err)
 	}
-	if err := w.ExecShow(); err != nil {
-		panic(err)
+	if !*sel {
+		if err := w.ExecShow(); err != nil {
+			panic(err)
+		}
 	}
 }
 
