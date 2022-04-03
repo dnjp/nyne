@@ -1,3 +1,6 @@
+/*
+Utility to execute Put via keyboard bindings
+*/
 package main
 
 import (

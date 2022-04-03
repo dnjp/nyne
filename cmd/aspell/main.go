@@ -1,3 +1,6 @@
+/*
+A spell checker for acme
+*/
 package main
 
 import (

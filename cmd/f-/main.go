@@ -1,3 +1,6 @@
+/*
+Decrease font size
+*/
 package main
 
 import (

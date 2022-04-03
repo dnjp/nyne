@@ -1,3 +1,6 @@
+/*
+Wrapper around `com` intended to be invoked from a tool like skhd
+*/
 package main
 
 import (

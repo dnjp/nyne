@@ -1,3 +1,6 @@
+/*
+Unindent selected source code
+*/
 package main
 
 import (

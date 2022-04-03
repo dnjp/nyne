@@ -1,3 +1,6 @@
+/*
+Implements tab expansion and indentation
+*/
 package main
 
 import (
