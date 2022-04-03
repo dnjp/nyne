@@ -27,8 +27,12 @@ type Win struct {
 }
 
 // NewWin constructs a Win object from acme window
-func NewWin(w *acme.Win) *Win {
-	return &Win{w: w}
+func NewWin() (*Win, error) {
+	w, err := acme.New()
+	if err != nil {
+		return nil, err
+	}
+	return &Win{w: w}, nil
 }
 
 // Windows returns all open acme windows
@@ -89,6 +93,11 @@ func OpenWin(id int, file string) (*Win, error) {
 		File: file,
 		w:    w,
 	}, nil
+}
+
+// Name sets the name for the win
+func (w *Win) Name(format string, args ...interface{}) error {
+	return w.w.Name(format, args...)
 }
 
 // OpenEventChan opens a channel to raw acme events
@@ -205,6 +214,53 @@ func (w *Win) ReadBody() ([]byte, error) {
 		return []byte{}, fmt.Errorf("window handle lost")
 	}
 	return w.w.ReadAll("body")
+}
+
+// Readp reads the previous character from q0
+func (w *Win) Readp(q0 int) (nq0 int, c byte) {
+	off := 1
+	if q0 == 0 {
+		off = 0
+	}
+	addr := fmt.Sprintf("#%d;#%d", q0-off, q0)
+	err := w.SetAddr(addr)
+	if err != nil {
+		panic(fmt.Errorf("could not set address to '%s': %w", addr, err))
+	}
+	dat, err := w.ReadData(q0-1, q0)
+	if err != nil {
+		panic(err)
+	}
+	if len(dat) == 0 {
+		panic("no data")
+	}
+	return q0 - 1, dat[0]
+}
+
+// Readn reads the next character from q0
+func (w *Win) Readn(q0 int) (nq0 int, c byte, eof bool) {
+	err := w.SetAddr("#%d;#%d", q0, q0+1)
+	if err != nil {
+		if err.Error() == "address out of range" {
+			c = 0
+			eof = true
+			return
+		}
+		panic(err)
+	}
+	dat, err := w.ReadData(q0, q0+1)
+	if err != nil {
+		// if err == io.EOF {
+		// 	c = 0
+		// 	eof = true
+		// 	return
+		// }
+		panic(err)
+	}
+	if len(dat) == 0 {
+		panic("no data")
+	}
+	return q0 + 1, dat[0], false
 }
 
 // ReadAddr returns the current address of the window
@@ -334,6 +390,14 @@ func (w *Win) WriteToTag(text string) error {
 		return fmt.Errorf("window handle lost")
 	}
 	return w.w.Fprintf("tag", "%s", text)
+}
+
+// WriteToBody appends the given text to the body
+func (w *Win) WriteToBody(data []byte) error {
+	if w == nil || w.w == nil {
+		return fmt.Errorf("window handle lost")
+	}
+	return w.write("body", data)
 }
 
 // WriteMenu writes the specified menu options to the Acme buffer
