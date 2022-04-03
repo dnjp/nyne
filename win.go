@@ -124,30 +124,48 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 
 	tag, err := w.ReadTag()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not read tag: %w", err)
 	}
-	offset := utf8.RuneCount(tag)
+
+	var before string
+	parts := strings.Split(string(tag), "|")
+	if len(parts) >= 2 {
+		before = parts[1]
+	}
 
 	cmd := fmt.Sprintf("%s %s", exec, strings.Join(args, " "))
 	if err := w.WriteToTag(cmd); err != nil {
-		return err
+		return fmt.Errorf("could not write tag: %w", err)
 	}
 
+	rc := utf8.RuneCount(tag)
+	nr := utf8.RuneCountInString(cmd)
 	evt := Event{
 		Origin:   Mouse,
 		Type:     B2Tag,
-		SelBegin: offset,
-		SelEnd:   offset + utf8.RuneCountInString(cmd),
+		SelBegin: rc,
+		SelEnd:   rc + nr,
+		NumRunes: nr,
+		Text:     []byte(cmd),
+		Flag:     HasChordedArg,
 	}
 
 	log := evt.Log()
-
 	err = w.w.WriteEvent(&log)
 	if err != nil {
-		return err
+		fmt.Fprintf(os.Stderr, "log=%+v\n", log)
+		return fmt.Errorf("could not write event: %w", err)
 	}
 
-	return w.ClearTagText()
+	if err = w.ClearTagText(); err != nil {
+		return fmt.Errorf("could not clear tag: %w", err)
+	}
+
+	if err := w.WriteToTag(before); err != nil {
+		return fmt.Errorf("could not write tag: %w", err)
+	}
+
+	return nil
 }
 
 // ExecGet is the equivalent to the Get interactive command with no

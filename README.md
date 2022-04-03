@@ -52,6 +52,8 @@ Usage of font:
     	font operation to execute: inc, dec (default "inc")
 ```
 
+- `xec`: Execute a command in the focused window as if it had been clicked with B2.
+
 ## Configuration
 
 Nyne and the bundled utilities use a [configuration

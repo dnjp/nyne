@@ -1,4 +1,4 @@
-ALL=nyne nynetab com xcom a+ a- save md move f+ f- font
+ALL=nyne nynetab com xcom a+ a- save md move f+ f- font xec
 
 all:V: ${ALL:%=bin/%}
 
