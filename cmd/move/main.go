@@ -290,7 +290,7 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 			// line to previous point
 			return nq0 + 1
 		default:
-			break
+			return q0
 		}
 	}
 
@@ -300,10 +300,10 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 
 func down(w *nyne.Win, q0 int) (nq0 int) {
 	var (
-		tnq0 int
+		tnq0                                   int
 		nl, fromstart, flushstart, tabs, tabsn int
-		atnl, flush                bool
-		c, flushc                   byte
+		atnl, flush                            bool
+		c, flushc                              byte
 	)
 
 	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
@@ -354,7 +354,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 					if fromstart > 0 {
 						off -= fromstart
 					} else {
-						off -= 1 // newline
+						off-- // newline
 					}
 				} else if tabsn-tabs > 0 {
 					if fromstart < ft.Tabwidth {
@@ -378,7 +378,6 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 			return nq0 - 1
 		}
 	}
-	return nq0
 }
 
 func main() {

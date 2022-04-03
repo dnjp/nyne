@@ -13,8 +13,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"9fans.net/go/draw"
 	"9fans.net/go/acme"
+	"9fans.net/go/draw"
 	p9client "9fans.net/go/plan9/client"
 )
 
@@ -23,14 +23,12 @@ type Win struct {
 	ID        int
 	File      string
 	Lastpoint int
-	handle    *acme.Win
+	w         *acme.Win
 }
 
 // NewWin constructs a Win object from acme window
 func NewWin(w *acme.Win) *Win {
-	return &Win{
-		handle: w,
-	}
+	return &Win{w: w}
 }
 
 // Windows returns all open acme windows
@@ -46,9 +44,9 @@ func Windows() (map[int]*Win, error) {
 			return nil, err
 		}
 		wins[wi.ID] = &Win{
-			ID:     wi.ID,
-			File:   wi.Name,
-			handle: w,
+			ID:   wi.ID,
+			File: wi.Name,
+			w:    w,
 		}
 	}
 	return wins, nil
@@ -87,31 +85,31 @@ func OpenWin(id int, file string) (*Win, error) {
 		return nil, err
 	}
 	return &Win{
-		ID:     id,
-		File:   file,
-		handle: w,
+		ID:   id,
+		File: file,
+		w:    w,
 	}, nil
 }
 
 // OpenEventChan opens a channel to raw acme events
 func (w *Win) OpenEventChan() <-chan *acme.Event {
-	return w.handle.EventChan()
+	return w.w.EventChan()
 }
 
 // Close closes down the window with associated files
 func (w *Win) Close() {
-	w.handle.CloseFiles()
+	w.w.CloseFiles()
 }
 
 // WriteEvent writes the acme event to the log
 func (w *Win) WriteEvent(e Event) error {
 	raw := e.Log()
-	return w.handle.WriteEvent(&raw)
+	return w.w.WriteEvent(&raw)
 }
 
 // ExecInTag executes the given command in the window tag
 func (w *Win) ExecInTag(exec string, args ...string) error {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return fmt.Errorf("window handle lost")
 	}
 
@@ -135,7 +133,7 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 
 	log := evt.Log()
 
-	err = w.handle.WriteEvent(&log)
+	err = w.w.WriteEvent(&log)
 	if err != nil {
 		return err
 	}
@@ -195,28 +193,28 @@ func (w *Win) ClearTagText() error {
 
 // ReadTag returns the tag contents
 func (w *Win) ReadTag() ([]byte, error) {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
 	}
-	return w.handle.ReadAll("tag")
+	return w.w.ReadAll("tag")
 }
 
 // ReadBody returns the window body
 func (w *Win) ReadBody() ([]byte, error) {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
 	}
-	return w.handle.ReadAll("body")
+	return w.w.ReadAll("body")
 }
 
 // ReadAddr returns the current address of the window
 //
 // Derived from https://github.com/fhs/acme-lsp/blob/623cb39c2e31bddda0ad7c216c2f3c2fcfcf237f/internal/acme/acme.go#L366
 func (w *Win) ReadAddr() (q0, q1 int, err error) {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return 0, 0, fmt.Errorf("window handle lost")
 	}
-	buf, err := w.handle.ReadAll("addr")
+	buf, err := w.w.ReadAll("addr")
 	if err != nil {
 		return 0, 0, err
 	}
@@ -287,7 +285,7 @@ func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
 	if len(args) > 0 {
 		addr = fmt.Sprintf(fmtstr, args...)
 	}
-	return w.handle.Addr(addr)
+	return w.w.Addr(addr)
 }
 
 // SetData is used in conjunction with addr for random access to the
@@ -306,12 +304,12 @@ func (w *Win) SetData(data []byte) error {
 
 // Font returns the font for the current win
 func (w *Win) Font() (tab int, font *draw.Font, err error) {
-	return w.handle.Font()
+	return w.w.Font()
 }
 
 // SetFont sets the font for the win
 func (w *Win) SetFont(font string) error {
-	return w.handle.Ctl("font %s", font)
+	return w.w.Ctl("font %s", font)
 }
 
 // ReadData reads the data in the body between q0 and q1. It is assumed
@@ -320,7 +318,7 @@ func (w *Win) SetFont(font string) error {
 func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
 	n := q1 - q0
 	buf := make([]byte, n)
-	n2, err := w.handle.Read("data", buf)
+	n2, err := w.w.Read("data", buf)
 	if err != nil {
 		return buf, err
 	}
@@ -332,10 +330,10 @@ func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
 
 // WriteToTag writes to the windows tag
 func (w *Win) WriteToTag(text string) error {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return fmt.Errorf("window handle lost")
 	}
-	return w.handle.Fprintf("tag", "%s", text)
+	return w.w.Fprintf("tag", "%s", text)
 }
 
 // WriteMenu writes the specified menu options to the Acme buffer
@@ -352,9 +350,9 @@ func (w *Win) WriteMenu(menu []string) error {
 }
 
 func (w *Win) write(file string, data []byte) error {
-	if w == nil || w.handle == nil {
+	if w == nil || w.w == nil {
 		return fmt.Errorf("window handle lost")
 	}
-	_, err := w.handle.Write(file, data)
+	_, err := w.w.Write(file, data)
 	return err
 }
