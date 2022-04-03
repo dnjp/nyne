@@ -29,7 +29,7 @@ func NewFormatter(filetypes []Filetype, menutag []string) (*Formatter, error) {
 	}
 
 	f.acme.WinHooks = map[AcmeOp][]WinHandler{
-		New: []WinHandler{
+		New: {
 			func(w *Win) {
 				ft, _ := f.filetype(w.File)
 				if ft.Tabwidth != 0 {
@@ -44,7 +44,7 @@ func NewFormatter(filetypes []Filetype, menutag []string) (*Formatter, error) {
 	}
 
 	f.acme.EventHooks = map[AcmeOp][]Handler{
-		Put: []Handler{
+		Put: {
 			func(evt Event) (Event, bool) {
 				evt.PostHooks = append(evt.PostHooks, func(e Event) error {
 					ft, ext := f.filetype(evt.File)
