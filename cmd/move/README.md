@@ -2,7 +2,7 @@
 
 Shortcuts for moving the cursor
 
-```go
+```
 Usage of move:
   -d string
     	the direction to move: up, down, left, right, start, end

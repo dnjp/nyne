@@ -35,6 +35,7 @@ readmes:
 	for(f in `{ls cmd}){
 		cd $f && \
 			goreadme -credit=false -title=`{echo $f | sed 's/cmd\///'} \
+			| sed 's/```go/```/g' \
 			>README.md && \
 			cd ../..
 	}
