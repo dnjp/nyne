@@ -30,7 +30,7 @@ Usage of md:
     	the operation to perform: link, bold, italic, preview
 ```
 
-- 'move': Shortcuts for moving the cursor
+- `move`: Shortcuts for moving the cursor
 
 ```
 % move -h
@@ -41,9 +41,9 @@ Usage of move:
   -w	move by word (only valid for left and right)
 ```
 
-- 'f+': Increase font size
-- 'f-': Decrease font size
-- 'font': Wrapper around f+ or f- intended to be invoked from a tool like skhd.
+- `f+`: Increase font size
+- `f-`: Decrease font size
+- `font`: Wrapper around f+ or f- intended to be invoked from a tool like skhd.
 
 ```
 % font -h
