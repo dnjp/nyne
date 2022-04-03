@@ -26,17 +26,28 @@ var Config = func() map[string]Filetype {
 	return c
 }()
 
+// Nums extracts numbers from the string, returning all matches
+func Nums(s string) (nums []int, err error) {
+	for _, ns := range numre.FindAllString(s, -1) {
+		n, err := strconv.Atoi(ns)
+		if err != nil {
+			return nil, err
+		}
+		nums = append(nums, n)
+	}
+	return
+}
+
 // FontSize returns the size of the font
 func FontSize(font *draw.Font) (int, error) {
-	sizes := numre.FindAllString(font.Name, -1)
+	sizes, err := Nums(font.Name)
+	if err != nil {
+		return 0, err
+	}
 	if l := len(sizes); l > 1 || l == 0 {
 		return 0, fmt.Errorf("could not parse font size")
 	}
-	fs, err := strconv.Atoi(sizes[0])
-	if err != nil {
-		return 0, fmt.Errorf("could not parse font size: %+v", err)
-	}
-	return fs, nil
+	return sizes[0], nil
 }
 
 // IsHiDPI returns whether the font is being displayed in a HiDPI
