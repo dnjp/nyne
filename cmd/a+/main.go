@@ -1,5 +1,8 @@
 /*
 Indent selected source code
+
+	Usage of a+:
+		|a+
 */
 package main
 
