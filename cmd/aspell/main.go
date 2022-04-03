@@ -36,13 +36,28 @@ func main() {
 
 	dir := filepath.Dir(w.File)
 	name := dir + "/-spell"
-	w2, err := nyne.NewWin()
-	if err != nil {
-		panic(err)
+
+	var w2 *nyne.Win
+	for _, win := range wins {
+		if win.File == name {
+			w2 = win
+			err := w2.ClearBody()
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
-	err = w2.Name(name)
-	if err != nil {
-		panic(err)
+
+	if w2 == nil {
+		w2, err = nyne.NewWin()
+		if err != nil {
+			panic(err)
+		}
+
+		err = w2.Name(name)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	body, err := w.ReadBody()

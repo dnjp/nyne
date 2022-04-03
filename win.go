@@ -216,6 +216,17 @@ func (w *Win) ReadBody() ([]byte, error) {
 	return w.w.ReadAll("body")
 }
 
+// ClearBody clears the text from the body
+func (w *Win) ClearBody() error {
+	if err := w.SetAddr(","); err != nil {
+		return fmt.Errorf("could not set addr: %w", err)
+	}
+	if err := w.SetData(nil); err != nil {
+		return fmt.Errorf("could not set data: %w", err)
+	}
+	return nil
+}
+
 // Readp reads the previous character from q0
 func (w *Win) Readp(q0 int) (nq0 int, c byte) {
 	off := 1
