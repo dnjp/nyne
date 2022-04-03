@@ -6,14 +6,16 @@
 # nyne
 
 nyne is a library and a collection of tools that enables interacting
-with acme in ways that are more intuitive when coming from more
-traditional text editors. As a library, nyne provides many abstractions
-on top of the [9fans acme library](https://pkg.go.dev/9fans.net/go/acme)
+with acme in ways that are more intuitive when coming from traditional
+text editors. As a library, nyne provides many abstractions on top
+of the [9fans acme library](https://pkg.go.dev/9fans.net/go/acme)
 to make event handling, finding focused windows, and other actions
 significantly easier (see
 [Event](https://pkg.go.dev/github.com/dnjp/nyne#Event) and the
 provided [variables](https://pkg.go.dev/github.com/dnjp/nyne#pkg-variables)
-for example). The included commands make working in acme faster and more user friendly, especially when combined with a keyboard mapping tool like [skhd](https://github.com/koekeishiya/skhd).
+for example). The included commands make working in acme faster and
+more user friendly, especially when combined with a keyboard mapping
+tool like [skhd](https://github.com/koekeishiya/skhd).
 
 These are the commands that are included:
 
