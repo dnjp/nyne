@@ -54,7 +54,7 @@ func Tabexpand(condition Condition, win WinFunc, tabwidth TabwidthFunc) (rune, H
 		rc := utf8.RuneCount(tab)
 		selEnd := e.SelBegin + rc
 		e.Origin = WindowFiles
-		e.Type = BodyInsert
+		e.Action = BodyInsert
 		e.SelEnd = selEnd
 		e.OrigSelEnd = selEnd
 		e.NumRunes = rc

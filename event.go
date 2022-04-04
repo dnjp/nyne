@@ -7,27 +7,27 @@ import (
 	"9fans.net/go/acme"
 )
 
-// PostWriteHook executes a function on the event after it has been
-// written to the acme log
-type PostWriteHook func(Event) error
-
-// AcmeOp contains the acme events that are available
-type AcmeOp int
+// Builtin contains the default acme event types
+type Builtin int
 
 const (
 	// New represents window creation
-	New AcmeOp = iota
+	New Builtin = iota
 	// Zerox reprents window creation via zerox
 	Zerox
-	// Get loadr file into window
+	// Get loads/reloads the file in the window
 	Get
 	// Put writes window to the named file
 	Put
 	// Del deletes the window
 	Del
-	// Focus is received when the window is in focus
+	// Focus is received when the window focused
 	Focus
 )
+
+// Hook executes a function on the event after it has been
+// written to the acme log
+type Hook func(Event) error
 
 // Event contains metadata for each Acme event
 //
@@ -38,10 +38,10 @@ type Event struct {
 	// Log
 	ID                       int
 	File                     string
-	Origin                   ActionOrigin
-	Type                     ActionType
+	Origin                   Origin
+	Action                   Action
 	Text                     []byte
-	Builtin                  AcmeOp
+	Builtin                  Builtin
 	Flag                     Flag
 	SelBegin, SelEnd         int
 	OrigSelBegin, OrigSelEnd int
@@ -50,69 +50,69 @@ type Event struct {
 	ChordArg                 []byte
 	ChordLoc                 []byte
 	// Hooks
-	PostHooks []PostWriteHook
+	WriteHooks []Hook
 }
 
-// ActionOrigin is the entity that originated the action
-type ActionOrigin int
+// Origin is the entity that originated the action
+type Origin int
 
 const (
 	// BodyOrTag represents an action received in the body or tag
-	BodyOrTag ActionOrigin = iota
+	BodyOrTag Origin = iota
 	// WindowFiles represents an action taken in the file
 	WindowFiles
 	// Keyboard represents an action taken by the keyboard
 	Keyboard
 	// Mouse represents an action taken by the mouse
 	Mouse
-	// DelOrigin represents a delete event
-	DelOrigin
+	// Delete represents a delete event
+	Delete
 )
 
 func (e *Event) setActionOrigin(event *acme.Event) error {
-	var origin ActionOrigin
+	var o Origin
 	c := rune(event.C1)
 	switch c {
 	case 0x0:
-		origin = DelOrigin
+		o = Delete
 	case 'E':
-		origin = BodyOrTag
+		o = BodyOrTag
 	case 'F':
-		origin = WindowFiles
+		o = WindowFiles
 	case 'K':
-		origin = Keyboard
+		o = Keyboard
 	case 'M':
-		origin = Mouse
+		o = Mouse
 	default:
 		return fmt.Errorf("%#U %c is not a known ActionOrigin", c, c)
 	}
-	e.Origin = origin
+	e.Origin = o
 	return nil
 }
 
 func (e *Event) actionOriginCode() rune {
-	var origin rune
+	var o rune
 	switch e.Origin {
 	case BodyOrTag:
-		origin = 'E'
+		o = 'E'
 	case WindowFiles:
-		origin = 'F'
+		o = 'F'
 	case Keyboard:
-		origin = 'K'
+		o = 'K'
 	case Mouse:
-		origin = 'M'
-	case DelOrigin:
-		origin = '0'
+		o = 'M'
+	case Delete:
+		o = '0'
 	}
-	return origin
+	return o
 }
 
-// ActionType describes what kind of action was taken
-type ActionType int
+// Action describes what kind of action was taken
+type Action int
 
 const (
 	// BodyDelete is a deletion in the window body
-	BodyDelete ActionType = iota
+	BodyDelete Action = iota
 	// TagDelete is a deletion in the window tag
 	TagDelete
 	// BodyInsert is an insertion into the window body
@@ -132,57 +132,57 @@ const (
 )
 
 func (e *Event) setActionType(event *acme.Event) error {
-	var action ActionType
+	var a Action
 	c := rune(event.C2)
 	switch c {
 	case 'D':
-		action = BodyDelete
+		a = BodyDelete
 	case 'd':
-		action = TagDelete
+		a = TagDelete
 	case 'I':
-		action = BodyInsert
+		a = BodyInsert
 	case 'i':
-		action = TagInsert
+		a = TagInsert
 	case 'L':
-		action = B3Body
+		a = B3Body
 	case 'l':
-		action = B3Tag
+		a = B3Tag
 	case 'X':
-		action = B2Body
+		a = B2Body
 	case 'x':
-		action = B2Tag
+		a = B2Tag
 	case 0x0:
-		action = DelType
+		a = DelType
 	default:
 		return fmt.Errorf("'%c' is not a known ActionType", c)
 	}
-	e.Type = action
+	e.Action = a
 	return nil
 }
 
 func (e *Event) actionTypeCode() rune {
-	var action rune
-	switch e.Type {
+	var a rune
+	switch e.Action {
 	case BodyDelete:
-		action = 'D'
+		a = 'D'
 	case TagDelete:
-		action = 'd'
+		a = 'd'
 	case BodyInsert:
-		action = 'I'
+		a = 'I'
 	case TagInsert:
-		action = 'i'
+		a = 'i'
 	case B3Body:
-		action = 'L'
+		a = 'L'
 	case B3Tag:
-		action = 'l'
+		a = 'l'
 	case B2Body:
-		action = 'X'
+		a = 'X'
 	case B2Tag:
-		action = 'x'
+		a = 'x'
 	case DelType:
-		action = '0'
+		a = '0'
 	}
-	return action
+	return a
 }
 
 // Flag contains the flag for the event. For BodyDelete, TagDelete,
@@ -230,36 +230,36 @@ const (
 )
 
 func (e *Event) setFlag(event *acme.Event) {
-	var flag Flag
-	if e.Type == B2Body || e.Type == B2Tag {
+	var f Flag
+	if e.Action == B2Body || e.Action == B2Tag {
 		switch event.Flag {
 		case 1:
-			flag = IsBuiltin
+			f = IsBuiltin
 		case 2:
-			flag = IsNull
+			f = IsNull
 		case 8:
-			flag = HasChordedArg
+			f = HasChordedArg
 		}
 	}
 
-	if e.Type == B3Body || e.Type == B3Tag {
+	if e.Action == B3Body || e.Action == B3Tag {
 		switch event.Flag {
 		case 1:
-			flag = NoReloadNeeded
+			f = NoReloadNeeded
 		case 2:
-			flag = PostExpandFollows
+			f = PostExpandFollows
 		case 4:
-			flag = IsFileOrWindow
+			f = IsFileOrWindow
 		}
 	}
-	e.Flag = flag
+	e.Flag = f
 }
 
 func (e *Event) setBuiltin(event *acme.Event) error {
 	text := string(event.Text)
 	action := strings.ToLower(text)
 
-	var op AcmeOp
+	var op Builtin
 	switch action {
 	case "new":
 		op = New

@@ -161,7 +161,7 @@ func (w *Win) Exec(exec string, args ...string) error {
 	nr := utf8.RuneCountInString(cmd)
 	evt := Event{
 		Origin:   Mouse,
-		Type:     B2Tag,
+		Action:   B2Tag,
 		SelBegin: rc,
 		SelEnd:   rc + nr,
 		NumRunes: nr,

@@ -12,8 +12,8 @@ type Buf struct {
 	file       string
 	win        *Win
 	debug      bool
-	EventHooks map[AcmeOp][]Handler
-	WinHooks   map[AcmeOp][]WinHandler
+	EventHooks map[Builtin][]Handler
+	WinHooks   map[Builtin][]WinHandler
 	KeyHooks   map[rune]Handler
 }
 
@@ -22,8 +22,8 @@ func NewBuf(id int, file string) *Buf {
 	return &Buf{
 		id:         id,
 		file:       file,
-		EventHooks: make(map[AcmeOp][]Handler),
-		WinHooks:   make(map[AcmeOp][]WinHandler),
+		EventHooks: make(map[Builtin][]Handler),
+		WinHooks:   make(map[Builtin][]WinHandler),
 		KeyHooks:   make(map[rune]Handler),
 	}
 }
@@ -60,7 +60,7 @@ func (b *Buf) Start() error {
 				w.Lastpoint = event.SelBegin
 				event, ok = b.keyEvent(event)
 			} else {
-				if event.Origin == DelOrigin && event.Type == DelType {
+				if event.Origin == Delete && event.Action == DelType {
 					b.win.WriteEvent(event)
 					b.win.Close()
 					return nil
@@ -77,7 +77,7 @@ func (b *Buf) Start() error {
 
 			b.win.WriteEvent(event)
 
-			for _, h := range event.PostHooks {
+			for _, h := range event.WriteHooks {
 				if err := h(event); err != nil {
 					return err
 				}
