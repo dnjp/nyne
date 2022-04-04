@@ -104,7 +104,10 @@ func (w *Win) EventChan(id int, filename string, stop <-chan struct{}) (<-chan E
 		ec := w.w.EventChan()
 		for {
 			select {
-			case e := <-ec:
+			case e, ok := <-ec:
+				if !ok {
+					return
+				}
 				event, err := NewEvent(e, id, filename)
 				if err != nil {
 					errs <- err
@@ -119,6 +122,15 @@ func (w *Win) EventChan(id int, filename string, stop <-chan struct{}) (<-chan E
 	return events, errs
 }
 
+// WriteEvent writes the acme event to the log
+func (w *Win) WriteEvent(e Event) error {
+	raw, err := e.Log()
+	if err != nil {
+		return err
+	}
+	return w.w.WriteEvent(raw)
+}
+
 // Name sets the name for the win
 func (w *Win) Name(format string, args ...interface{}) error {
 	return w.w.Name(format, args...)
@@ -127,12 +139,6 @@ func (w *Win) Name(format string, args ...interface{}) error {
 // Close closes down the window with associated files
 func (w *Win) Close() {
 	w.w.CloseFiles()
-}
-
-// WriteEvent writes the acme event to the log
-func (w *Win) WriteEvent(e Event) error {
-	raw := e.Log()
-	return w.w.WriteEvent(&raw)
 }
 
 // Exec executes the given command in the window tag
@@ -165,14 +171,16 @@ func (w *Win) Exec(exec string, args ...string) error {
 		SelBegin: rc,
 		SelEnd:   rc + nr,
 		NumRunes: nr,
-		Text:     []byte(cmd),
+		Text:     Text(cmd),
 		Flag:     HasChordedArg,
 	}
 
-	log := evt.Log()
-	err = w.w.WriteEvent(&log)
+	log, err := evt.Log()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "log=%+v\n", log)
+		return fmt.Errorf("could not convert event to log: %w", err)
+	}
+	err = w.w.WriteEvent(log)
+	if err != nil {
 		return fmt.Errorf("could not write event: %w", err)
 	}
 

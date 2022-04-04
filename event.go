@@ -1,28 +1,7 @@
 package nyne
 
 import (
-	"fmt"
-	"strings"
-
 	"9fans.net/go/acme"
-)
-
-// Builtin contains the default acme event types
-type Builtin int
-
-const (
-	// New represents window creation
-	New Builtin = iota
-	// Zerox reprents window creation via zerox
-	Zerox
-	// Get loads/reloads the file in the window
-	Get
-	// Put writes window to the named file
-	Put
-	// Del deletes the window
-	Del
-	// Focus is received when the window focused
-	Focus
 )
 
 // Hook executes a function on the event after it has been
@@ -40,8 +19,7 @@ type Event struct {
 	File                     string
 	Origin                   Origin
 	Action                   Action
-	Text                     []byte
-	Builtin                  Builtin
+	Text                     Text
 	Flag                     Flag
 	SelBegin, SelEnd         int
 	OrigSelBegin, OrigSelEnd int
@@ -53,136 +31,103 @@ type Event struct {
 	WriteHooks []Hook
 }
 
+// Text contains the default acme event types
+type Text string
+
+const (
+	// New represents window creation
+	New Text = "New"
+	// Zerox reprents window creation via zerox
+	Zerox Text = "Zerox"
+	// Get loads/reloads the file in the window
+	Get Text = "Get"
+	// Put writes window to the named file
+	Put Text = "Put"
+	// Del deletes the window
+	Del Text = "Del"
+	// Focus is received when the window focused
+	Focus Text = "Focus"
+)
+
+// NewText constructs a builtin from the event text
+func NewText(text []byte) Text {
+	return Text(text)
+}
+
+// String returns Text as a string
+func (b Text) String() string {
+	return string(b)
+}
+
+// Bytes returns Text as a slice of bytes
+func (b Text) Bytes() []byte {
+	return []byte(b)
+}
+
 // Origin is the entity that originated the action
-type Origin int
+type Origin rune
 
 const (
 	// BodyOrTag represents an action received in the body or tag
-	BodyOrTag Origin = iota
+	BodyOrTag Origin = 'E'
 	// WindowFiles represents an action taken in the file
-	WindowFiles
+	WindowFiles Origin = 'F'
 	// Keyboard represents an action taken by the keyboard
-	Keyboard
+	Keyboard Origin = 'K'
 	// Mouse represents an action taken by the mouse
-	Mouse
+	Mouse Origin = 'M'
 	// Delete represents a delete event
-	Delete
+	Delete Origin = 0x0
 )
 
-func (e *Event) setActionOrigin(event *acme.Event) error {
-	var o Origin
-	c := rune(event.C1)
-	switch c {
-	case 0x0:
-		o = Delete
-	case 'E':
-		o = BodyOrTag
-	case 'F':
-		o = WindowFiles
-	case 'K':
-		o = Keyboard
-	case 'M':
-		o = Mouse
-	default:
-		return fmt.Errorf("%#U %c is not a known ActionOrigin", c, c)
-	}
-	e.Origin = o
-	return nil
+// NewOrigin constructs an origin from c1
+func NewOrigin(c1 rune) Origin {
+	return Origin(c1)
 }
 
-func (e *Event) actionOriginCode() rune {
-	var o rune
-	switch e.Origin {
-	case BodyOrTag:
-		o = 'E'
-	case WindowFiles:
-		o = 'F'
-	case Keyboard:
-		o = 'K'
-	case Mouse:
-		o = 'M'
-	case Delete:
-		o = '0'
+// Rune returns the Origin as a rune
+func (o Origin) Rune() rune {
+	if o == Delete {
+		return 0
 	}
-	return o
+	return rune(o)
 }
 
 // Action describes what kind of action was taken
-type Action int
+type Action rune
 
 const (
 	// BodyDelete is a deletion in the window body
-	BodyDelete Action = iota
+	BodyDelete Action = 'D'
 	// TagDelete is a deletion in the window tag
-	TagDelete
+	TagDelete Action = 'd'
 	// BodyInsert is an insertion into the window body
-	BodyInsert
+	BodyInsert Action = 'I'
 	// TagInsert is an insert into the window tag
-	TagInsert
+	TagInsert Action = 'i'
 	// B3Body is a right click event in the window body
-	B3Body
+	B3Body Action = 'L'
 	// B3Tag is a right click event in the window tag
-	B3Tag
+	B3Tag Action = 'l'
 	// B2Body is a middle click event in the window body
-	B2Body
+	B2Body Action = 'X'
 	// B2Tag is a middle click event in the window tag
-	B2Tag
+	B2Tag Action = 'x'
 	// DelType represents a delete event
-	DelType
+	DelType Action = 0x0
 )
 
-func (e *Event) setActionType(event *acme.Event) error {
-	var a Action
-	c := rune(event.C2)
-	switch c {
-	case 'D':
-		a = BodyDelete
-	case 'd':
-		a = TagDelete
-	case 'I':
-		a = BodyInsert
-	case 'i':
-		a = TagInsert
-	case 'L':
-		a = B3Body
-	case 'l':
-		a = B3Tag
-	case 'X':
-		a = B2Body
-	case 'x':
-		a = B2Tag
-	case 0x0:
-		a = DelType
-	default:
-		return fmt.Errorf("'%c' is not a known ActionType", c)
-	}
-	e.Action = a
-	return nil
+// NewAction constructs a new action
+func NewAction(c2 rune) Action {
+	return Action(c2)
 }
 
-func (e *Event) actionTypeCode() rune {
-	var a rune
-	switch e.Action {
-	case BodyDelete:
-		a = 'D'
-	case TagDelete:
-		a = 'd'
-	case BodyInsert:
-		a = 'I'
-	case TagInsert:
-		a = 'i'
-	case B3Body:
-		a = 'L'
-	case B3Tag:
-		a = 'l'
-	case B2Body:
-		a = 'X'
-	case B2Tag:
-		a = 'x'
-	case DelType:
-		a = '0'
+// Rune returns the Action as a rune
+func (a Action) Rune() rune {
+	if a == DelType {
+		return 0
 	}
-	return a
+	return rune(a)
 }
 
 // Flag contains the flag for the event. For BodyDelete, TagDelete,
@@ -226,93 +171,64 @@ const (
 	// (perhaps with address) rather than plain literal text.
 	IsFileOrWindow
 
-	// TODO: determine what flag with value '3' means
+	// For messages with the 1 bit on in the flag, writing the message
+	// back to the event file, but with the flag, count, and text omitted,
+	// will cause the action to be applied to the file exactly as it would
+	// have been if the event file had not been open.
 )
 
-func (e *Event) setFlag(event *acme.Event) {
-	var f Flag
-	if e.Action == B2Body || e.Action == B2Tag {
-		switch event.Flag {
+// NewFlag constructs a Flag
+func NewFlag(a Action, rawFlag int) Flag {
+	if a == B2Body || a == B2Tag {
+		switch rawFlag {
 		case 1:
-			f = IsBuiltin
+			return IsBuiltin
 		case 2:
-			f = IsNull
-		case 8:
-			f = HasChordedArg
+			return IsNull
+		case 3, 8:
+			return HasChordedArg
 		}
 	}
 
-	if e.Action == B3Body || e.Action == B3Tag {
-		switch event.Flag {
+	if a == B3Body || a == B3Tag {
+		switch rawFlag {
 		case 1:
-			f = NoReloadNeeded
+			return NoReloadNeeded
 		case 2:
-			f = PostExpandFollows
+			return PostExpandFollows
 		case 4:
-			f = IsFileOrWindow
+			return IsFileOrWindow
 		}
 	}
-	e.Flag = f
-}
-
-func (e *Event) setBuiltin(event *acme.Event) error {
-	text := string(event.Text)
-	action := strings.ToLower(text)
-
-	var op Builtin
-	switch action {
-	case "new":
-		op = New
-	case "zerox":
-		op = Zerox
-	case "get":
-		op = Get
-	case "put":
-		op = Put
-	case "del":
-		op = Del
-	}
-	e.Builtin = op
-	return nil
-}
-
-func (e *Event) setMeta(event *acme.Event) {
-	e.Text = event.Text
-	e.SelBegin = event.Q0
-	e.SelEnd = event.Q1
-	e.OrigSelBegin = event.OrigQ0
-	e.OrigSelEnd = event.OrigQ1
-	e.NumBytes = event.Nb
-	e.NumRunes = event.Nr
-	e.ChordArg = event.Arg
-	e.ChordLoc = event.Loc
+	return Flag(rawFlag)
 }
 
 // NewEvent constructs an Event from a raw acme event
 func NewEvent(event *acme.Event, id int, file string) (Event, error) {
 	e := Event{
-		ID:   id,
-		File: file,
+		ID:           id,
+		File:         file,
+		Origin:       NewOrigin(event.C1),
+		Action:       NewAction(event.C2),
+		Text:         NewText(event.Text),
+		SelBegin:     event.Q0,
+		SelEnd:       event.Q1,
+		OrigSelBegin: event.OrigQ0,
+		OrigSelEnd:   event.OrigQ1,
+		NumBytes:     event.Nb,
+		NumRunes:     event.Nr,
+		ChordArg:     event.Arg,
+		ChordLoc:     event.Loc,
 	}
-	if err := e.setActionOrigin(event); err != nil {
-		return e, err
-	}
-	if err := e.setActionType(event); err != nil {
-		return e, err
-	}
-	if err := e.setBuiltin(event); err != nil {
-		return e, err
-	}
-	e.setFlag(event)
-	e.setMeta(event)
+	e.Flag = NewFlag(e.Action, event.Flag)
 	return e, nil
 }
 
 // Log returns a raw acme log event for the Event type
-func (e *Event) Log() acme.Event {
-	return acme.Event{
-		C1:     e.actionOriginCode(),
-		C2:     e.actionTypeCode(),
+func (e *Event) Log() (*acme.Event, error) {
+	return &acme.Event{
+		C1:     e.Origin.Rune(),
+		C2:     e.Action.Rune(),
 		Q0:     e.SelBegin,
 		Q1:     e.SelEnd,
 		OrigQ0: e.OrigSelBegin,
@@ -320,8 +236,8 @@ func (e *Event) Log() acme.Event {
 		Flag:   int(e.Flag),
 		Nb:     e.NumBytes,
 		Nr:     e.NumRunes,
-		Text:   e.Text,
+		Text:   e.Text.Bytes(),
 		Arg:    e.ChordArg,
 		Loc:    e.ChordLoc,
-	}
+	}, nil
 }

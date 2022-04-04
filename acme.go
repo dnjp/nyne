@@ -12,8 +12,8 @@ import (
 
 // Acme implements the Listener interface for acme events
 type Acme struct {
-	EventHooks map[Builtin][]Handler
-	WinHooks   map[Builtin][]WinHandler
+	EventHooks map[Text][]Handler
+	WinHooks   map[Text][]WinHandler
 	KeyHooks   map[rune]Handler
 	wins       map[int]string
 	bufs       map[int]*Buf
@@ -24,8 +24,8 @@ type Acme struct {
 // NewAcme constructs an Acme event listener
 func NewAcme() *Acme {
 	return &Acme{
-		EventHooks: make(map[Builtin][]Handler),
-		WinHooks:   make(map[Builtin][]WinHandler),
+		EventHooks: make(map[Text][]Handler),
+		WinHooks:   make(map[Text][]WinHandler),
 		KeyHooks:   make(map[rune]Handler),
 		wins:       make(map[int]string),
 		bufs:       make(map[int]*Buf),
