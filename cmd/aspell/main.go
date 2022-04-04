@@ -51,13 +51,13 @@ func text(w *nyne.Win) (body []byte, q0 int) {
 	}
 
 	if q1 > q0 {
-		body, err = w.ReadData(q0, q1)
+		body, err = w.Data(q0, q1)
 		if err != nil {
 			panic(err)
 		}
 	} else {
 		q0 = 0
-		body, err = w.ReadBody()
+		body, err = w.Body()
 		if err != nil {
 			panic(err)
 		}
@@ -177,12 +177,12 @@ func main() {
 		out += corrections[addr] + "\n"
 	}
 
-	err = outw.WriteToBody([]byte(out))
+	err = outw.AppendBody([]byte(out))
 	if err != nil {
 		panic(err)
 	}
 
-	err = outw.MarkWinClean()
+	err = outw.Clean()
 	if err != nil {
 		panic(err)
 	}
@@ -190,11 +190,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = outw.SetTextToAddr()
+	err = outw.SelectionFromAddr()
 	if err != nil {
 		panic(err)
 	}
-	if err := outw.ExecShow(); err != nil {
+	if err := outw.Show(); err != nil {
 		panic(err)
 	}
 }

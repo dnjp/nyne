@@ -49,7 +49,7 @@ func main() {
 
 	// we have selected text to indent/unindent
 	if q1 > q0+1 {
-		dat, err := w.ReadData(q0, q1)
+		dat, err := w.Data(q0, q1)
 		if err != nil {
 			panic(err)
 		}
@@ -91,7 +91,7 @@ func main() {
 			panic(err)
 		}
 
-		err = w.SetTextToAddr()
+		err = w.SelectionFromAddr()
 		if err != nil {
 			panic(err)
 		}

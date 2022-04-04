@@ -39,7 +39,7 @@ func main() {
 		panic(fmt.Errorf("could not find window with id %d", winid))
 	}
 
-	err = w.ExecInTag(cmd, args...)
+	err = w.Exec(cmd, args...)
 	if err != nil {
 		panic(err)
 	}

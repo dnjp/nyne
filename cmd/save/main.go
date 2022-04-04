@@ -53,7 +53,7 @@ func main() {
 		panic(err)
 	}
 
-	err = w.ExecPut()
+	err = w.Put()
 	if err != nil {
 		panic(err)
 	}

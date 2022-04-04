@@ -45,7 +45,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			dat, err := w.ReadData(q0, q1)
+			dat, err := w.Data(q0, q1)
 			if err != nil {
 				panic(err)
 			}
@@ -60,7 +60,7 @@ func main() {
 		}
 	}
 
-	dat, err := w.ReadData(q0, q1)
+	dat, err := w.Data(q0, q1)
 	if err != nil {
 		panic(err)
 	}
@@ -97,7 +97,7 @@ func main() {
 		panic(err)
 	}
 
-	err = w.SetTextToAddr()
+	err = w.SelectionFromAddr()
 	if err != nil {
 		panic(err)
 	}

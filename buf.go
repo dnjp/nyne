@@ -48,7 +48,9 @@ func (b *Buf) Start() error {
 
 	// runs hooks for acme 'new' event
 	b.winEvent(b.win, Event{Builtin: New})
-	events, errs := b.win.EventChan(b.id, b.file)
+	stop := make(chan struct{})
+	defer func() { stop <- struct{}{} }()
+	events, errs := b.win.EventChan(b.id, b.file, stop)
 	for {
 		select {
 		case event := <-events:
@@ -83,7 +85,7 @@ func (b *Buf) Start() error {
 
 			// maintain current address after formatting buffer
 			if event.Builtin == Put {
-				body, err := b.win.ReadBody()
+				body, err := b.win.Body()
 				if err != nil {
 					return err
 				}
@@ -93,10 +95,10 @@ func (b *Buf) Start() error {
 				if err := b.win.SetAddr("#%d", w.Lastpoint); err != nil {
 					return err
 				}
-				if err := b.win.SetTextToAddr(); err != nil {
+				if err := b.win.SelectionFromAddr(); err != nil {
 					return err
 				}
-				if err := b.win.ExecShow(); err != nil {
+				if err := b.win.Show(); err != nil {
 					return err
 				}
 			}

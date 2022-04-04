@@ -35,9 +35,11 @@ func NewFormatter(filetypes []Filetype, menutag []string) (*Formatter, error) {
 				if ft.Tabwidth != 0 {
 					f.fmt(w, ft)
 				}
-				err := w.WriteMenu(menutag)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "%+v", err)
+				for _, opt := range menutag {
+					err := w.AppendTag(opt)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "%+v", err)
+					}
 				}
 			},
 		},
@@ -116,14 +118,14 @@ func (f *Formatter) fmt(w *Win, ft Filetype) error {
 	if ft.Tabwidth == 0 {
 		return nil
 	}
-	if err := w.WriteToTag("\n"); err != nil {
+	if err := w.AppendTag("\n"); err != nil {
 		return err
 	}
-	if err := w.ExecInTag("Tab", strconv.Itoa(ft.Tabwidth)); err != nil {
+	if err := w.Exec("Tab", strconv.Itoa(ft.Tabwidth)); err != nil {
 		return err
 	}
 	if ft.Tabexpand {
-		if err := w.ExecInTag("tabexpand=true"); err != nil {
+		if err := w.Exec("tabexpand=true"); err != nil {
 			return err
 		}
 	}
@@ -139,7 +141,7 @@ func (f *Formatter) refmt(evt Event, cmd Command, xt string) ([]byte, error) {
 	}
 
 	// get current body
-	old, err := l.Win().ReadBody()
+	old, err := l.Win().Body()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -204,10 +206,10 @@ func (f *Formatter) update(evt Event, updates [][]byte) error {
 		if err := w.SetAddr("#%d", w.Lastpoint); err != nil {
 			return err
 		}
-		if err := w.SetTextToAddr(); err != nil {
+		if err := w.SelectionFromAddr(); err != nil {
 			return err
 		}
-		if err := w.ExecShow(); err != nil {
+		if err := w.Show(); err != nil {
 			return err
 		}
 	}

@@ -63,12 +63,12 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
 		}
 	}
 
-	err = w.SetTextToAddr()
+	err = w.SelectionFromAddr()
 	if err != nil {
 		panic(err)
 	}
 	if !*sel {
-		if err := w.ExecShow(); err != nil {
+		if err := w.Show(); err != nil {
 			panic(err)
 		}
 	}
@@ -78,7 +78,7 @@ func start(w *nyne.Win, q0 int) (nq0, tabs int) {
 	var c byte
 	nq0 = q0
 	for nq0 >= 0 {
-		nq0, c = w.Readp(nq0)
+		nq0, c = w.PrevChar(nq0)
 		if c == '\t' {
 			tabs++
 		} else if c == '\n' {
@@ -93,7 +93,7 @@ func end(w *nyne.Win, q0 int) (nq0, tabs int) {
 	var c byte
 	nq0 = q0
 	for nq0 >= 0 {
-		nq0, c, _ = w.Readn(nq0)
+		nq0, c, _ = w.NextChar(nq0)
 		if c == '\t' {
 			tabs++
 		} else if c == '\n' {
@@ -125,9 +125,9 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 		var tnq0 int
 		var pc, c, nc byte
 		for {
-			_, pc, _ = w.Readn(nq0)
-			tnq0, c = w.Readp(nq0)
-			_, nc = w.Readp(nq0 - 1)
+			_, pc, _ = w.NextChar(nq0)
+			tnq0, c = w.PrevChar(nq0)
+			_, nc = w.PrevChar(nq0 - 1)
 			nq0 = tnq0
 			if nq0 == 0 {
 				return nq0
@@ -152,7 +152,7 @@ func left(w *nyne.Win, q0 int) (nq0 int) {
 		if err != nil {
 			panic(err)
 		}
-		nq0, _, err = w.ReadAddr()
+		nq0, _, err = w.Addr()
 		if err != nil {
 			panic(err)
 		}
@@ -170,9 +170,9 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 		var tnq0 int
 		var pc, c, nc byte
 		for {
-			_, pc = w.Readp(nq0)
-			tnq0, c, _ = w.Readn(nq0)
-			_, nc, _ = w.Readn(nq0 + 1)
+			_, pc = w.PrevChar(nq0)
+			tnq0, c, _ = w.NextChar(nq0)
+			_, nc, _ = w.NextChar(nq0 + 1)
 			nq0 = tnq0
 			if !isword(pc) && isword(c) && isword(nc) {
 				return nq0 - 1
@@ -194,7 +194,7 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 		if err != nil {
 			panic(err)
 		}
-		nq0, _, err = w.ReadAddr()
+		nq0, _, err = w.Addr()
 		if err != nil {
 			panic(err)
 		}
@@ -212,7 +212,7 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 	)
 
 	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
-	for nq0, c = w.Readp(q0); nq0 >= 0; nq0, c = w.Readp(nq0) {
+	for nq0, c = w.PrevChar(q0); nq0 >= 0; nq0, c = w.PrevChar(nq0) {
 		if c == '\n' {
 			nl++
 		}
@@ -289,7 +289,7 @@ func down(w *nyne.Win, q0 int) (nq0 int) {
 	}
 
 	for {
-		nq0, c, _ = w.Readn(nq0)
+		nq0, c, _ = w.NextChar(nq0)
 		if c == '\n' {
 			nl++
 		}
