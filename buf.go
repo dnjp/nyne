@@ -1,7 +1,6 @@
 package nyne
 
 import (
-	"log"
 	"unicode/utf8"
 )
 
@@ -11,9 +10,8 @@ type Buf struct {
 	id         int
 	file       string
 	win        *Win
-	debug      bool
-	EventHooks map[AcmeOp][]Handler
-	WinHooks   map[AcmeOp][]WinHandler
+	EventHooks map[Text][]Handler
+	WinHooks   map[Text][]WinHandler
 	KeyHooks   map[rune]Handler
 }
 
@@ -22,8 +20,8 @@ func NewBuf(id int, file string) *Buf {
 	return &Buf{
 		id:         id,
 		file:       file,
-		EventHooks: make(map[AcmeOp][]Handler),
-		WinHooks:   make(map[AcmeOp][]WinHandler),
+		EventHooks: make(map[Text][]Handler),
+		WinHooks:   make(map[Text][]WinHandler),
 		KeyHooks:   make(map[rune]Handler),
 	}
 }
@@ -47,20 +45,21 @@ func (b *Buf) Start() error {
 	b.win = w
 
 	// runs hooks for acme 'new' event
-	b.winEvent(b.win, Event{Builtin: New})
+	go b.winEvent(b.win, Event{Text: New})
 	stop := make(chan struct{})
 	defer func() { stop <- struct{}{} }()
 	events, errs := b.win.EventChan(b.id, b.file, stop)
 	for {
 		select {
-		case event := <-events:
-
-			var ok bool
-			if event.Origin == Keyboard {
+		case event, ok := <-events:
+			if !ok {
+				return nil
+			}
+			if event.Origin == Keyboard && event.Action == BodyInsert {
 				w.Lastpoint = event.SelBegin
 				event, ok = b.keyEvent(event)
 			} else {
-				if event.Origin == DelOrigin && event.Type == DelType {
+				if event.Origin == DelOrigin && event.Action == DelAction {
 					b.win.WriteEvent(event)
 					b.win.Close()
 					return nil
@@ -71,20 +70,15 @@ func (b *Buf) Start() error {
 				continue
 			}
 
-			if b.debug {
-				log.Printf("EVENT(after): %+v\n", event)
-			}
-
 			b.win.WriteEvent(event)
-
-			for _, h := range event.PostHooks {
+			for _, h := range event.WriteHooks {
 				if err := h(event); err != nil {
 					return err
 				}
 			}
 
 			// maintain current address after formatting buffer
-			if event.Builtin == Put {
+			if event.Text == Put {
 				body, err := b.win.Body()
 				if err != nil {
 					return err
@@ -102,7 +96,6 @@ func (b *Buf) Start() error {
 					return err
 				}
 			}
-
 		case err := <-errs:
 			return err
 		}
@@ -110,13 +103,13 @@ func (b *Buf) Start() error {
 }
 
 func (b *Buf) winEvent(w *Win, event Event) {
-	for _, hook := range b.WinHooks[event.Builtin] {
+	for _, hook := range b.WinHooks[event.Text] {
 		hook(w)
 	}
 }
 
 func (b *Buf) keyEvent(event Event) (Event, bool) {
-	r, _ := utf8.DecodeRune(event.Text)
+	r, _ := utf8.DecodeRune(event.Text.Bytes())
 	hook, ok := b.KeyHooks[r]
 	if !ok {
 		return event, true
@@ -128,7 +121,7 @@ func (b *Buf) execEvent(event Event) (Event, bool) {
 	origEvent := event
 	newEvent := origEvent
 	ok := true
-	for _, hook := range b.EventHooks[event.Builtin] {
+	for _, hook := range b.EventHooks[event.Text] {
 		newEvent, ok = hook(newEvent)
 		if !ok {
 			return origEvent, true

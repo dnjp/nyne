@@ -2,7 +2,6 @@ package nyne
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -12,20 +11,19 @@ import (
 
 // Acme implements the Listener interface for acme events
 type Acme struct {
-	EventHooks map[AcmeOp][]Handler
-	WinHooks   map[AcmeOp][]WinHandler
+	EventHooks map[Text][]Handler
+	WinHooks   map[Text][]WinHandler
 	KeyHooks   map[rune]Handler
 	wins       map[int]string
 	bufs       map[int]*Buf
-	debug      bool
 	mux        sync.Mutex
 }
 
 // NewAcme constructs an Acme event listener
 func NewAcme() *Acme {
 	return &Acme{
-		EventHooks: make(map[AcmeOp][]Handler),
-		WinHooks:   make(map[AcmeOp][]WinHandler),
+		EventHooks: make(map[Text][]Handler),
+		WinHooks:   make(map[Text][]WinHandler),
 		KeyHooks:   make(map[rune]Handler),
 		wins:       make(map[int]string),
 		bufs:       make(map[int]*Buf),
@@ -35,25 +33,11 @@ func NewAcme() *Acme {
 // Listen watches the acme event log for events and executes hooks
 // based on those events
 func (a *Acme) Listen() error {
-	if len(os.Getenv("DEBUG")) > 0 {
-		a.debug = true
-	}
-
-	if a.debug {
-		log.Println("opening acme log")
-	}
 	l, err := acme.Log()
 	if err != nil {
-		if a.debug {
-			log.Printf("failed to read acme log: %v\n", err)
-		}
 		return err
 	}
 	for {
-		if a.debug {
-			log.Println("reading acme event")
-		}
-
 		event, err := l.Read()
 		if err != nil {
 			return err
@@ -84,7 +68,6 @@ func (a *Acme) startBuf(id int) {
 	f := &Buf{
 		id:         id,
 		file:       a.wins[id],
-		debug:      a.debug,
 		EventHooks: a.EventHooks,
 		WinHooks:   a.WinHooks,
 		KeyHooks:   a.KeyHooks,
