@@ -24,7 +24,7 @@ func main() {
 	}
 	cmd := os.Args[1]
 	args := os.Args[2:]
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}
@@ -39,7 +39,7 @@ func main() {
 		panic(fmt.Errorf("could not find window with id %d", winid))
 	}
 
-	err = w.ExecInTag(cmd, args...)
+	err = w.Exec(cmd, args...)
 	if err != nil {
 		panic(err)
 	}

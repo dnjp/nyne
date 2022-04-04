@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -33,6 +34,19 @@ func NewWin() (*Win, error) {
 		return nil, err
 	}
 	return &Win{w: w}, nil
+}
+
+// OpenWin opens an acme window
+func OpenWin(id int, file string) (*Win, error) {
+	w, err := acme.Open(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &Win{
+		ID:   id,
+		File: file,
+		w:    w,
+	}, nil
 }
 
 // Windows returns all open acme windows
@@ -77,32 +91,37 @@ func FocusedWinID(addr string) (int, error) {
 	return strconv.Atoi(winid)
 }
 
-// FindFocusedWinID finds the active window ID using acmefocused
-func FindFocusedWinID() (int, error) {
-	return FocusedWinID(filepath.Join(p9client.Namespace(), "acmefocused"))
+// FocusedWinAddr returns the address of the active window using acmefocused
+func FocusedWinAddr() string {
+	return filepath.Join(p9client.Namespace(), "acmefocused")
 }
 
-// OpenWin opens an acme window
-func OpenWin(id int, file string) (*Win, error) {
-	w, err := acme.Open(id, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &Win{
-		ID:   id,
-		File: file,
-		w:    w,
-	}, nil
+// EventChan opens a channel to acme events
+func (w *Win) EventChan(id int, filename string, stop <-chan struct{}) (<-chan Event, <-chan error) {
+	errs := make(chan error)
+	events := make(chan Event)
+	go func() {
+		ec := w.w.EventChan()
+		for {
+			select {
+			case e := <-ec:
+				event, err := NewEvent(e, id, filename)
+				if err != nil {
+					errs <- err
+					continue
+				}
+				events <- event
+			case <-stop:
+				return
+			}
+		}
+	}()
+	return events, errs
 }
 
 // Name sets the name for the win
 func (w *Win) Name(format string, args ...interface{}) error {
 	return w.w.Name(format, args...)
-}
-
-// OpenEventChan opens a channel to raw acme events
-func (w *Win) OpenEventChan() <-chan *acme.Event {
-	return w.w.EventChan()
 }
 
 // Close closes down the window with associated files
@@ -116,13 +135,13 @@ func (w *Win) WriteEvent(e Event) error {
 	return w.w.WriteEvent(&raw)
 }
 
-// ExecInTag executes the given command in the window tag
-func (w *Win) ExecInTag(exec string, args ...string) error {
+// Exec executes the given command in the window tag
+func (w *Win) Exec(exec string, args ...string) error {
 	if w == nil || w.w == nil {
 		return fmt.Errorf("window handle lost")
 	}
 
-	tag, err := w.ReadTag()
+	tag, err := w.Tag()
 	if err != nil {
 		return fmt.Errorf("could not read tag: %w", err)
 	}
@@ -134,7 +153,7 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 	}
 
 	cmd := fmt.Sprintf("%s %s", exec, strings.Join(args, " "))
-	if err := w.WriteToTag(cmd); err != nil {
+	if err := w.AppendTag(cmd); err != nil {
 		return fmt.Errorf("could not write tag: %w", err)
 	}
 
@@ -157,77 +176,97 @@ func (w *Win) ExecInTag(exec string, args ...string) error {
 		return fmt.Errorf("could not write event: %w", err)
 	}
 
-	if err = w.ClearTagText(); err != nil {
+	if err = w.ClearTag(); err != nil {
 		return fmt.Errorf("could not clear tag: %w", err)
 	}
 
-	if err := w.WriteToTag(before); err != nil {
+	if err := w.AppendTag(before); err != nil {
 		return fmt.Errorf("could not write tag: %w", err)
 	}
 
 	return nil
 }
 
-// ExecGet is the equivalent to the Get interactive command with no
+// Get is the equivalent to the Get interactive command with no
 // arguments; accepts no arguments.
-func (w *Win) ExecGet() error {
+func (w *Win) Get() error {
 	return w.write("ctl", []byte("get"))
 }
 
-// ExecDelete is the equivalent to the Del interactive command.
-func (w *Win) ExecDelete() error {
+// Del is the equivalent to the Del interactive command.
+func (w *Win) Del() error {
 	return w.write("ctl", []byte("del"))
 }
 
-// ExecDumpToFile sets the command string to recreate the window from a
-// dump file.
-func (w *Win) ExecDumpToFile(file string) error {
-	return w.write("ctl", []byte(fmt.Sprintf("dump %s", file)))
-}
-
-// ExecPut is the equivalent to the Put interactive command with no
+// Put is the equivalent to the Put interactive command with no
 // arguments; accepts no arguments.
-func (w *Win) ExecPut() error {
+func (w *Win) Put() error {
 	return w.write("ctl", []byte("put"))
 }
 
-// ExecShow guarantees at least some of the selected text is visible on
+// Dump sets the command string to recreate the window from a
+// dump file.
+func (w *Win) Dump(file string) error {
+	return w.write("ctl", []byte(fmt.Sprintf("dump %s", file)))
+}
+
+// Dumpdir sets the directory in which to run the command to recreate
+// the window from a dump file.
+func (w *Win) Dumpdir(dir string) error {
+	return w.write("ctl", []byte(fmt.Sprintf("dumpdir %s", dir)))
+}
+
+// Show guarantees at least some of the selected text is visible on
 // the display.
-func (w *Win) ExecShow() error {
+func (w *Win) Show() error {
 	return w.write("ctl", []byte("show"))
 }
 
-// SetAddrToSelText sets the addr address to that of the user’s selected
-// text in the window.
-func (w *Win) SetAddrToSelText() error {
-	return w.write("ctl", []byte("addr=dot"))
+// NoMark turns off automatic ‘marking’ of changes, so a set of
+// related changes may be undone in a single Undo interactive command.
+func (w *Win) NoMark() error {
+	return w.write("ctl", []byte("nomark"))
 }
 
-// MarkWinClean marks the window clean as though it has just been written.
-func (w *Win) MarkWinClean() error {
+// DisableNoMark cancels nomark, returning the window to the usual state
+// wherein each modification to the body must be undone individually.
+func (w *Win) DisableNoMark() error {
+	return w.write("ctl", []byte("mark"))
+}
+
+// Clean marks the window clean as though it has just been written.
+func (w *Win) Clean() error {
 	return w.write("ctl", []byte("clean"))
 }
 
-// MarkWinDirty marks the window dirty, the opposite of clean.
-func (w *Win) MarkWinDirty() error {
+// Dirty marks the window dirty, the opposite of clean.
+func (w *Win) Dirty() error {
 	return w.write("ctl", []byte("dirty"))
 }
 
-// ClearTagText removes all text in the tag after the vertical bar.
-func (w *Win) ClearTagText() error {
-	return w.write("ctl", []byte("cleartag"))
-}
-
-// ReadTag returns the tag contents
-func (w *Win) ReadTag() ([]byte, error) {
+// Tag returns the tag contents
+func (w *Win) Tag() ([]byte, error) {
 	if w == nil || w.w == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
 	}
 	return w.w.ReadAll("tag")
 }
 
-// ReadBody returns the window body
-func (w *Win) ReadBody() ([]byte, error) {
+// ClearTag removes all text in the tag after the vertical bar.
+func (w *Win) ClearTag() error {
+	return w.write("ctl", []byte("cleartag"))
+}
+
+// AppendTag writes to the windows tag
+func (w *Win) AppendTag(text string) error {
+	if w == nil || w.w == nil {
+		return fmt.Errorf("window handle lost")
+	}
+	return w.w.Fprintf("tag", "%s", text)
+}
+
+// Body returns the window body
+func (w *Win) Body() ([]byte, error) {
 	if w == nil || w.w == nil {
 		return []byte{}, fmt.Errorf("window handle lost")
 	}
@@ -245,57 +284,52 @@ func (w *Win) ClearBody() error {
 	return nil
 }
 
-// Readp reads the previous character from q0
-func (w *Win) Readp(q0 int) (nq0 int, c byte) {
-	off := 1
-	if q0 == 0 {
-		off = 0
+// AppendBody appends the given text to the body
+func (w *Win) AppendBody(data []byte) error {
+	if w == nil || w.w == nil {
+		return fmt.Errorf("window handle lost")
 	}
-	addr := fmt.Sprintf("#%d;#%d", q0-off, q0)
-	err := w.SetAddr(addr)
-	if err != nil {
-		panic(fmt.Errorf("could not set address to '%s': %w", addr, err))
-	}
-	dat, err := w.ReadData(q0-1, q0)
-	if err != nil {
-		panic(err)
-	}
-	if len(dat) == 0 {
-		panic("no data")
-	}
-	return q0 - 1, dat[0]
+	return w.write("body", data)
 }
 
-// Readn reads the next character from q0
-func (w *Win) Readn(q0 int) (nq0 int, c byte, eof bool) {
-	err := w.SetAddr("#%d;#%d", q0, q0+1)
+// Char reads the character at q0
+func (w *Win) Char(q0 int) (c byte, err error) {
+	var dat []byte
+	err = w.SetAddr("#%d;#%d", q0, q0+1)
 	if err != nil {
 		if err.Error() == "address out of range" {
 			c = 0
-			eof = true
+			err = io.EOF
 			return
 		}
-		panic(err)
+		return
 	}
-	dat, err := w.ReadData(q0, q0+1)
+	dat, err = w.Data(q0, q0+1)
 	if err != nil {
-		// if err == io.EOF {
-		// 	c = 0
-		// 	eof = true
-		// 	return
-		// }
-		panic(err)
+		return
 	}
 	if len(dat) == 0 {
-		panic("no data")
+		err = fmt.Errorf("no data")
+		return
 	}
-	return q0 + 1, dat[0], false
+	c = dat[0]
+	return
 }
 
-// ReadAddr returns the current address of the window
+// SetAddr takes an addr which may be written with any textual address
+// in the format understood by button 3 but without the initial colon
+func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
+	addr := fmtstr
+	if len(args) > 0 {
+		addr = fmt.Sprintf(fmtstr, args...)
+	}
+	return w.w.Addr(addr)
+}
+
+// Addr returns the current address of the window
 //
 // Derived from https://github.com/fhs/acme-lsp/blob/623cb39c2e31bddda0ad7c216c2f3c2fcfcf237f/internal/acme/acme.go#L366
-func (w *Win) ReadAddr() (q0, q1 int, err error) {
+func (w *Win) Addr() (q0, q1 int, err error) {
 	if w == nil || w.w == nil {
 		return 0, 0, fmt.Errorf("window handle lost")
 	}
@@ -317,60 +351,33 @@ func (w *Win) ReadAddr() (q0, q1 int, err error) {
 
 // CurrentAddr sets the addr to dot and reads the addr
 func (w *Win) CurrentAddr() (q0, q1 int, err error) {
-	_, _, err = w.ReadAddr() // open addr file
+	_, _, err = w.Addr() // open addr file
 	if err != nil {
 		return 0, 0, fmt.Errorf("read addr: %v", err)
 	}
-	err = w.SetAddrToSelText()
+	err = w.AddrFromSelection()
 	if err != nil {
 		return 0, 0, fmt.Errorf("setting addr=dot: %v", err)
 	}
-	return w.ReadAddr()
+	return w.Addr()
 }
 
-// SetTextToAddr sets the user’s selected text in the window to the text
+// AddrFromSelection sets the addr address to that of the user’s selected
+// text in the window.
+func (w *Win) AddrFromSelection() error {
+	return w.write("ctl", []byte("addr=dot"))
+}
+
+// SelectionFromAddr sets the user’s selected text in the window to the text
 // addressed by the addr address.
-func (w *Win) SetTextToAddr() error {
+func (w *Win) SelectionFromAddr() error {
 	return w.write("ctl", []byte("dot=addr"))
 }
 
-// SetDumpDir sets the directory in which to run the command to recreate
-// the window from a dump file.
-func (w *Win) SetDumpDir(dir string) error {
-	return w.write("ctl", []byte(fmt.Sprintf("dumpdir %s", dir)))
-}
-
-// RestrictSearchToAddr restricts subsequent searches to the current addr
+// LimitSearchToAddr restricts subsequent searches to the current addr
 // address.
-func (w *Win) RestrictSearchToAddr() error {
+func (w *Win) LimitSearchToAddr() error {
 	return w.write("ctl", []byte("limit=addr"))
-}
-
-// EnableNoMark turns off automatic ‘marking’ of changes, so a set of
-// related changes may be undone in a single Undo interactive command.
-func (w *Win) EnableNoMark() error {
-	return w.write("ctl", []byte("nomark"))
-}
-
-// DisableNoMark cancels nomark, returning the window to the usual state
-// wherein each modification to the body must be undone individually.
-func (w *Win) DisableNoMark() error {
-	return w.write("ctl", []byte("mark"))
-}
-
-// SetWinName sets the name of the window to name.
-func (w *Win) SetWinName(name string) error {
-	return w.write("ctl", []byte(fmt.Sprintf("name %s", name)))
-}
-
-// SetAddr takes an addr which may be written with any textual address
-// in the format understood by button 3 but without the initial colon
-func (w *Win) SetAddr(fmtstr string, args ...interface{}) error {
-	addr := fmtstr
-	if len(args) > 0 {
-		addr = fmt.Sprintf(fmtstr, args...)
-	}
-	return w.w.Addr(addr)
 }
 
 // SetData is used in conjunction with addr for random access to the
@@ -387,20 +394,10 @@ func (w *Win) SetData(data []byte) error {
 	return w.write("data", data)
 }
 
-// Font returns the font for the current win
-func (w *Win) Font() (tab int, font *draw.Font, err error) {
-	return w.w.Font()
-}
-
-// SetFont sets the font for the win
-func (w *Win) SetFont(font string) error {
-	return w.w.Ctl("font %s", font)
-}
-
-// ReadData reads the data in the body between q0 and q1. It is assumed
+// Data reads the data in the body between q0 and q1. It is assumed
 // that CurrentAddr() or similar has been called to properly set the addr
 // and retrieve valid q0 and q1 points.
-func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
+func (w *Win) Data(q0, q1 int) ([]byte, error) {
 	n := q1 - q0
 	buf := make([]byte, n)
 	n2, err := w.w.Read("data", buf)
@@ -413,33 +410,14 @@ func (w *Win) ReadData(q0, q1 int) ([]byte, error) {
 	return buf, nil
 }
 
-// WriteToTag writes to the windows tag
-func (w *Win) WriteToTag(text string) error {
-	if w == nil || w.w == nil {
-		return fmt.Errorf("window handle lost")
-	}
-	return w.w.Fprintf("tag", "%s", text)
+// SetFont sets the font for the win
+func (w *Win) SetFont(font string) error {
+	return w.w.Ctl("font %s", font)
 }
 
-// WriteToBody appends the given text to the body
-func (w *Win) WriteToBody(data []byte) error {
-	if w == nil || w.w == nil {
-		return fmt.Errorf("window handle lost")
-	}
-	return w.write("body", data)
-}
-
-// WriteMenu writes the specified menu options to the Acme buffer
-func (w *Win) WriteMenu(menu []string) error {
-	if w == nil {
-		return fmt.Errorf("state has drifted: *Win is nil")
-	}
-	for _, opt := range menu {
-		if err := w.WriteToTag(opt); err != nil {
-			return err
-		}
-	}
-	return nil
+// Font returns the font for the current win
+func (w *Win) Font() (tab int, font *draw.Font, err error) {
+	return w.w.Font()
 }
 
 func (w *Win) write(file string, data []byte) error {

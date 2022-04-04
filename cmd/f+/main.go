@@ -18,7 +18,7 @@ import (
 func main() {
 	os.Unsetenv("winid") // do not trust the execution environment
 
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "could not find focused window: %+v", err)
 		os.Exit(1)

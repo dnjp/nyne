@@ -50,7 +50,7 @@ func update(w *nyne.Win, cb func(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, o
 		panic(err)
 	}
 
-	err = w.SetTextToAddr()
+	err = w.SelectionFromAddr()
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +64,7 @@ func link(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 		nq1 = q1
 		return
 	}
-	dat, err := w.ReadData(q0, q1)
+	dat, err := w.Data(q0, q1)
 	if err != nil {
 		panic(err)
 	}
@@ -96,7 +96,7 @@ func bold(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 		nq1 = q1
 		return
 	}
-	dat, err := w.ReadData(q0, q1)
+	dat, err := w.Data(q0, q1)
 	if err != nil {
 		panic(err)
 	}
@@ -121,7 +121,7 @@ func italic(w *nyne.Win, q0, q1 int) (nq0, nq1, curs int, out []byte) {
 		nq1 = q1
 		return
 	}
-	dat, err := w.ReadData(q0, q1)
+	dat, err := w.Data(q0, q1)
 	if err != nil {
 		panic(err)
 	}
@@ -183,7 +183,7 @@ func preview(w *nyne.Win) {
 func main() {
 	flag.Parse()
 
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}

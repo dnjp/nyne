@@ -28,7 +28,7 @@ func isterm(w *nyne.Win) bool {
 func main() {
 	os.Unsetenv("winid") // do not trust the execution environment
 
-	winid, err := nyne.FindFocusedWinID()
+	winid, err := nyne.FocusedWinID(nyne.FocusedWinAddr())
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +53,7 @@ func main() {
 		panic(err)
 	}
 
-	err = w.ExecPut()
+	err = w.Put()
 	if err != nil {
 		panic(err)
 	}
