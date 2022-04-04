@@ -10,7 +10,6 @@ type Buf struct {
 	id         int
 	file       string
 	win        *Win
-	debug      bool
 	EventHooks map[Text][]Handler
 	WinHooks   map[Text][]WinHandler
 	KeyHooks   map[rune]Handler
@@ -39,7 +38,6 @@ func (b *Buf) Win() *Win {
 
 // Start begins the event listener for the window
 func (b *Buf) Start() error {
-
 	w, err := OpenWin(b.id, b.file)
 	if err != nil {
 		return err
@@ -61,7 +59,7 @@ func (b *Buf) Start() error {
 				w.Lastpoint = event.SelBegin
 				event, ok = b.keyEvent(event)
 			} else {
-				if event.Origin == Delete && event.Action == DelType {
+				if event.Origin == DelOrigin && event.Action == DelAction {
 					b.win.WriteEvent(event)
 					b.win.Close()
 					return nil

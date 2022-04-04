@@ -4,10 +4,6 @@ import (
 	"9fans.net/go/acme"
 )
 
-// Hook executes a function on the event after it has been
-// written to the acme log
-type Hook func(Event) error
-
 // Event contains metadata for each Acme event
 //
 // The message includes the text if it is less than 256 chars. If it
@@ -76,8 +72,8 @@ const (
 	Keyboard Origin = 'K'
 	// Mouse represents an action taken by the mouse
 	Mouse Origin = 'M'
-	// Delete represents a delete event
-	Delete Origin = 0x0
+	// DelOrigin represents a delete event
+	DelOrigin Origin = 0x0
 )
 
 // NewOrigin constructs an origin from c1
@@ -87,7 +83,7 @@ func NewOrigin(c1 rune) Origin {
 
 // Rune returns the Origin as a rune
 func (o Origin) Rune() rune {
-	if o == Delete {
+	if o == DelOrigin {
 		return 0
 	}
 	return rune(o)
@@ -113,8 +109,8 @@ const (
 	B2Body Action = 'X'
 	// B2Tag is a middle click event in the window tag
 	B2Tag Action = 'x'
-	// DelType represents a delete event
-	DelType Action = 0x0
+	// DelAction represents a delete event
+	DelAction Action = 0x0
 )
 
 // NewAction constructs a new action
@@ -124,7 +120,7 @@ func NewAction(c2 rune) Action {
 
 // Rune returns the Action as a rune
 func (a Action) Rune() rune {
-	if a == DelType {
+	if a == DelAction {
 		return 0
 	}
 	return rune(a)

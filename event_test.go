@@ -35,7 +35,7 @@ func TestOrigin(t *testing.T) {
 		given    rune
 		expected Origin
 	}{
-		{0x0, Delete},
+		{0x0, DelOrigin},
 		{'E', BodyOrTag},
 		{'F', WindowFiles},
 		{'K', Keyboard},
@@ -65,7 +65,7 @@ func TestAction(t *testing.T) {
 		{'l', B3Tag},
 		{'X', B2Body},
 		{'x', B2Tag},
-		{0x0, DelType},
+		{0x0, DelAction},
 	}
 	for _, tc := range testCases {
 		t.Run(string(tc.given), func(t *testing.T) {
