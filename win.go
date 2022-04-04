@@ -165,6 +165,9 @@ func (w *Win) Exec(exec string, args ...string) error {
 
 	rc := utf8.RuneCount(tag)
 	nr := utf8.RuneCountInString(cmd)
+	// TODO: this is broken when using 9fans 0.0.4 due to
+	// this commit:
+	// https://github.com/9fans/go/pull/2/commits/ec429baff6830331d0884359449b303d4a87e33c
 	evt := Event{
 		Origin:   Mouse,
 		Action:   B2Tag,
