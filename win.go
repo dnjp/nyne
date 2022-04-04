@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -291,51 +292,28 @@ func (w *Win) AppendBody(data []byte) error {
 	return w.write("body", data)
 }
 
-// PrevChar reads the previous character from q0
-func (w *Win) PrevChar(q0 int) (nq0 int, c byte) {
-	off := 1
-	if q0 == 0 {
-		off = 0
-	}
-	addr := fmt.Sprintf("#%d;#%d", q0-off, q0)
-	err := w.SetAddr(addr)
-	if err != nil {
-		panic(fmt.Errorf("could not set address to '%s': %w", addr, err))
-	}
-	dat, err := w.Data(q0-1, q0)
-	if err != nil {
-		panic(err)
-	}
-	if len(dat) == 0 {
-		panic("no data")
-	}
-	return q0 - 1, dat[0]
-}
-
-// NextChar reads the next character from q0
-func (w *Win) NextChar(q0 int) (nq0 int, c byte, eof bool) {
-	err := w.SetAddr("#%d;#%d", q0, q0+1)
+// Char reads the character at q0
+func (w *Win) Char(q0 int) (c byte, err error) {
+	var dat []byte
+	err = w.SetAddr("#%d;#%d", q0, q0+1)
 	if err != nil {
 		if err.Error() == "address out of range" {
 			c = 0
-			eof = true
+			err = io.EOF
 			return
 		}
-		panic(err)
+		return
 	}
-	dat, err := w.Data(q0, q0+1)
+	dat, err = w.Data(q0, q0+1)
 	if err != nil {
-		// if err == io.EOF {
-		// 	c = 0
-		// 	eof = true
-		// 	return
-		// }
-		panic(err)
+		return
 	}
 	if len(dat) == 0 {
-		panic("no data")
+		err = fmt.Errorf("no data")
+		return
 	}
-	return q0 + 1, dat[0], false
+	c = dat[0]
+	return
 }
 
 // SetAddr takes an addr which may be written with any textual address
