@@ -1,0 +1,17 @@
+#!/bin/zsh -i
+
+export varfont=/mnt/font/LucidaGrande/15a/font,/mnt/font/LucidaGrande/30a/font
+export fixfont=/mnt/font/Menlo-Regular/14a/font,/mnt/font/Menlo-Regular/28a/font
+export acmeshell=$SHELL
+export tabstop=8
+export INSIDE_ACME=true
+
+if [ -x /usr/libexec/path_helper ]; then
+	eval `/usr/libexec/path_helper -s`
+fi
+
+cd $HOME
+export PLAN9=${PLAN9:-/usr/local/plan9}
+
+nstart acme -a -f $varfont -F $fixfont
+

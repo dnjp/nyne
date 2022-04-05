@@ -28,6 +28,7 @@ These are the commands that are included:
 * [cmd/font](./cmd/font): Wrapper around f+ or f- intended to be invoked from a tool like skhd
 * [cmd/md](./cmd/md): Shortcuts for working with markdown
 * [cmd/move](./cmd/move): Shortcuts for moving the cursor
+* [cmd/nstart](./cmd/nstart): Used to launching acme along with all dependencies and helpers
 * [cmd/nyne](./cmd/nyne): The core autoformatting engine that is run from within acme
 * [cmd/nynetab](./cmd/nynetab): Implements tab expansion and indentation
 * [cmd/save](./cmd/save): Utility to execute Put via keyboard bindings
