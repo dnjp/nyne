@@ -1,4 +1,4 @@
-ALL=nyne nynetab com xcom a+ a- save md move f+ f- font xec wait4acme
+ALL=nyne nynetab com xcom a+ a- save md move f+ f- font xec nstart
 
 all:V: ${ALL:%=bin/%}
 
@@ -10,6 +10,9 @@ bin/%:V: ./cmd/% bin
 
 install:
 	go install ./...
+
+mac:V:
+	cp -r mac/Acme.app /Applications/
 
 MKSHELL=$PLAN9/bin/rc
 uninstall-rc:V:

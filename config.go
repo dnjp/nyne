@@ -6,9 +6,25 @@ import (
 	"strconv"
 
 	"9fans.net/go/draw"
+	"9fans.net/go/plan9/client"
 )
 
 var numre = regexp.MustCompile("[0-9]+")
+
+// AcmeDeps are programs that will be executed before
+// acme can launch
+var AcmeDeps = []string{
+	"plumber",
+	"fontsrv",
+}
+
+// AcmeHelpers are programs that will be executed in an acme
+// subprocess by nstart
+var AcmeHelpers = []string{
+	"acme-lsp",
+	"acmefocused",
+	"skhd",
+}
 
 // Menu contains the menu options that should be written to the tag
 var Menu = []string{
@@ -56,6 +72,11 @@ func IsHiDPI(font *draw.Font) bool {
 	// I said this was a hack
 	size, _ := FontSize(font)
 	return size >= 24
+}
+
+// Namespace returns the current namespace
+func Namespace() string {
+	return client.Namespace()
 }
 
 // FindFiletype returns the filetype in the nyne config if present
