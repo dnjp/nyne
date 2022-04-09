@@ -42,7 +42,7 @@ printf("hello world\n");
 	}
 	for _, tc := range testCases {
 		endQ0c := body[tc.endQ0-tc.startQ0]
-		nQ0 := movedown(body, tc.tabwidth, tc.startQ0, tc.currentQ0)
+		nQ0 := down(body, tc.tabwidth, tc.startQ0, tc.currentQ0)
 		nQ0c := body[nQ0-tc.currentQ0]
 		if nQ0 != tc.endQ0 {
 			t.Fatalf("expected nq0=%d(%c), got nq0=%d(%c)",

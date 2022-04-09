@@ -270,19 +270,19 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 	return q0
 }
 
-func movedown(body []byte, tw, startQ0, currentQ0 int) (nq0 int) {
+func down(body []byte, tw, start, q int) (nq0 int) {
 	var (
-		i, nl, starttabs, off  int
-		hasc, hasc2, atq0, set bool
-		c                      byte
+		i, nl, starttabs, off int
+		hasc, hasc2, atq, set bool
+		c                     byte
 	)
 
-	fromstart := currentQ0 - startQ0
+	fromstart := q - start
 	for i, c = range body {
 		if i == int(fromstart) {
-			atq0 = true
+			atq = true
 		}
-		if !set && atq0 && nl == 1 {
+		if !set && atq && nl == 1 {
 			set = true
 			tabchars := starttabs * tw
 			off = (fromstart - starttabs) + tabchars
@@ -292,7 +292,7 @@ func movedown(body []byte, tw, startQ0, currentQ0 int) (nq0 int) {
 			// only count offset once we are at current
 			// position
 			if c == '\t' {
-				if !hasc && !atq0 {
+				if !hasc && !atq {
 					starttabs++
 				}
 			} else {
@@ -300,7 +300,7 @@ func movedown(body []byte, tw, startQ0, currentQ0 int) (nq0 int) {
 			}
 		case 1:
 			if off <= 0 {
-				return startQ0 + i
+				return start + i
 			}
 			if c == '\t' {
 				// offset starting tabs
@@ -311,32 +311,37 @@ func movedown(body []byte, tw, startQ0, currentQ0 int) (nq0 int) {
 			} else {
 				hasc2 = true
 				off--
+				// subtract character from tab offset
 				if starttabs > 0 && off%tw == 0 {
 					starttabs--
 				}
 			}
 		case 2:
-			return startQ0 + (i - 1)
+			// we are moving from the end of the current
+			// line, but the next line has fewer characters
+			// than the line we started on. end on the
+			// newline for the next line.
+			return start + (i - 1)
 		}
 
 		if c == '\n' {
 			nl++
 		}
 	}
-	return startQ0 + i
+	return start + i
 }
 
-func textdown(w *nyne.Win, sel bool) (body []byte, startQ0, currentQ0, currentQ1 int, err error) {
-	currentQ0, currentQ1, err = w.CurrentAddr()
+func downtext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+	q0, q1, err = w.CurrentAddr()
 	if err != nil {
 		return
 	}
 
-	if sel && currentQ1 > currentQ0 {
+	if sel && q1 > q0 {
 		// must set addr to q1 so that the
 		// regex below will be in refernece
 		// to q1 instead of q0
-		err = w.SetAddr("#%d", currentQ1)
+		err = w.SetAddr("#%d", q1)
 		if err != nil {
 			return
 		}
@@ -346,12 +351,12 @@ func textdown(w *nyne.Win, sel bool) (body []byte, startQ0, currentQ0, currentQ1
 		return
 	}
 
-	var nq1 int
-	startQ0, nq1, err = w.Addr()
+	var end int
+	start, end, err = w.Addr()
 	if err != nil {
 		return
 	}
-	body, err = w.Data(startQ0, nq1)
+	body, err = w.Data(start, end)
 	if err != nil {
 		return
 	}
@@ -367,6 +372,18 @@ func tabwidth(w *nyne.Win) int {
 	return tab / cw
 }
 
+func updatesel(w *nyne.Win, sel bool) {
+	err := w.SelectionFromAddr()
+	if err != nil {
+		panic(err)
+	}
+	if !sel {
+		if err := w.Show(); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -379,38 +396,30 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	tw := tabwidth(w)
 
 	switch strings.ToLower(*direction) {
 	case "up":
 		update(w, up)
 	case "down":
-		tw := tabwidth(w)
-		body, startQ0, currentQ0, currentQ1, err := textdown(w, *sel)
+		body, start, q0, q1, err := downtext(w, *sel)
 		if err != nil {
 			panic(err)
 		}
 		if *sel {
-			nq1 := movedown(body, tw, startQ0, currentQ1)
-			err = w.SetAddr("#%d;#%d", currentQ0, nq1)
+			nq1 := down(body, tw, start, q1)
+			err = w.SetAddr("#%d;#%d", q0, nq1)
 			if err != nil {
 				panic(err)
 			}
 		} else {
-			nq0 := movedown(body, tw, startQ0, currentQ0)
+			nq0 := down(body, tw, start, q0)
 			err = w.SetAddr("#%d", nq0)
 			if err != nil {
 				panic(err)
 			}
 		}
-		err = w.SelectionFromAddr()
-		if err != nil {
-			panic(err)
-		}
-		if !*sel {
-			if err := w.Show(); err != nil {
-				panic(err)
-			}
-		}
+		updatesel(w, *sel)
 	case "left":
 		update(w, left)
 	case "right":
