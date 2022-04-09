@@ -410,6 +410,9 @@ func (w *Win) SetData(data []byte) error {
 // and retrieve valid q0 and q1 points.
 func (w *Win) Data(q0, q1 int) ([]byte, error) {
 	n := q1 - q0
+	if n <= 0 {
+		return nil, fmt.Errorf("invalid range %d,%d", q0, q1)
+	}
 	buf := make([]byte, n)
 	n2, err := w.w.Read("data", buf)
 	if err != nil {

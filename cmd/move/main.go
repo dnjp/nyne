@@ -12,7 +12,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"strings"
 	"unicode"
 
@@ -271,83 +270,101 @@ func up(w *nyne.Win, q0 int) (nq0 int) {
 	return q0
 }
 
-func down(w *nyne.Win, q0 int) (nq0 int) {
+func movedown(body []byte, tw, startQ0, currentQ0 int) (nq0 int) {
 	var (
-		tnq0                                   int
-		nl, fromstart, flushstart, tabs, tabsn int
-		atnl, flush                            bool
-		c, flushc                              byte
+		i, nl, starttabs, off  int
+		hasc, hasc2, atq0, set bool
+		c                      byte
 	)
 
-	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
-	nq0, tabs = start(w, q0) // find beginning of line
-	fromstart = q0 - nq0     // find next line with offset
-	nq0 = q0                 // move back to starting position
+	fromstart := currentQ0 - startQ0
+	for i, c = range body {
+		if i == int(fromstart) {
+			atq0 = true
+		}
+		if !set && atq0 && nl == 1 {
+			set = true
+			tabchars := starttabs * tw
+			off = (fromstart - starttabs) + tabchars
+		}
+		switch nl {
+		case 0:
+			// only count offset once we are at current
+			// position
+			if c == '\t' {
+				if !hasc && !atq0 {
+					starttabs++
+				}
+			} else {
+				hasc = true
+			}
+		case 1:
+			if off <= 0 {
+				return startQ0 + i
+			}
+			if c == '\t' {
+				// offset starting tabs
+				if !hasc2 {
+					starttabs--
+					off -= tw
+				}
+			} else {
+				hasc2 = true
+				off--
+				if starttabs > 0 && off%tw == 0 {
+					starttabs--
+				}
+			}
+		case 2:
+			return startQ0 + (i - 1)
+		}
 
-	if fromstart == 0 {
-		atnl = true
-	}
-
-	for {
-		c, _ = w.Char(nq0)
-		nq0++
 		if c == '\n' {
 			nl++
 		}
-		if tnq0 > nq0 {
-			return tnq0
-		}
-		tnq0 = nq0
+	}
+	return startQ0 + i
+}
 
-		switch nl {
-		case 0: // current line
-			continue
-		case 1: // next line
-			if c == '\t' {
-				tabsn++
-			}
-			if flush {
-				continue
-			}
-			if atnl {
-				// starting point was already at a newline
-				// so we just need to move down by 1 line
-				return nq0
-			} else if fromstart <= 0 || tabs-tabsn == 0 {
-				flush = true
-				flushstart = nq0
-				flushc = c
-				continue
-			}
-			fromstart--
-		default: // over next line
-			if flush {
-				var off int
-				if tabs-tabsn > 0 {
-					off = ((tabs - tabsn) * ft.Tabwidth)
-					if fromstart > 0 {
-						off -= fromstart
-					} else {
-						off-- // newline
-					}
-				}
-				if flushc == '\t' && fromstart >= ft.Tabwidth && tabsn > tabs {
-					fromstart -= ft.Tabwidth
-					off++
-				}
-				rt := flushstart + off + fromstart
-				if rt >= nq0 {
-					rt = nq0 - 1
-				}
-				if q0 == 0 {
-					rt--
-				}
-				return rt
-			}
-			// backtrack
-			return nq0 - 1
+func textdown(w *nyne.Win, sel bool) (body []byte, startQ0, currentQ0, currentQ1 int, err error) {
+	currentQ0, currentQ1, err = w.CurrentAddr()
+	if err != nil {
+		return
+	}
+
+	if sel && currentQ1 > currentQ0 {
+		// must set addr to q1 so that the
+		// regex below will be in refernece
+		// to q1 instead of q0
+		err = w.SetAddr("#%d", currentQ1)
+		if err != nil {
+			return
 		}
 	}
+	err = w.SetAddr("-/^/;+2")
+	if err != nil {
+		return
+	}
+
+	var nq1 int
+	startQ0, nq1, err = w.Addr()
+	if err != nil {
+		return
+	}
+	body, err = w.Data(startQ0, nq1)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func tabwidth(w *nyne.Win) int {
+	tab, font, err := w.Font()
+	if err != nil {
+		panic(err)
+	}
+	cw := font.StringWidth("0")
+	return tab / cw
 }
 
 func main() {
@@ -358,21 +375,42 @@ func main() {
 		panic(err)
 	}
 
-	wins, err := nyne.Windows()
+	w, err := nyne.OpenWin(winid, "")
 	if err != nil {
 		panic(err)
-	}
-
-	w, ok := wins[winid]
-	if !ok {
-		panic(fmt.Errorf("could not find window with id %d", winid))
 	}
 
 	switch strings.ToLower(*direction) {
 	case "up":
 		update(w, up)
 	case "down":
-		update(w, down)
+		tw := tabwidth(w)
+		body, startQ0, currentQ0, currentQ1, err := textdown(w, *sel)
+		if err != nil {
+			panic(err)
+		}
+		if *sel {
+			nq1 := movedown(body, tw, startQ0, currentQ1)
+			err = w.SetAddr("#%d;#%d", currentQ0, nq1)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			nq0 := movedown(body, tw, startQ0, currentQ0)
+			err = w.SetAddr("#%d", nq0)
+			if err != nil {
+				panic(err)
+			}
+		}
+		err = w.SelectionFromAddr()
+		if err != nil {
+			panic(err)
+		}
+		if !*sel {
+			if err := w.Show(); err != nil {
+				panic(err)
+			}
+		}
 	case "left":
 		update(w, left)
 	case "right":
