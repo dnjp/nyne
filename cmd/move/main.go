@@ -195,79 +195,58 @@ func right(w *nyne.Win, q0 int) (nq0 int) {
 	return q0 + 1
 }
 
-func up(w *nyne.Win, q0 int) (nq0 int) {
+func up(body []byte, tw, start, q int) (nq0 int) {
 	var (
-		nl         int  // newline counter, index
-		ch, tabs   int  // current line
-		chp, tabsp int  // previous line
-		c          byte // current character
+		i, nl, fromstart, starttabs, off int
+		c                                byte
 	)
 
-	ft, _ := nyne.FindFiletype(nyne.Filename(w.File))
-
-	prev := func(a int) (int, byte) {
-		a--
-		c, _ := w.Char(a)
-		return a, c
-	}
-
-	for nq0, c = prev(q0); nq0 >= 0; nq0, c = prev(nq0) {
+	// find fromstart
+	for i = len(body) - 1; i >= 0; i-- {
+		c = body[i]
 		if c == '\n' {
 			nl++
 		}
-		if nq0 == 0 {
+		if nl == 1 {
+			fromstart = (len(body) - 1) - i
+			break
+		}
+		if c == '\t' {
+			starttabs++
+		}
+	}
+
+	if fromstart == 0 {
+		return q - len(body)
+	}
+
+	tabchars := starttabs * tw
+	off = (fromstart - starttabs) + tabchars
+	nl = 0
+	for i, c = range body {
+		if c == '\n' {
 			nl++
 		}
-		switch nl {
-		case 0: // current line
-			if c == '\t' {
-				tabs++
-			} else if c != '\n' {
-				ch++
+		if nl == 1 {
+			return q - (len(body) - i)
+		}
+		if c == '\t' {
+			starttabs--
+			off -= tw
+		} else {
+			off--
+			// subtract character from tab offset
+			if starttabs > 0 && off%tw == 0 {
+				starttabs--
 			}
-		case 1: // previous line
-			if c == '\t' {
-				tabsp++
-			} else if c != '\n' {
-				chp++
-			}
-		case 2: // start of previous line
-			if ch == 0 && tabs == 0 && tabsp == 0 {
-				// line only contains newline character,
-				// so return the current line
-				if nq0 > 0 {
-					return nq0 + 1
-				}
-				return nq0
-			}
-			nq0++
-			nc := ch
-			if tabs > tabsp {
-				nc += (tabs - tabsp) * ft.Tabwidth
-				tabs = tabsp
-			} else if tabs > 0 && tabsp > tabs {
-				nc -= (tabsp - tabs) * ft.Tabwidth
-				if nc < 0 {
-					nc = 0
-				} else {
-					tabs = tabsp
-				}
-			}
-			if nc > chp {
-				nc = chp
-			}
-			return nq0 + tabs + nc
-		case 3:
-			// line only contained newline, move down a
-			// line to previous point
-			return nq0 + 1
-		default:
-			return q0
+		}
+		if off <= 0 {
+			return q - ((len(body) - 1) - i)
 		}
 	}
 
 	// something bad happened, don't move
-	return q0
+	return q
 }
 
 func down(body []byte, tw, start, q int) (nq0 int) {
@@ -331,6 +310,29 @@ func down(body []byte, tw, start, q int) (nq0 int) {
 	return start + i
 }
 
+func uptext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+	q0, q1, err = w.CurrentAddr()
+	if err != nil {
+		return
+	}
+
+	err = w.SetAddr("-1;#%d", q0)
+	if err != nil {
+		return
+	}
+
+	var end int
+	start, end, err = w.Addr()
+	if err != nil {
+		return
+	}
+	body, err = w.Data(start, end)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func downtext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
@@ -372,8 +374,20 @@ func tabwidth(w *nyne.Win) int {
 	return tab / cw
 }
 
-func updatesel(w *nyne.Win, sel bool) {
-	err := w.SelectionFromAddr()
+func updatesel(w *nyne.Win, sel bool, q0, q1 int) {
+	var err error
+	if sel {
+		err = w.SetAddr("#%d;#%d", q0, q1)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		err = w.SetAddr("#%d", q0)
+		if err != nil {
+			panic(err)
+		}
+	}
+	err = w.SelectionFromAddr()
 	if err != nil {
 		panic(err)
 	}
@@ -396,30 +410,27 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	tw := tabwidth(w)
 
+	tw := tabwidth(w)
 	switch strings.ToLower(*direction) {
 	case "up":
-		update(w, up)
+		body, start, q0, q1, err := uptext(w, *sel)
+		if err != nil {
+			panic(err)
+		}
+		q0 = up(body, tw, start, q0)
+		updatesel(w, *sel, q0, q1)
 	case "down":
 		body, start, q0, q1, err := downtext(w, *sel)
 		if err != nil {
 			panic(err)
 		}
 		if *sel {
-			nq1 := down(body, tw, start, q1)
-			err = w.SetAddr("#%d;#%d", q0, nq1)
-			if err != nil {
-				panic(err)
-			}
+			q1 = down(body, tw, start, q1)
 		} else {
-			nq0 := down(body, tw, start, q0)
-			err = w.SetAddr("#%d", nq0)
-			if err != nil {
-				panic(err)
-			}
+			q0 = down(body, tw, start, q0)
 		}
-		updatesel(w, *sel)
+		updatesel(w, *sel, q0, q1)
 	case "left":
 		update(w, left)
 	case "right":
