@@ -12,6 +12,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -120,38 +121,79 @@ func isword(c byte) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
-func left(w *nyne.Win, q0 int) (nq0 int) {
-	if *word {
-		nq0 = q0 - 1
-		var pc, c byte
-		for {
-			pc, _ = w.Char(nq0)
-			nq0--
-			c, _ = w.Char(nq0)
-			if nq0 == 0 {
-				return nq0
-			}
-			if (!isword(pc) && isword(c)) || (isword(pc) && !isword(c)) {
-				return nq0 + 1
+// if *word {
+// 	nq0 = q0 - 1
+// 	var pc, c byte
+// 	for {
+// 		pc, _ = w.Char(nq0)
+// 		nq0--
+// 		c, _ = w.Char(nq0)
+// 		if nq0 == 0 {
+// 			return nq0
+// 		}
+// 		if (!isword(pc) && isword(c)) || (isword(pc) && !isword(c)) {
+// 			return nq0 + 1
+// 		}
+// 	}
+// }
+// if *paragraph {
+// 	err := w.SetAddr("#%d", q0-1)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = w.SetAddr("-/^$/")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	nq0, _, err = w.Addr()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return nq0
+// }
+
+func blank(w *nyne.Win, q int, up bool) (nq0 int) {
+	off := 1
+	regex := "+/^$/"
+	if up {
+		off = -1
+		regex = "-/^$/"
+	}
+	err := w.SetAddr("#%d", q+off)
+	if err != nil {
+		panic(err)
+	}
+	err = w.SetAddr(regex)
+	if err != nil {
+		panic(err)
+	}
+	nq0, _, err = w.Addr()
+	if err != nil {
+		panic(err)
+	}
+	return nq0
+}
+
+func prevword(body []byte, tw, start, q int) (nq0 int) {
+	leftv := q - start
+	for i := leftv; i >= 0; i-- {
+		pc := body[i]
+		if i-1 <= 0 {
+			return start - 1
+		}
+		c := body[i-1]
+		if !isword(pc) && isword(c) {
+			if start+i != q {
+				return start + i
 			}
 		}
 	}
-	if *paragraph {
-		err := w.SetAddr("#%d", q0-1)
-		if err != nil {
-			panic(err)
-		}
-		err = w.SetAddr("-/^$/")
-		if err != nil {
-			panic(err)
-		}
-		nq0, _, err = w.Addr()
-		if err != nil {
-			panic(err)
-		}
-		return nq0
-	}
-	if nq0 = q0 - 1; nq0 <= 0 {
+	return q
+}
+
+func left(body []byte, tw, start, q int) (nq0 int) {
+	nq0 = q - 1
+	if nq0 <= 0 {
 		return 0
 	}
 	return nq0
@@ -310,6 +352,29 @@ func down(body []byte, tw, start, q int) (nq0 int) {
 	return start + i
 }
 
+func linetext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+	q0, q1, err = w.CurrentAddr()
+	if err != nil {
+		return
+	}
+
+	err = w.SetAddr("-+")
+	if err != nil {
+		return
+	}
+
+	var end int
+	start, end, err = w.Addr()
+	if err != nil {
+		return
+	}
+	body, err = w.Data(start, end)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func uptext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
@@ -432,7 +497,23 @@ func main() {
 		}
 		updatesel(w, *sel, q0, q1)
 	case "left":
-		update(w, left)
+		body, start, q0, q1, err := linetext(w, *sel)
+		if err != nil {
+			panic(err)
+		}
+		if *word {
+			fmt.Println("prevword")
+			q0 = prevword(body, tw, start, q0)
+		} else if *paragraph {
+			q0, _, err = w.CurrentAddr()
+			if err != nil {
+				return
+			}
+			q0 = blank(w, q0, true)
+		} else {
+			q0 = left(body, tw, start, q0)
+		}
+		updatesel(w, *sel, q0, q1)
 	case "right":
 		update(w, right)
 	case "start":
