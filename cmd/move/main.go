@@ -216,7 +216,7 @@ func down(body []byte, tw, start, q int) (nq0 int) {
 	return start + i
 }
 
-func linetext(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err error) {
+func curline(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
 		return
@@ -239,6 +239,7 @@ func linetext(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err
 	if err != nil {
 		return
 	}
+
 	body, err = w.Data(start, end)
 	if err != nil {
 		return
@@ -246,7 +247,7 @@ func linetext(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err
 	return
 }
 
-func uptext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+func prevline(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
 		return
@@ -262,6 +263,7 @@ func uptext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	if err != nil {
 		return
 	}
+
 	body, err = w.Data(start, end)
 	if err != nil {
 		return
@@ -269,7 +271,7 @@ func uptext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	return
 }
 
-func downtext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+func nextline(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
 		return
@@ -284,6 +286,7 @@ func downtext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error)
 			return
 		}
 	}
+
 	err = w.SetAddr("-/^/;+2")
 	if err != nil {
 		return
@@ -294,6 +297,7 @@ func downtext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error)
 	if err != nil {
 		return
 	}
+
 	body, err = w.Data(start, end)
 	if err != nil {
 		return
@@ -310,7 +314,7 @@ func tabwidth(w *nyne.Win) int {
 	return tab / cw
 }
 
-func updatesel(w *nyne.Win, sel bool, q0, q1 int) {
+func update(w *nyne.Win, sel bool, q0, q1 int) {
 	var err error
 	if sel {
 		err = w.SetAddr("#%d;#%d", q0, q1)
@@ -350,14 +354,14 @@ func main() {
 	tw := tabwidth(w)
 	switch strings.ToLower(*direction) {
 	case "up":
-		body, start, q0, q1, err := uptext(w, *sel)
+		body, start, q0, q1, err := prevline(w, *sel)
 		if err != nil {
 			panic(err)
 		}
 		q0 = up(body, tw, start, q0)
-		updatesel(w, *sel, q0, q1)
+		update(w, *sel, q0, q1)
 	case "down":
-		body, start, q0, q1, err := downtext(w, *sel)
+		body, start, q0, q1, err := nextline(w, *sel)
 		if err != nil {
 			panic(err)
 		}
@@ -366,9 +370,9 @@ func main() {
 		} else {
 			q0 = down(body, tw, start, q0)
 		}
-		updatesel(w, *sel, q0, q1)
+		update(w, *sel, q0, q1)
 	case "left":
-		body, start, q0, q1, err := linetext(w, *sel, false)
+		body, start, q0, q1, err := curline(w, *sel, false)
 		if err != nil {
 			panic(err)
 		}
@@ -383,13 +387,13 @@ func main() {
 		} else {
 			q0 = left(body, tw, start, q0)
 		}
-		updatesel(w, *sel, q0, q1)
+		update(w, *sel, q0, q1)
 	case "right":
 		incQ1 := false
 		if *sel && *word {
 			incQ1 = true
 		}
-		body, start, q0, q1, err := linetext(w, *sel, incQ1)
+		body, start, q0, q1, err := curline(w, *sel, incQ1)
 		if err != nil {
 			panic(err)
 		}
@@ -426,15 +430,15 @@ func main() {
 		} else {
 			q0 = right(body, tw, start, q0)
 		}
-		updatesel(w, *sel, q0, q1)
+		update(w, *sel, q0, q1)
 	case "start":
-		_, start, _, q1, err := linetext(w, *sel, false)
+		_, start, _, q1, err := curline(w, *sel, false)
 		if err != nil {
 			panic(err)
 		}
-		updatesel(w, *sel, start, q1)
+		update(w, *sel, start, q1)
 	case "end":
-		body, start, q0, q1, err := linetext(w, *sel, false)
+		body, start, q0, q1, err := curline(w, *sel, false)
 		if err != nil {
 			panic(err)
 		}
@@ -443,6 +447,6 @@ func main() {
 		} else {
 			q0 = (start + len(body)) - 1
 		}
-		updatesel(w, *sel, q0, q1)
+		update(w, *sel, q0, q1)
 	}
 }
