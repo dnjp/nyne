@@ -12,7 +12,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"strings"
 	"unicode"
 
@@ -23,134 +22,6 @@ var direction = flag.String("d", "", "the direction to move: up, down, left, rig
 var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
 var sel = flag.Bool("s", false, "select text while moving")
-
-func update(w *nyne.Win, cb func(w *nyne.Win, q0 int) (nq0 int)) {
-	q0, q1, err := w.CurrentAddr()
-	if err != nil {
-		panic(err)
-	}
-
-	if *sel {
-		var a, b, nq0 int
-		switch *direction {
-		case "left", "up", "start":
-			nq0 = cb(w, q0)
-			a = q0
-			if nq0 < a {
-				a = nq0
-			}
-			b = nq0
-			if q0 > b {
-				b = q0
-			}
-			if q0 != q1 {
-				b = q1
-			}
-		case "right", "down", "end":
-			nq0 = cb(w, q1)
-			a = q0
-			b = nq0
-		}
-		err = w.SetAddr("#%d;#%d", a, b)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		nq0 := cb(w, q0)
-		err = w.SetAddr("#%d", nq0)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	err = w.SelectionFromAddr()
-	if err != nil {
-		panic(err)
-	}
-	if !*sel {
-		if err := w.Show(); err != nil {
-			panic(err)
-		}
-	}
-}
-
-func start(w *nyne.Win, q0 int) (nq0, tabs int) {
-	var c byte
-	nq0 = q0
-	for nq0 >= 0 {
-		nq0--
-		c, _ = w.Char(nq0)
-		if c == '\t' {
-			tabs++
-		} else if c == '\n' {
-			nq0++
-			break
-		}
-	}
-	return nq0, tabs
-}
-
-func end(w *nyne.Win, q0 int) (nq0, tabs int) {
-	var c byte
-	nq0 = q0
-	for nq0 >= 0 {
-		c, _ = w.Char(nq0)
-		nq0++
-		if c == '\t' {
-			tabs++
-		} else if c == '\n' {
-			nq0--
-			break
-		}
-	}
-	return nq0, tabs
-}
-
-func startline(w *nyne.Win, q0 int) (nq0 int) {
-	nq0, _ = start(w, q0)
-	return nq0
-}
-
-func endline(w *nyne.Win, q0 int) (nq0 int) {
-	nq0, _ = end(w, q0)
-	return nq0
-}
-
-func isword(c byte) bool {
-	r := rune(c)
-	return unicode.IsLetter(r) || unicode.IsDigit(r)
-}
-
-// if *word {
-// 	nq0 = q0 - 1
-// 	var pc, c byte
-// 	for {
-// 		pc, _ = w.Char(nq0)
-// 		nq0--
-// 		c, _ = w.Char(nq0)
-// 		if nq0 == 0 {
-// 			return nq0
-// 		}
-// 		if (!isword(pc) && isword(c)) || (isword(pc) && !isword(c)) {
-// 			return nq0 + 1
-// 		}
-// 	}
-// }
-// if *paragraph {
-// 	err := w.SetAddr("#%d", q0-1)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	err = w.SetAddr("-/^$/")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	nq0, _, err = w.Addr()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return nq0
-// }
 
 func blank(w *nyne.Win, q int, up bool) (nq0 int) {
 	off := 1
@@ -174,6 +45,11 @@ func blank(w *nyne.Win, q int, up bool) (nq0 int) {
 	return nq0
 }
 
+func isword(c byte) bool {
+	r := rune(c)
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
 func prevword(body []byte, tw, start, q int) (nq0 int) {
 	leftv := q - start
 	for i := leftv; i >= 0; i-- {
@@ -191,6 +67,28 @@ func prevword(body []byte, tw, start, q int) (nq0 int) {
 	return q
 }
 
+func nextword(body []byte, tw, start, q int) (nq0 int) {
+	leftv := q - start
+	length := len(body)
+	for i := leftv; i < length; i++ {
+		off := -1
+		if i+off < 0 {
+			off = 0
+		}
+		pc := body[i+off]
+		if i+1 >= length {
+			return start + length
+		}
+		c := body[i]
+		if !isword(pc) && isword(c) {
+			if start+i != q {
+				return start + i
+			}
+		}
+	}
+	return q
+}
+
 func left(body []byte, tw, start, q int) (nq0 int) {
 	nq0 = q - 1
 	if nq0 <= 0 {
@@ -199,42 +97,8 @@ func left(body []byte, tw, start, q int) (nq0 int) {
 	return nq0
 }
 
-func right(w *nyne.Win, q0 int) (nq0 int) {
-	if *word {
-		nq0 = q0 + 1
-		var pc, c, nc byte
-		for {
-			pc, _ = w.Char(nq0 - 1)
-			c, _ = w.Char(nq0)
-			nc, _ = w.Char(nq0 + 1)
-			nq0++
-			if !isword(pc) && isword(c) && isword(nc) {
-				return nq0 - 1
-			}
-			if !isword(pc) && isword(c) && !isword(nc) {
-				return nq0 - 1
-			}
-			if isword(pc) && !isword(c) {
-				return nq0 - 1
-			}
-		}
-	}
-	if *paragraph {
-		err := w.SetAddr("#%d", q0+1)
-		if err != nil {
-			panic(err)
-		}
-		err = w.SetAddr("+/^$/")
-		if err != nil {
-			panic(err)
-		}
-		nq0, _, err = w.Addr()
-		if err != nil {
-			panic(err)
-		}
-		return nq0
-	}
-	return q0 + 1
+func right(body []byte, tw, start, q int) (nq0 int) {
+	return q + 1
 }
 
 func up(body []byte, tw, start, q int) (nq0 int) {
@@ -352,10 +216,17 @@ func down(body []byte, tw, start, q int) (nq0 int) {
 	return start + i
 }
 
-func linetext(w *nyne.Win, sel bool) (body []byte, start, q0, q1 int, err error) {
+func linetext(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err error) {
 	q0, q1, err = w.CurrentAddr()
 	if err != nil {
 		return
+	}
+
+	if incQ1 {
+		err = w.SetAddr("#%d", q1)
+		if err != nil {
+			return
+		}
 	}
 
 	err = w.SetAddr("-+")
@@ -497,12 +368,11 @@ func main() {
 		}
 		updatesel(w, *sel, q0, q1)
 	case "left":
-		body, start, q0, q1, err := linetext(w, *sel)
+		body, start, q0, q1, err := linetext(w, *sel, false)
 		if err != nil {
 			panic(err)
 		}
 		if *word {
-			fmt.Println("prevword")
 			q0 = prevword(body, tw, start, q0)
 		} else if *paragraph {
 			q0, _, err = w.CurrentAddr()
@@ -515,10 +385,64 @@ func main() {
 		}
 		updatesel(w, *sel, q0, q1)
 	case "right":
-		update(w, right)
+		incQ1 := false
+		if *sel && *word {
+			incQ1 = true
+		}
+		body, start, q0, q1, err := linetext(w, *sel, incQ1)
+		if err != nil {
+			panic(err)
+		}
+		if *sel {
+			if *word {
+				q1 = nextword(body, tw, start, q1)
+			} else if *paragraph {
+				_, q1, err = w.CurrentAddr()
+				if err != nil {
+					return
+				}
+				q1t := q1
+				q1 = blank(w, q1, false)
+				if q1 < q1t {
+					// wraparound
+					return
+				}
+			} else {
+				q1 = right(body, tw, start, q1)
+			}
+		} else if *word {
+			q0 = nextword(body, tw, start, q0)
+		} else if *paragraph {
+			q0, _, err = w.CurrentAddr()
+			if err != nil {
+				return
+			}
+			q0t := q0
+			q0 = blank(w, q0, false)
+			if q0 < q0t {
+				// wraparound
+				return
+			}
+		} else {
+			q0 = right(body, tw, start, q0)
+		}
+		updatesel(w, *sel, q0, q1)
 	case "start":
-		update(w, startline)
+		_, start, _, q1, err := linetext(w, *sel, false)
+		if err != nil {
+			panic(err)
+		}
+		updatesel(w, *sel, start, q1)
 	case "end":
-		update(w, endline)
+		body, start, q0, q1, err := linetext(w, *sel, false)
+		if err != nil {
+			panic(err)
+		}
+		if *sel {
+			q1 = (start + len(body)) - 1
+		} else {
+			q0 = (start + len(body)) - 1
+		}
+		updatesel(w, *sel, q0, q1)
 	}
 }
