@@ -23,7 +23,7 @@ var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
 var sel = flag.Bool("s", false, "select text while moving")
 
-func blank(w *nyne.Win, q int, up bool) (nq0 int) {
+func blankline(w *nyne.Win, q int, up bool) (nq0 int) {
 	off := 1
 	regex := "+/^$/"
 	if up {
@@ -379,7 +379,7 @@ func main() {
 			if err != nil {
 				return
 			}
-			q0 = blank(w, q0, true)
+			q0 = blankline(w, q0, true)
 		} else {
 			q0 = left(body, tw, start, q0)
 		}
@@ -402,7 +402,7 @@ func main() {
 					return
 				}
 				q1t := q1
-				q1 = blank(w, q1, false)
+				q1 = blankline(w, q1, false)
 				if q1 < q1t {
 					// wraparound
 					return
@@ -418,7 +418,7 @@ func main() {
 				return
 			}
 			q0t := q0
-			q0 = blank(w, q0, false)
+			q0 = blankline(w, q0, false)
 			if q0 < q0t {
 				// wraparound
 				return
