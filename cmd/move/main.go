@@ -23,34 +23,12 @@ var word = flag.Bool("w", false, "move by word (only valid for left and right)")
 var paragraph = flag.Bool("p", false, "move by paragraph (only valid for left and right)")
 var sel = flag.Bool("s", false, "select text while moving")
 
-func blankline(w *nyne.Win, q int, up bool) (nq0 int) {
-	off := 1
-	regex := "+/^$/"
-	if up {
-		off = -1
-		regex = "-/^$/"
-	}
-	err := w.SetAddr("#%d", q+off)
-	if err != nil {
-		panic(err)
-	}
-	err = w.SetAddr(regex)
-	if err != nil {
-		panic(err)
-	}
-	nq0, _, err = w.Addr()
-	if err != nil {
-		panic(err)
-	}
-	return nq0
-}
-
 func isword(c byte) bool {
 	r := rune(c)
 	return unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
-func prevword(body []byte, tw, start, q int) (nq0 int) {
+func prevword(body []byte, tw, start, q int) (nq int) {
 	leftv := q - start
 	for i := leftv; i >= 0; i-- {
 		pc := body[i]
@@ -67,7 +45,7 @@ func prevword(body []byte, tw, start, q int) (nq0 int) {
 	return q
 }
 
-func nextword(body []byte, tw, start, q int) (nq0 int) {
+func nextword(body []byte, tw, start, q int) (nq int) {
 	leftv := q - start
 	length := len(body)
 	for i := leftv; i < length; i++ {
@@ -89,19 +67,19 @@ func nextword(body []byte, tw, start, q int) (nq0 int) {
 	return q
 }
 
-func left(body []byte, tw, start, q int) (nq0 int) {
-	nq0 = q - 1
-	if nq0 <= 0 {
+func left(body []byte, tw, start, q int) (nq int) {
+	nq = q - 1
+	if nq <= 0 {
 		return 0
 	}
-	return nq0
+	return nq
 }
 
-func right(body []byte, tw, start, q int) (nq0 int) {
+func right(body []byte, tw, start, q int) (nq int) {
 	return q + 1
 }
 
-func up(body []byte, tw, start, q int) (nq0 int) {
+func up(body []byte, tw, start, q int) (nq int) {
 	var (
 		i, nl, fromstart, starttabs, off int
 		c                                byte
@@ -155,7 +133,7 @@ func up(body []byte, tw, start, q int) (nq0 int) {
 	return q
 }
 
-func down(body []byte, tw, start, q int) (nq0 int) {
+func down(body []byte, tw, start, q int) (nq int) {
 	var (
 		i, nl, starttabs, off int
 		hasc, hasc2, atq, set bool
@@ -214,6 +192,28 @@ func down(body []byte, tw, start, q int) (nq0 int) {
 		}
 	}
 	return start + i
+}
+
+func blankline(w *nyne.Win, q int, up bool) (nq int) {
+	off := 1
+	regex := "+/^$/"
+	if up {
+		off = -1
+		regex = "-/^$/"
+	}
+	err := w.SetAddr("#%d", q+off)
+	if err != nil {
+		panic(err)
+	}
+	err = w.SetAddr(regex)
+	if err != nil {
+		panic(err)
+	}
+	nq, _, err = w.Addr()
+	if err != nil {
+		panic(err)
+	}
+	return nq
 }
 
 func curline(w *nyne.Win, sel, incQ1 bool) (body []byte, start, q0, q1 int, err error) {
